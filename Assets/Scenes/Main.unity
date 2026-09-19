@@ -2109,7 +2109,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
   movementSpeed: 0.004
-  snappiness: 0.5
+  zoomSpeed: 1.5
+  maxZoomOffset: 7
+  zoomMovementSpeedFactor: 1.4
+  snappiness: 0.02
 --- !u!1 &1793132071
 GameObject:
   m_ObjectHideFlags: 0
@@ -2273,6 +2276,22 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: e6575082-8d4e-49da-a34d-cbcc113e0b28
     m_ActionName: 'Player/Right Click[/Mouse/rightButton]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1926876056}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnScrollWheel
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: edf324e3-4b64-4cff-912c-3cbbc9cbb897
+    m_ActionName: 'Player/Scroll Wheel[/Mouse/scroll/down,/Mouse/scroll/up]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: Keyboard&Mouse
   m_DefaultActionMap: Player
