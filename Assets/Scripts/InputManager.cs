@@ -63,4 +63,11 @@ public class InputManager : MonoBehaviour
     {
         onScrollWheel?.Invoke(ctx.action.ReadValue<float>());
     }
+
+
+    public event Action<Vector2> onMovement;
+    public void OnMovement(InputAction.CallbackContext ctx)
+    {
+        onMovement?.Invoke(ctx.action.ReadValue<Vector2>());
+    }
 }
