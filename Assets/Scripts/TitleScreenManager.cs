@@ -5,7 +5,7 @@ public class TitleScreenManager : MonoBehaviour {
 
     
     public void GameStartPressed() {
-        
+        Debug.Log("play button pressed");
     }
 
 
