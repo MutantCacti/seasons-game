@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class TitleScreenManager {
+public class TitleScreenManager : MonoBehaviour {
 
     
     public void GameStartPressed() {
