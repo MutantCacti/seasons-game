@@ -3,11 +3,16 @@ using UnityEngine.SceneManagement;
 
 public class TitleScreenManager : MonoBehaviour {
 
-    
-    public void GameStartPressed() {
-        Debug.Log("play button pressed");
+    public void OnPlay()
+    {
+        LoadingScreenManager.instance.LoadScene("Game");
     }
 
 
-    
+    public void OnQuit()
+    {
+        Debug.Log("Quitting");
+        Application.Quit();
+    }
+
 }
