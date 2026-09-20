@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using UnityEngine;
 
 public class DayNightManager : MonoBehaviour {
@@ -18,62 +19,34 @@ public class DayNightManager : MonoBehaviour {
     [SerializeField] float dayDuration = 10f;
     [SerializeField] float nightDuration = 2f;
 
-    private float cycleLength = 0f;
-    private float currentTime = 0f;
 
     private void Awake() {
         sunNoonRotation = new Vector3(sunNoonAngle, (sunRiseRotation.y + sunSetRotation.y) * 0.65f, 0f);
 
         sunLight = sunGO.GetComponent<Light>();
         sunTransform = sunGO.transform;
-
-        cycleLength = dayDuration + nightDuration;
-
+        
         sunLight.intensity = nightIntensity;
         sunTransform.localEulerAngles = sunRiseRotation;
     }
 
-    private void FixedUpdate() {
-
-        currentTime += Time.deltaTime;
-
-        if (currentTime >= cycleLength) {
-            currentTime -= cycleLength;
-            sunTransform.localEulerAngles = sunRiseRotation;
-            Debug.LogWarning("reset");
-        }
+    private void Start() {
+        SunRise();
+    }
 
 
-        // TODO: ADD SINE EASING TO LERPs
+    private void SunRise() {
+        sunTransform.DOLocalRotate(sunNoonRotation, dayDuration / 2f).SetEase(Ease.OutSine).OnComplete(SunSet);
+        sunLight.DOIntensity(noonIntensity, dayDuration / 2f).SetEase(Ease.Linear);
+    }
 
-        if (currentTime < dayDuration) {
-
-            if (currentTime < dayDuration / 2) {
-
-                float dayProgress = currentTime / (dayDuration / 2);
-
-                sunTransform.localEulerAngles = Vector3.Lerp(sunRiseRotation, sunNoonRotation, dayProgress);
-
-                sunLight.intensity = Mathf.Lerp(nightIntensity, noonIntensity, dayProgress);
-
-            } else {
-
-                float dayProgress = (currentTime - dayDuration / 2) / (dayDuration / 2);
-
-                sunTransform.localEulerAngles = Vector3.Lerp(sunNoonRotation, sunSetRotation, dayProgress);
-
-                sunLight.intensity = Mathf.Lerp(noonIntensity, nightIntensity, dayProgress);
-
-            }
-
-
-            Debug.Log("day");
-
-        } else {
-            sunLight.intensity = nightIntensity;
-            Debug.Log("night");
-        }
-        
+    private void SunSet() {
+        sunTransform.DOLocalRotate(sunSetRotation, dayDuration / 2f).SetEase(Ease.InSine).OnComplete(Night);
+        sunLight.DOIntensity(nightIntensity, dayDuration / 2f).SetEase(Ease.Linear);
+    }
+    
+    private void Night() {
+        sunTransform.DOLocalRotate(sunRiseRotation, nightDuration).OnComplete(SunRise);
     }
 
     
