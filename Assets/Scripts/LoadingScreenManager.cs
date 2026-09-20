@@ -48,6 +48,8 @@ public class LoadingScreenManager : MonoBehaviour {
     private IEnumerator LoadSceneRoutine(string sceneName) {
         isLoading = true;
 
+        InputManager.Instance.DisableInput();
+
         RectTransform loadingScreenRT = loadingScreenGO.GetComponent<RectTransform>();
         transitionFromPosition = new Vector2(-Screen.width, 0); // slide in from the left
         transitionToPosition = new Vector2(Screen.width, 0);    // slide out to the right
@@ -69,6 +71,8 @@ public class LoadingScreenManager : MonoBehaviour {
         // out
         yield return loadingScreenRT.DOAnchorPos(transitionToPosition, ANIMATION_DURATION).SetEase(Ease.InOutQuad).WaitForCompletion();
         loadingScreenCanvasGO.SetActive(false);
+
+        InputManager.Instance.EnableInput();
 
         isLoading = false;
     }
