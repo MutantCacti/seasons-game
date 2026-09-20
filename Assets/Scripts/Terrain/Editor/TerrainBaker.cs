@@ -15,7 +15,7 @@ public static class TerrainBaker
 
     public static void Bake(TerrainBakeSettings settings)
     {
-        List<TerrainLevels.Level> levels = TerrainLevels.Discover(settings.transform);
+        List<TerrainGrid.Level> levels = TerrainGrid.DiscoverLevels(settings.transform);
         if (levels.Count == 0)
         {
             Debug.LogError("No tilemaps with tiles in them were found under the bake settings object", settings);

@@ -132570,8 +132570,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1793132073}
   - component: {fileID: 1793132072}
-  - component: {fileID: 1793132074}
+  - component: {fileID: 1793132076}
   - component: {fileID: 1793132075}
+  - component: {fileID: 1793132074}
   m_Layer: 0
   m_Name: Grid
   m_TagString: Untagged
@@ -132648,6 +132649,18 @@ MonoBehaviour:
   bakedRenderers:
   - {fileID: 971058262}
   - {fileID: 268664225}
+--- !u!114 &1793132076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1793132071}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 614447f51c07f2d39ad936206fd11c0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TerrainGrid
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

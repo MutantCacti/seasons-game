@@ -5,7 +5,7 @@ using UnityEngine.Tilemaps;
 // Generates a TerrainRaster by converting tilemap sprite alpha into a bool bitmap
 public static class TerrainRasterizer
 {
-    public static TerrainRaster Rasterize(List<TerrainLevels.Level> levels, int pixelsPerTile, float alphaThreshold, UnityEngine.Object context)
+    public static TerrainRaster Rasterize(List<TerrainGrid.Level> levels, int pixelsPerTile, float alphaThreshold, UnityEngine.Object context)
     {
         if (pixelsPerTile <= 0)
         {
@@ -19,17 +19,14 @@ public static class TerrainRasterizer
         int cellMinX = int.MaxValue, cellMinY = int.MaxValue;
         int cellMaxX = int.MinValue, cellMaxY = int.MinValue;
 
-        foreach (TerrainLevels.Level level in levels)
+        foreach (TerrainGrid.Level level in levels)
         {
-            foreach (Tilemap tilemap in level.tilemaps)
-            {
-                BoundsInt bounds = tilemap.cellBounds;
+            BoundsInt bounds = level.tilemap.cellBounds;
 
-                cellMinX = Mathf.Min(cellMinX, bounds.xMin);
-                cellMinY = Mathf.Min(cellMinY, bounds.yMin);
-                cellMaxX = Mathf.Max(cellMaxX, bounds.xMax);
-                cellMaxY = Mathf.Max(cellMaxY, bounds.yMax);
-            }
+            cellMinX = Mathf.Min(cellMinX, bounds.xMin);
+            cellMinY = Mathf.Min(cellMinY, bounds.yMin);
+            cellMaxX = Mathf.Max(cellMaxX, bounds.xMax);
+            cellMaxY = Mathf.Max(cellMaxY, bounds.yMax);
         }
 
         TerrainRaster raster = new TerrainRaster();
@@ -52,10 +49,7 @@ public static class TerrainRasterizer
             raster.levelMasks[levelIndex] = new bool[raster.pixelWidth * raster.pixelHeight];
             raster.spriteByCell[levelIndex] = new Sprite[raster.cellWidth * raster.cellHeight];
 
-            foreach (Tilemap tilemap in levels[levelIndex].tilemaps)
-            {
-                RasterizeTilemap(raster, levelIndex, tilemap, maskCache, alphaThreshold, context);
-            }
+            RasterizeTilemap(raster, levelIndex, levels[levelIndex].tilemap, maskCache, alphaThreshold, context);
         }
 
         return raster;
