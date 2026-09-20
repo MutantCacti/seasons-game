@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 // Runs the terrain bake and writes the result as shipped mesh assets
 public static class TerrainBaker
@@ -13,14 +15,14 @@ public static class TerrainBaker
 
     public static void Bake(TerrainBakeSettings settings)
     {
-        TerrainLayer[] terrainLayers = settings.GetComponentsInChildren<TerrainLayer>();
-        if (terrainLayers.Length == 0)
+        List<TerrainLevels.Level> levels = TerrainLevels.Discover(settings.transform);
+        if (levels.Count == 0)
         {
-            Debug.LogError("No TerrainLayer components found under the bake settings object", settings);
+            Debug.LogError("No tilemaps with tiles in them were found under the bake settings object", settings);
             return;
         }
 
-        TerrainRaster raster = TerrainRasterizer.Rasterize(terrainLayers, settings.pixelsPerTile, settings.alphaThreshold, settings);
+        TerrainRaster raster = TerrainRasterizer.Rasterize(levels, settings.pixelsPerTile, settings.alphaThreshold, settings);
         if (raster == null)
         {
             Debug.LogError("Terrain bake produced no levels, probably there are no tiles", settings);
@@ -63,8 +65,12 @@ public static class TerrainBaker
             mesh => TerrainCollisionMeshBuilder.Fill(mesh, raster, collision)
         );
 
-        MeshRenderer topRenderer = WireRenderMesh(settings, "Terrain Tops", topMesh, settings.topMaterial);
-        MeshRenderer wallRenderer = WireRenderMesh(settings, "Terrain Walls", wallMesh, settings.wallMaterial);
+        // baking shouldn't flip which of the two views you are looking at, so work out
+        // what is on screen right now and leave it that way
+        bool showBaked = !AnyTilemapRendererEnabled(settings);
+
+        MeshRenderer topRenderer = WireRenderMesh(settings, "Terrain Tops", topMesh, settings.topMaterial, showBaked);
+        MeshRenderer wallRenderer = WireRenderMesh(settings, "Terrain Walls", wallMesh, settings.wallMaterial, showBaked);
         WireCollision(settings, collisionMesh);
         WireRuntimeVisibility(settings, new MeshRenderer[] { topRenderer, wallRenderer });
 
@@ -98,7 +104,7 @@ public static class TerrainBaker
     }
 
 
-    private static MeshRenderer WireRenderMesh(TerrainBakeSettings settings, string childName, Mesh mesh, Material material)
+    private static MeshRenderer WireRenderMesh(TerrainBakeSettings settings, string childName, Mesh mesh, Material material, bool showBaked)
     {
         Transform holder = GetOrCreateChild(settings.transform, childName);
 
@@ -110,10 +116,23 @@ public static class TerrainBaker
         if (material != null) meshRenderer.sharedMaterial = material;
         else Debug.LogWarning($"No material assigned for '{childName}' - it will render as the magenta default", settings);
 
-        // this will later be toggled by TerrainBakeSettingsEditor:ToggleRenderers
-        meshRenderer.enabled = false;
+        // tilemaps and meshes sit at the same height, so only ever one of them renders
+        Undo.RecordObject(meshRenderer, "Bake Terrain");
+        meshRenderer.enabled = showBaked;
 
         return meshRenderer;
+    }
+
+
+    // the tilemaps are the authoring view and always exist, so they decide which view is up
+    private static bool AnyTilemapRendererEnabled(TerrainBakeSettings settings)
+    {
+        foreach (TilemapRenderer tilemapRenderer in settings.GetComponentsInChildren<TilemapRenderer>(true))
+        {
+            if (tilemapRenderer.enabled) return true;
+        }
+
+        return false;
     }
 
 

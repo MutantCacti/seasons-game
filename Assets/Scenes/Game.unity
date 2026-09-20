@@ -130,7 +130,6 @@ GameObject:
   - component: {fileID: 52114616}
   - component: {fileID: 52114618}
   - component: {fileID: 52114617}
-  - component: {fileID: 52114619}
   m_Layer: 0
   m_Name: Tilemap L0
   m_TagString: Untagged
@@ -1917,19 +1916,6 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
---- !u!114 &52114619
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 52114615}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0941a01106d630624a7a52c933258223, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TerrainLayer
-  Layer: 0
 --- !u!1 &54557717
 GameObject:
   m_ObjectHideFlags: 0
@@ -1941,7 +1927,6 @@ GameObject:
   - component: {fileID: 54557718}
   - component: {fileID: 54557720}
   - component: {fileID: 54557719}
-  - component: {fileID: 54557721}
   m_Layer: 0
   m_Name: Tilemap L2
   m_TagString: Untagged
@@ -2258,19 +2243,6 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
---- !u!114 &54557721
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 54557717}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0941a01106d630624a7a52c933258223, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TerrainLayer
-  Layer: 1
 --- !u!1 &268664224
 GameObject:
   m_ObjectHideFlags: 0
@@ -2296,7 +2268,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 268664224}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -2372,7 +2344,6 @@ GameObject:
   - component: {fileID: 722619420}
   - component: {fileID: 722619422}
   - component: {fileID: 722619421}
-  - component: {fileID: 722619423}
   m_Layer: 0
   m_Name: Tilemap L1
   m_TagString: Untagged
@@ -3143,19 +3114,6 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
---- !u!114 &722619423
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 722619419}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0941a01106d630624a7a52c933258223, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TerrainLayer
-  Layer: 0.5
 --- !u!1 &971058261
 GameObject:
   m_ObjectHideFlags: 0
@@ -3181,7 +3139,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 971058261}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -3459,7 +3417,6 @@ GameObject:
   - component: {fileID: 1522154939}
   - component: {fileID: 1522154942}
   - component: {fileID: 1522154941}
-  - component: {fileID: 1522154943}
   m_Layer: 0
   m_Name: Tilemap L-1
   m_TagString: Untagged
@@ -132446,19 +132403,6 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
---- !u!114 &1522154943
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1522154938}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0941a01106d630624a7a52c933258223, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TerrainLayer
-  Layer: -0.5
 --- !u!1 &1764824868
 GameObject:
   m_ObjectHideFlags: 0

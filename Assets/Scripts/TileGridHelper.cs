@@ -6,8 +6,9 @@ using UnityEngine.Tilemaps;
 //
 // Important notes:
 // the Grid sits at the origin with a 90 degree X rotation so grid x is world x, grid y is world z
-// and a TerrainLayer's level is world y. Tiles are exactly 1 unit by 1 unit in x and z, but
-// levels may be any distance apart in y (see TerrainLayer.Layer) so a level is a float.
+// and a level's height is world y, read off the tilemap's transform by TerrainLevels.
+// Tiles are exactly 1 unit by 1 unit in x and z, but levels may be any distance apart in y,
+// so a level is a float.
 // These things really should not change or the entire Terrain scripts need rewriting.
 
 
@@ -79,11 +80,13 @@ public class TileGridHelper
     // Tilemap lookup from level
     // Assumes all the tilemaps are children of gridRoot (currently GO "Grid" in Scene "Game")
     // level is a world y, so it is matched with a tolerance rather than exactly
+    // NB: rediscovers every call, and returns only the first tilemap at a height even
+    // though a level may hold several. TerrainGrid replaces this with a cached table.
     public Tilemap FindTilemapForLevel(Transform gridRoot, float level)
     {
-        foreach (TerrainLayer terrainLayer in gridRoot.GetComponentsInChildren<TerrainLayer>(true))
+        foreach (TerrainLevels.Level terrainLevel in TerrainLevels.Discover(gridRoot))
         {
-            if (Mathf.Abs(terrainLayer.Layer - level) <= LEVEL_EPSILON) return terrainLayer.GetComponent<Tilemap>();
+            if (Mathf.Abs(terrainLevel.height - level) <= LEVEL_EPSILON) return terrainLevel.tilemaps[0];
         }
 
         return null;
