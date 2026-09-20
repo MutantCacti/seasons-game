@@ -7,9 +7,19 @@
             "id": "c74b71bd-9d88-44ec-9f64-03d76d710b2f",
             "actions": [
                 {
-                    "name": "Mouse Position",
+                    "name": "Mouse Delta",
                     "type": "Value",
                     "id": "5ed5a633-4139-4839-bdf8-cc0a5877ff13",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true,
+                    "priority": 0
+                },
+                {
+                    "name": "Mouse Position",
+                    "type": "Value",
+                    "id": "6b68e5b5-1dbb-434c-8511-06ff7189290c",
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
@@ -65,7 +75,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
-                    "action": "Mouse Position",
+                    "action": "Mouse Delta",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -233,6 +243,17 @@
                     "action": "Movement",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "adde8e18-3bd8-4dcf-a0d6-09752a2ab0ff",
+                    "path": "<Pointer>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Mouse Position",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }

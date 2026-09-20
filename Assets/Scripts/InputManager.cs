@@ -51,10 +51,17 @@ public class InputManager : MonoBehaviour
     }
 
 
-    public event Action<Vector2> onMouseMove;
-    public void OnMouseMove(InputAction.CallbackContext ctx)
+    public event Action<Vector2> onMouseDelta;
+    public void OnMouseDelta(InputAction.CallbackContext ctx)
     {
-        onMouseMove?.Invoke(ctx.action.ReadValue<Vector2>());
+        onMouseDelta?.Invoke(ctx.action.ReadValue<Vector2>());
+    }
+
+
+    public event Action<Vector2> onMousePosition;
+    public void OnMousePosition(InputAction.CallbackContext ctx)
+    {
+        onMousePosition?.Invoke(ctx.action.ReadValue<Vector2>());
     }
 
 
