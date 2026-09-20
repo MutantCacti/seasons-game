@@ -3387,12 +3387,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DayNightManager
   sunGO: {fileID: 1484790763}
-  sunRiseRotation: {x: 40, y: -115, z: 0}
-  sunSetRotation: {x: 40, y: 30, z: 0}
+  sunRiseRotation: {x: -2, y: -115, z: 0}
+  sunNoonAngle: 60
+  sunSetRotation: {x: -2, y: 45, z: 0}
   noonIntensity: 1
   nightIntensity: 0
   dayDuration: 10
-  nightDuration: 5
+  nightDuration: 2
 --- !u!1 &1512830045
 GameObject:
   m_ObjectHideFlags: 0

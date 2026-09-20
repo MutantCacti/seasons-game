@@ -4,8 +4,10 @@ using UnityEngine;
 public class DayNightManager : MonoBehaviour {
 
     [SerializeField] GameObject sunGO;
-    [SerializeField] Vector3 sunRiseRotation = new Vector3(40f, -115f, 0f);
-    [SerializeField] Vector3 sunSetRotation = new Vector3(40f, 30f, 0f);
+    [SerializeField] Vector3 sunRiseRotation = new Vector3(-2f, -115f, 0f);
+    [SerializeField] float sunNoonAngle = 60f;
+    private Vector3 sunNoonRotation;
+    [SerializeField] Vector3 sunSetRotation = new Vector3(-2f, 45f, 0f);
     [SerializeField] float noonIntensity = 1f;
     [SerializeField] float nightIntensity = 0f;
 
@@ -14,46 +16,54 @@ public class DayNightManager : MonoBehaviour {
 
     [Tooltip("Duration in seconds")]
     [SerializeField] float dayDuration = 10f;
-    [SerializeField] float nightDuration = 5f;
+    [SerializeField] float nightDuration = 2f;
 
-    private float dayLength = 0f;
+    private float cycleLength = 0f;
     private float currentTime = 0f;
 
     private void Awake() {
+        sunNoonRotation = new Vector3(sunNoonAngle, (sunRiseRotation.y + sunSetRotation.y) * 0.65f, 0f);
+
         sunLight = sunGO.GetComponent<Light>();
         sunTransform = sunGO.transform;
 
-        dayLength = dayDuration + nightDuration;
+        cycleLength = dayDuration + nightDuration;
 
         sunLight.intensity = nightIntensity;
         sunTransform.localEulerAngles = sunRiseRotation;
     }
 
     private void FixedUpdate() {
-        
+
         currentTime += Time.deltaTime;
 
-        if (currentTime >= dayLength) {
-            currentTime -= dayLength;
+        if (currentTime >= cycleLength) {
+            currentTime -= cycleLength;
             sunTransform.localEulerAngles = sunRiseRotation;
             Debug.LogWarning("reset");
         }
 
 
-        //sine
+        // TODO: ADD SINE EASING TO LERPs
 
         if (currentTime < dayDuration) {
 
-            float dayProgress = currentTime / dayDuration;
-
-            sunTransform.localEulerAngles = Vector3.Lerp(sunRiseRotation, sunSetRotation, dayProgress);
-
             if (currentTime < dayDuration / 2) {
-                float intensityProgress = currentTime / (dayDuration / 2);
-                sunLight.intensity = Mathf.Lerp(nightIntensity, noonIntensity, intensityProgress);
+
+                float dayProgress = currentTime / (dayDuration / 2);
+
+                sunTransform.localEulerAngles = Vector3.Lerp(sunRiseRotation, sunNoonRotation, dayProgress);
+
+                sunLight.intensity = Mathf.Lerp(nightIntensity, noonIntensity, dayProgress);
+
             } else {
-                float intensityProgress = (currentTime - dayDuration / 2) / (dayDuration / 2);
-                sunLight.intensity = Mathf.Lerp(noonIntensity, nightIntensity, intensityProgress);
+
+                float dayProgress = (currentTime - dayDuration / 2) / (dayDuration / 2);
+
+                sunTransform.localEulerAngles = Vector3.Lerp(sunNoonRotation, sunSetRotation, dayProgress);
+
+                sunLight.intensity = Mathf.Lerp(noonIntensity, nightIntensity, dayProgress);
+
             }
 
 
