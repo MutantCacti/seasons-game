@@ -9,31 +9,40 @@ using UnityEngine.InputSystem;
 
 public class InputManager : MonoBehaviour
 {
-    private static InputManager _instance;
-    public static InputManager Instance{ get { return _instance; }}
+    private static InputManager instance;
+    public static InputManager Instance{ get { return instance; }}
 
 
-    private PlayerInput _playerInput;
+    private PlayerInput playerInput;
 
 
-    void Awake() {_instance = this;}
-
-
-    void Start()
+    public void Awake()
     {
-        _playerInput = GetComponent<PlayerInput>();
+        if (instance != null && instance != this)
+        {
+            Debug.LogWarning("Found more than one InputManager in the scene - destroying newest !!");
+            Destroy(gameObject);
+            return;
+        }
+        instance = this;
+    }
+
+
+    public void Start()
+    {
+        playerInput = GetComponent<PlayerInput>();
     }
 
 
     public void DisableInput()
     {
-        _playerInput.enabled = false;
+        playerInput.enabled = false;
     }
 
 
     public void EnableInput()
     {
-        _playerInput.enabled = true;
+        playerInput.enabled = true;
     }
 
 
