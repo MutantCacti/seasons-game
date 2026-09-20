@@ -402,6 +402,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1372464660}
+  - component: {fileID: 1372464661}
   m_Layer: 0
   m_Name: SFXPlayer
   m_TagString: Untagged
@@ -424,6 +425,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 761960047}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1372464661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1372464659}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4678da5defef1373ab590883f7fc8533, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXPlayer
+  audioMixerGroup: {fileID: 0}
+  sfxPriority: 128
+  numVoices: 8
+  maxDistance: 30
 --- !u!1 &1400548504
 GameObject:
   m_ObjectHideFlags: 0

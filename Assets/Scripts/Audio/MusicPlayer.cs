@@ -21,7 +21,7 @@ public class MusicPlayer : MonoBehaviour
         AudioClip clip = soundObject.PickRandomClip();
         if (clip == null)
         {
-            Debug.LogWarning($"SoundObject '{soundObject.name}' has no clips assigned - ignoring Play !!");
+            Debug.LogWarning($"MusicPlayer: SoundObject '{soundObject.name}' has no clips assigned - ignoring Play !!");
             return;
         }
 
