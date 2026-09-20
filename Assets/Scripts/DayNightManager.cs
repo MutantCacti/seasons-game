@@ -52,7 +52,7 @@ public class DayNightManager : MonoBehaviour {
                 float intensityProgress = currentTime / (dayDuration / 2);
                 sunLight.intensity = Mathf.Lerp(nightIntensity, noonIntensity, intensityProgress);
             } else {
-                float intensityProgress = (currentTime / 2) / (dayDuration / 2);
+                float intensityProgress = (currentTime - dayDuration / 2) / (dayDuration / 2);
                 sunLight.intensity = Mathf.Lerp(noonIntensity, nightIntensity, intensityProgress);
             }
 
