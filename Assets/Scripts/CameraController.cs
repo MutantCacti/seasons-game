@@ -26,7 +26,7 @@ public class CameraController : MonoBehaviour
     public void Start()
     {
         InputManager.Instance.onLeftClickDown += OnLeftClickDown;
-        InputManager.Instance.onMouseMove += OnMouseMove;
+        InputManager.Instance.onMouseDelta += OnMouseMove;
         InputManager.Instance.onScrollWheel += OnScrollWheel;
         InputManager.Instance.onMovement += OnMovement;
 
@@ -55,7 +55,7 @@ public class CameraController : MonoBehaviour
         if (InputManager.Instance == null) return;
 
         InputManager.Instance.onLeftClickDown -= OnLeftClickDown;
-        InputManager.Instance.onMouseMove -= OnMouseMove;
+        InputManager.Instance.onMouseDelta -= OnMouseMove;
         InputManager.Instance.onScrollWheel -= OnScrollWheel;
         InputManager.Instance.onMovement -= OnMovement;
     }
