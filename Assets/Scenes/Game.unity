@@ -37,7 +37,7 @@ RenderSettings:
   m_ReflectionBounces: 1
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
-  m_Sun: {fileID: 0}
+  m_Sun: {fileID: 1484790764}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -3257,6 +3257,7 @@ GameObject:
   - component: {fileID: 1484790765}
   - component: {fileID: 1484790764}
   - component: {fileID: 1484790766}
+  - component: {fileID: 1484790767}
   m_Layer: 0
   m_Name: Directional Light (Sun)
   m_TagString: Untagged
@@ -3337,13 +3338,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1484790763}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.31598538, y: -0.3596048, z: 0.13088542, w: 0.8681629}
+  m_LocalRotation: {x: 0.44037747, y: -0.26672927, z: 0.13885047, w: 0.8459573}
   m_LocalPosition: {x: 15, y: 15, z: -15}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 55, y: -35, z: 0}
 --- !u!114 &1484790766
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3373,6 +3374,26 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &1484790767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1484790763}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a44379fbcc0d32a4ab2e263caa773a07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DayNightManager
+  sunGO: {fileID: 1484790763}
+  sunRiseRotation: {x: -2, y: -135, z: 0}
+  sunNoonAngle: 60
+  sunSetRotation: {x: -2, y: 55, z: 0}
+  noonIntensity: 1
+  nightIntensity: 0
+  dayDuration: 30
+  nightDuration: 10
 --- !u!1 &1512830045
 GameObject:
   m_ObjectHideFlags: 0
