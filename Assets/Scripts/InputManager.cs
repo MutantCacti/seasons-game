@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 
 [RequireComponent(typeof(PlayerInput))]
@@ -36,6 +37,9 @@ public class InputManager : MonoBehaviour
 
     public void DisableInput()
     {
+        foreach (Button button in TitleScreenManager.instance.buttons) {
+            button.enabled = false;
+        }
         playerInput.enabled = false;
     }
 

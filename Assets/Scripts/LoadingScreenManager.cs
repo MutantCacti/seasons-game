@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class LoadingScreenManager : MonoBehaviour {
 
@@ -48,6 +49,7 @@ public class LoadingScreenManager : MonoBehaviour {
     private IEnumerator LoadSceneRoutine(string sceneName) {
         isLoading = true;
 
+        
         InputManager.Instance.DisableInput();
 
         RectTransform loadingScreenRT = loadingScreenGO.GetComponent<RectTransform>();
@@ -73,6 +75,11 @@ public class LoadingScreenManager : MonoBehaviour {
         loadingScreenCanvasGO.SetActive(false);
 
         InputManager.Instance.EnableInput();
+        if (sceneName.Equals("Title Screen")) {
+            foreach (Button button in TitleScreenManager.instance.buttons) {
+                button.enabled = true;
+            }
+        }
 
         isLoading = false;
     }
