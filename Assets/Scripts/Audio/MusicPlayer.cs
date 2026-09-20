@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -7,11 +6,10 @@ using UnityEngine.Audio;
 public class MusicPlayer : MonoBehaviour
 {
     [SerializeField] private AudioMixerGroup audioMixerGroup;
-    [SerializeField] private int musicPriority = 64;
+    [SerializeField] private int musicPriority = 0;
 
 
     // index synched --- audioSources[n] is playing soundObjects[n]
-    private int numVoices = 0;
     private List<AudioSource> audioSources = new List<AudioSource>();
     private List<SoundObject> soundObjects = new List<SoundObject>();
 
@@ -20,36 +18,29 @@ public class MusicPlayer : MonoBehaviour
     {
         if (soundObject == null) return;
 
-        AudioSource audioSource = gameObject.AddComponent<AudioSource>();
-        audioSource.clip = soundObject.PickRandomClip();
-        audioSource.outputAudioMixerGroup = audioMixerGroup;
-        audioSource.playOnAwake = false;
-        audioSource.priority = musicPriority;
-        audioSource.spatialize = false;
+        AudioClip clip = soundObject.PickRandomClip();
+        if (clip == null)
+        {
+            Debug.LogWarning($"SoundObject '{soundObject.name}' has no clips assigned - ignoring Play !!");
+            return;
+        }
 
+        AudioSource audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f;  // music is always 2D; the listener moves with the camera
+        audioSource.outputAudioMixerGroup = audioMixerGroup;
+        audioSource.priority = musicPriority;
+
+        audioSource.clip = clip;
+        audioSource.loop = soundObject.Loop;
         audioSource.volume = soundObject.Volume;
         audioSource.pitch = soundObject.Pitch;
 
-        // Register the new voice in the player
-        if (audioSources.Count == numVoices)
-        {
-            audioSources.Add(null);
-            soundObjects.Add(null);
-        }
-        audioSources[numVoices] = audioSource;
-        soundObjects[numVoices] = soundObject;
+        // register the new voice in the player
+        audioSources.Add(audioSource);
+        soundObjects.Add(soundObject);
 
         audioSource.Play();
-        StartCoroutine(DestroyOnClipEnd(numVoices));
-        numVoices++;
-    }
-
-
-    private IEnumerator DestroyOnClipEnd(int index)
-    {
-        yield return new WaitUntil(() => !audioSources[index].isPlaying);
-        Destroy(audioSources[index]);
-        SwapRemoveIndex(index);
     }
 
 
@@ -58,33 +49,38 @@ public class MusicPlayer : MonoBehaviour
         int index = soundObjects.IndexOf(soundObject);
         if (index == -1) return;
 
-        // Destroy the AudioSource
-        audioSources[index].Stop();
-        Destroy(audioSources[index]);
-
-        SwapRemoveIndex(index);
+        RemoveVoice(index);
     }
 
 
     public void StopAll()
     {
-        for (int i = 0; i < numVoices; i++)
+        for (int i = audioSources.Count - 1; i >= 0; i--)
         {
-            audioSources[i].Stop();
-            Destroy(audioSources[i]);
+            RemoveVoice(i);
         }
-        audioSources.Clear();
-        soundObjects.Clear();
     }
 
 
-    private void SwapRemoveIndex(int index)
+    public void Update()
     {
-        // Swap-remove from the lists
-        numVoices--;
-        audioSources[index] = audioSources[numVoices];
-        audioSources.RemoveAt(numVoices);
-        soundObjects[index] = soundObjects[numVoices];
-        soundObjects.RemoveAt(numVoices);
+        // destroy voices when their clip is over
+        for (int i = audioSources.Count - 1; i >= 0; i--)
+        {
+            if (audioSources[i].isPlaying) continue;
+
+            RemoveVoice(i);
+        }
+    }
+
+
+    private void RemoveVoice(int index)
+    {
+        // stop and destroy the AudioSource, then drop it from both lists
+        audioSources[index].Stop();
+        Destroy(audioSources[index]);
+
+        audioSources.RemoveAt(index);
+        soundObjects.RemoveAt(index);
     }
 }

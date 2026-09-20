@@ -695,7 +695,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MusicPlayer
   audioMixerGroup: {fileID: 8210792945417198521, guid: 42e00332f3026b86f8e729085439c634, type: 2}
-  musicPriority: 64
+  musicPriority: 0
 --- !u!1 &1857046189
 GameObject:
   m_ObjectHideFlags: 0
