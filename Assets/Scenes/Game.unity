@@ -1929,7 +1929,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0941a01106d630624a7a52c933258223, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainLayer
-  layer: 0
+  Layer: 0
 --- !u!1 &54557717
 GameObject:
   m_ObjectHideFlags: 0
@@ -1958,7 +1958,7 @@ Transform:
   m_GameObject: {fileID: 54557717}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -2}
+  m_LocalPosition: {x: 0, y: 0, z: -1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2270,7 +2270,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0941a01106d630624a7a52c933258223, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainLayer
-  layer: 2
+  Layer: 1
 --- !u!1 &268664224
 GameObject:
   m_ObjectHideFlags: 0
@@ -2296,7 +2296,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 268664224}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -2389,7 +2389,7 @@ Transform:
   m_GameObject: {fileID: 722619419}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -1}
+  m_LocalPosition: {x: 0, y: 0, z: -0.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3155,7 +3155,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0941a01106d630624a7a52c933258223, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainLayer
-  layer: 1
+  Layer: 0.5
 --- !u!1 &971058261
 GameObject:
   m_ObjectHideFlags: 0
@@ -3181,7 +3181,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 971058261}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -3438,7 +3438,7 @@ GameObject:
   - component: {fileID: 1522154939}
   - component: {fileID: 1522154942}
   - component: {fileID: 1522154941}
-  - component: {fileID: 1522154940}
+  - component: {fileID: 1522154943}
   m_Layer: 0
   m_Name: Tilemap L-1
   m_TagString: Untagged
@@ -3455,25 +3455,12 @@ Transform:
   m_GameObject: {fileID: 1522154938}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1793132073}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1522154940
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1522154938}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0941a01106d630624a7a52c933258223, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TerrainLayer
-  layer: -1
 --- !u!483693784 &1522154941
 TilemapRenderer:
   serializedVersion: 2
@@ -132438,6 +132425,19 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
+--- !u!114 &1522154943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1522154938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0941a01106d630624a7a52c933258223, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TerrainLayer
+  Layer: -0.5
 --- !u!1 &1764824868
 GameObject:
   m_ObjectHideFlags: 0

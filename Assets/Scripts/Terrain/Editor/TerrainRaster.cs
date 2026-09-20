@@ -20,7 +20,7 @@ public class TerrainRaster
     public int pixelHeight;
 
 
-    public int[] levelHeights;       // ascending order
+    public float[] levelHeights;     // world y per level, ascending order; not necessarily 1 unit apart
     public bool[][] levelMasks;      // per level, pixelWidth * pixelHeight
     public Sprite[][] spriteByCell;  // per level, cellWidth * cellHeight
 
@@ -80,8 +80,8 @@ public struct WallRun
     public int outer;
     public int startInner;  // inclusive
     public int endInner;    // exclusive
-    public int bottom;      // world y the wall falls to
-    public int top;         // world y of the surface that owns it
+    public float bottom;    // world y the wall falls to
+    public float top;       // world y of the surface that owns it
     public int ownerCellX;
     public int ownerCellY;
 }

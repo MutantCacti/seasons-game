@@ -28,7 +28,7 @@ public static class TerrainBaker
         }
 
         // check to make sure the lowest layer is still above the void
-        int lowestLevel = raster.levelHeights[0];
+        float lowestLevel = raster.levelHeights[0];
         if (settings.voidDepth >= lowestLevel)
         {
             Debug.LogError($"voidDepth ({settings.voidDepth}) must be below the lowest terrain layer ({lowestLevel})", settings);
