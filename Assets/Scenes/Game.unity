@@ -3338,13 +3338,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1484790763}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.338351, y: 0.1372731, z: -0.049963314, w: 0.929612}
+  m_LocalRotation: {x: 0.44037747, y: -0.26672927, z: 0.13885047, w: 0.8459573}
   m_LocalPosition: {x: 15, y: 15, z: -15}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 40, y: 16.8, z: 0}
+  m_LocalEulerAnglesHint: {x: 55, y: -35, z: 0}
 --- !u!114 &1484790766
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3387,13 +3387,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DayNightManager
   sunGO: {fileID: 1484790763}
-  sunRiseRotation: {x: -2, y: -115, z: 0}
+  sunRiseRotation: {x: -2, y: -135, z: 0}
   sunNoonAngle: 60
-  sunSetRotation: {x: -2, y: 45, z: 0}
+  sunSetRotation: {x: -2, y: 55, z: 0}
   noonIntensity: 1
   nightIntensity: 0
-  dayDuration: 10
-  nightDuration: 2
+  dayDuration: 30
+  nightDuration: 10
 --- !u!1 &1512830045
 GameObject:
   m_ObjectHideFlags: 0
