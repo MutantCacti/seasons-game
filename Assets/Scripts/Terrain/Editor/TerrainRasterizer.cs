@@ -13,9 +13,9 @@ public static class TerrainRasterizer
             return null;
         }
 
-        // group tilemaps by height if some dumbass like me forgets to change 
-        // the layer number in the TerrainLayer when I copy it again
-        SortedDictionary<int, List<Tilemap>> tilemapsByHeight = new SortedDictionary<int, List<Tilemap>>();
+        // group tilemaps by height if some dumbass like me forgets to change
+        // the layer height in the TerrainLayer when I copy it again
+        SortedDictionary<float, List<Tilemap>> tilemapsByHeight = new SortedDictionary<float, List<Tilemap>>();
         int cellMinX = int.MaxValue, cellMinY = int.MaxValue;
         int cellMaxX = int.MinValue, cellMaxY = int.MinValue;
 
@@ -31,10 +31,10 @@ public static class TerrainRasterizer
             BoundsInt bounds = tilemap.cellBounds;
             if (bounds.size.x <= 0 || bounds.size.y <= 0) continue;
 
-            if (!tilemapsByHeight.TryGetValue(terrainLayer.layer, out List<Tilemap> sharing))
+            if (!tilemapsByHeight.TryGetValue(terrainLayer.Layer, out List<Tilemap> sharing))
             {
                 sharing = new List<Tilemap>();
-                tilemapsByHeight[terrainLayer.layer] = sharing;
+                tilemapsByHeight[terrainLayer.Layer] = sharing;
             }
             sharing.Add(tilemap);
 
@@ -54,14 +54,14 @@ public static class TerrainRasterizer
         raster.cellHeight = cellMaxY - cellMinY;
         raster.pixelWidth = raster.cellWidth * pixelsPerTile;
         raster.pixelHeight = raster.cellHeight * pixelsPerTile;
-        raster.levelHeights = new int[tilemapsByHeight.Count];
+        raster.levelHeights = new float[tilemapsByHeight.Count];
         raster.levelMasks = new bool[tilemapsByHeight.Count][];
         raster.spriteByCell = new Sprite[tilemapsByHeight.Count][];
 
         Dictionary<Sprite, bool[]> maskCache = new Dictionary<Sprite, bool[]>();
         int levelIndex = 0;
 
-        foreach (KeyValuePair<int, List<Tilemap>> entry in tilemapsByHeight)
+        foreach (KeyValuePair<float, List<Tilemap>> entry in tilemapsByHeight)
         {
             raster.levelHeights[levelIndex] = entry.Key;
             raster.levelMasks[levelIndex] = new bool[raster.pixelWidth * raster.pixelHeight];

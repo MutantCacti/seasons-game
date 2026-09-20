@@ -5,6 +5,10 @@ using UnityEngine.Rendering;
 // Builds the rendered wall mesh
 public static class TerrainWallMeshBuilder
 {
+    // absorbs float error when a wall height is a whole number of units but does not
+    // land exactly on it, e.g. 2.0 arriving as 1.9999999
+    private const float EPSILON = 1e-4f;
+
     private static readonly List<Vector3> vertices = new List<Vector3>();
     private static readonly List<Vector3> normals = new List<Vector3>();
     private static readonly List<Vector2> uvs = new List<Vector2>();
@@ -51,9 +55,19 @@ public static class TerrainWallMeshBuilder
                 vTop = 1.0f;
             }
 
-            for (int segment = run.bottom; segment < run.top; segment++)
+            float height = run.top - run.bottom;
+            int segmentCount = Mathf.CeilToInt(height);
+
+            for (int segment = 0; segment < segmentCount; segment++)
             {
-                AddWallQuad(raster, run, segment, segment + 1, uStart, uEnd, vBottom, vTop);
+                float segmentTop = run.top - segment;
+                float segmentBottom = Mathf.Max(segmentTop - 1.0f, run.bottom);
+
+                float fromBottom = run.top - segmentBottom;
+                float fracBottom = Mathf.Clamp01(fromBottom - Mathf.Floor(Mathf.Max(fromBottom - EPSILON, 0.0f)));
+                float vSegmentBottom = vTop - fracBottom * (vTop - vBottom);
+
+                AddWallQuad(raster, run, segmentBottom, segmentTop, uStart, uEnd, vSegmentBottom, vTop);
             }
         }
 

@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 public static class TerrainSurfaceBuilder
 {
-    public static TerrainSurfaces Build(TerrainRaster raster, int voidDepth, bool perTile)
+    public static TerrainSurfaces Build(TerrainRaster raster, float voidDepth, bool perTile)
     {
         TerrainSurfaces surfaces = new TerrainSurfaces();
 
@@ -156,9 +156,9 @@ public static class TerrainSurfaceBuilder
 
 
     private static void EmitWalls(TerrainRaster raster, TerrainSurfaces surfaces, int levelIndex,
-        int du, int dv, int voidDepth, bool perTile)
+        int du, int dv, float voidDepth, bool perTile)
     {
-        int top = raster.levelHeights[levelIndex];
+        float top = raster.levelHeights[levelIndex];
         int pixelsPerTile = raster.pixelsPerTile;
         int outerCount = du != 0 ? raster.pixelWidth : raster.pixelHeight;
         int innerCount = du != 0 ? raster.pixelHeight : raster.pixelWidth;
@@ -166,7 +166,7 @@ public static class TerrainSurfaceBuilder
         for (int outer = 0; outer < outerCount; outer++)
         {
             int runStart = -1;
-            int runBottom = 0;
+            float runBottom = 0.0f;
             int runTile = -1;
 
             for (int inner = 0; inner <= innerCount; inner++)
@@ -174,7 +174,7 @@ public static class TerrainSurfaceBuilder
                 int u = du != 0 ? outer : inner;
                 int v = du != 0 ? inner : outer;
 
-                int bottom = 0;
+                float bottom = 0.0f;
                 bool exposed = inner < innerCount && TryGetWallBottom(raster, levelIndex, u, v, du, dv, voidDepth, out bottom);
                 int tile = perTile ? inner / pixelsPerTile : 0;
 
@@ -196,7 +196,7 @@ public static class TerrainSurfaceBuilder
 
 
     private static void AddWallRun(TerrainRaster raster, TerrainSurfaces surfaces, int levelIndex,
-        int du, int dv, int outer, int startInner, int endInner, int bottom, int top)
+        int du, int dv, int outer, int startInner, int endInner, float bottom, float top)
     {
         int pixelsPerTile = raster.pixelsPerTile;
         int outerCell = outer / pixelsPerTile;
@@ -219,7 +219,7 @@ public static class TerrainSurfaceBuilder
 
 
     // Cast along the layers below this one to find the required height of the wall
-    private static bool TryGetWallBottom(TerrainRaster raster, int levelIndex, int u, int v, int du, int dv, int voidDepth, out int bottom)
+    private static bool TryGetWallBottom(TerrainRaster raster, int levelIndex, int u, int v, int du, int dv, float voidDepth, out float bottom)
     {
         bottom = voidDepth;
 

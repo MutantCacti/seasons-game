@@ -1,8 +1,10 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
 
 
 public class TerrainLayer : MonoBehaviour
 {
-    [SerializeField] public int layer;
+    // World y of this layer's surface
+    [SerializeField] public float Layer;
 }
