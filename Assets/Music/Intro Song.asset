@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ad02a35d4b6a5748b713a1421b24793, type: 3}
+  m_Name: Intro Song
+  m_EditorClassIdentifier: Assembly-CSharp::SoundObject
+  clips:
+  - {fileID: 8300000, guid: 7b4831b38c0a05c3ba31b7515a6b04f1, type: 3}
+  soundType: 1
+  loop: 0
+  volume: 1
+  volumeVariation: 0
+  pitch: 1
+  pitchVariation: 0

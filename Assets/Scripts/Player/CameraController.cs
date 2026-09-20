@@ -13,6 +13,7 @@ public class CameraController : MonoBehaviour
 
     private const float REFERENCE_FRAMERATE = 60.0f;  // framerate the authored snappiness value is tuned against
 
+    [SerializeField] private SoundObject testSO;    // DEBUG
 
     private bool leftClickDown = false;
     private Vector3 right;
@@ -41,6 +42,8 @@ public class CameraController : MonoBehaviour
         forward.Normalize();
 
         targetPosition = transform.position;
+
+        AudioManager.Instance.PlayMusic(testSO);
     }
 
 

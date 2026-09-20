@@ -132594,6 +132594,7 @@ MonoBehaviour:
   maxZoomOffset: 7
   zoomMovementSpeedFactor: 1.4
   snappiness: 0.2
+  testSO: {fileID: 11400000, guid: 37df897fd2e48c72f8ade9e939f56cf6, type: 2}
 --- !u!1 &1793132071
 GameObject:
   m_ObjectHideFlags: 0
