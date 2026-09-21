@@ -49,6 +49,11 @@ public class LoadingScreenManager : MonoBehaviour {
     private IEnumerator LoadSceneRoutine(string sceneName) {
         isLoading = true;
 
+        if (SceneManager.GetActiveScene().name.Equals("Title Screen")) {
+            foreach (Button button in TitleScreenManager.Instance.Buttons) {
+                button.enabled = false;
+            }
+        }
         InputManager.Instance.DisableInput();
 
         RectTransform loadingScreenRT = loadingScreenGO.GetComponent<RectTransform>();
