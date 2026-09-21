@@ -27,7 +27,7 @@ public class InventoryManager : MonoBehaviour {
         }
 
         foreach (KeyValuePair<string, int> keyValuePair in SaveDataManager.Instance.SaveData.inventory) {
-            UpdateItemCount(keyValuePair.Key, keyValuePair.Value);
+            SetItemCount(keyValuePair.Key, keyValuePair.Value);
         }
     }
 
