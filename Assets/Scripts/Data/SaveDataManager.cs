@@ -79,7 +79,10 @@ public class SaveDataManager : MonoBehaviour
                 return new SaveData();
             }
 
+            Debug.Log($"SaveDataManager: Loaded save from {FullPath}");
+
             if (loaded.terrain == null) loaded.terrain = new TerrainSaveData();
+            if (loaded.entities == null) loaded.entities = new EntitySaveData();
             if (loaded.inventory == null) loaded.inventory = new SerializableDictionary<string, int>();
 
             return loaded;
