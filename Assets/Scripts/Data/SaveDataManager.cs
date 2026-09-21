@@ -79,6 +79,11 @@ public class SaveDataManager : MonoBehaviour
                 return new SaveData();
             }
 
+            // A save written before a section existed has no key for it, and an absent key
+            // deserialises to null rather than to an empty section
+            if (loaded.terrain == null) loaded.terrain = new TerrainSaveData();
+            if (loaded.inventory == null) loaded.inventory = new SerializableDictionary<string, int>();
+
             return loaded;
         }
         catch (System.Exception e)

@@ -205,7 +205,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 5545935261613767603, guid: 5a270fdd17492634ab10137a727432a7, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -227,8 +227,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7b400023f351bf48a5f1febb09c8d33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  id: 
-  displayName: 
+  item: {fileID: 0}
+  iconImage: {fileID: 133334389450208410}
   tooltipGO: {fileID: 7573613803446383486}
   countText: {fileID: 5936746975027061266}
 --- !u!1 &7382852633763902515

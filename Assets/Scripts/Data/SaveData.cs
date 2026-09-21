@@ -15,6 +15,7 @@ public class SaveData
     // readable as inventory, quests and crops arrive
     public TerrainSaveData terrain;
 
+    // item id -> count. Owned by InventoryManager, which writes through to it on every change
     public SerializableDictionary<string, int> inventory;
 
 
@@ -32,16 +33,11 @@ public class SaveData
 
     // Called by SaveDataManager just before serialising. Anything that needs tidying for a clean
     // file does it here, so the manager never has to know what sections exist.
+    //
+    // Inventory is deliberately absent: InventoryManager writes its own counts through to
+    // `inventory` as they change, so nothing has to reach back into the UI at save time.
     public void PrepareForWrite()
     {
-        terrain.Sort();
-
-        foreach (ItemInventorySlot itemInventorySlot in InventoryManager.Instance.ItemInventorySlots) {
-            if (inventory.ContainsKey(itemInventorySlot.ID)) {
-                inventory[itemInventorySlot.ID] = itemInventorySlot.Count;
-            } else {
-                inventory.Add(itemInventorySlot.ID, itemInventorySlot.Count);
-            }
-        }
+        if (terrain != null) terrain.Sort();
     }
 }
