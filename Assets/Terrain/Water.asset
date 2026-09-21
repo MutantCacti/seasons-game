@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TerrainTile
   Id: water
   Tags: []
-  Variants:
+  FillVariants:
   - {fileID: 2042599600, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
   VariantSeed: 93475
   Edges:
