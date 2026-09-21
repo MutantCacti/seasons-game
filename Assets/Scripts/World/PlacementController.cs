@@ -30,6 +30,9 @@ public class PlacementController : MonoBehaviour
     private GameItem dragging;
     private GameObject ghost;
 
+    // scratch for the resident query, so a per-frame check does not allocate
+    private readonly List<GameItem> residents = new List<GameItem>();
+
     private Vector3Int previewCell;
     private bool hasPreview;
 
@@ -262,7 +265,29 @@ public class PlacementController : MonoBehaviour
         // already an entity at that location
         if (dragging.Prefab != null && entityManager != null && entityManager.HasEntityAt(dragging, cell)) return false;
 
+        // Changing the ground must not invalidate the placement rules of entities
+        // already at that cell
+        if (!ResidentsAllow(dragging.Tile, cell)) return false;
+
         return dragging.IsPlaceableOn(target);
+    }
+
+
+    // Check if an entity already at this tile will allow the tile to change
+    private bool ResidentsAllow(TerrainTile newTile, Vector3Int cell)
+    {
+        if (newTile == null || entityManager == null) return true;
+
+        entityManager.CollectEntitiesAt(cell, residents);
+
+        for (int i = 0; i < residents.Count; i++)
+        {
+            if (residents[i].IsPlaceableOn(newTile)) continue;
+
+            return false;
+        }
+
+        return true;
     }
 
 

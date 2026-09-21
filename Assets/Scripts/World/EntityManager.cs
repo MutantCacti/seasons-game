@@ -176,6 +176,23 @@ public class EntityManager : MonoBehaviour
     }
 
 
+    // Fills results with the GameItems standing on a cell, so that a change to the ground under them
+    // can be tested against their own placement rules. Takes the caller's list because this runs once
+    // a frame while a placement drag is live.
+    public void CollectEntitiesAt(Vector3Int cell, List<GameItem> results)
+    {
+        results.Clear();
+
+        for (int i = 0; i < live.Count; i++)
+        {
+            if (live[i].cell != cell) continue;
+            if (live[i].item == null) continue;
+
+            results.Add(live[i].item);
+        }
+    }
+
+
     // MARK: internals
 
 
