@@ -32,7 +32,7 @@ public class TerrainTileRegistry : ScriptableObject
     }
 
 
-    public bool TryGetId(TerrainTile tile, out string id)
+    public bool TryGetIdByTile(TerrainTile tile, out string id)
     {
         id = null;
         if (tile == null) return false;

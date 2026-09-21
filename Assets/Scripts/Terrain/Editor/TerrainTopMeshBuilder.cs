@@ -11,7 +11,8 @@ public static class TerrainTopMeshBuilder
     private static readonly List<int> triangles = new List<int>();
 
 
-    public static void Fill(Mesh mesh, TerrainRaster raster, TerrainSurfaces surfaces, UnityEngine.Object context)
+    public static void Fill(Mesh mesh, TerrainRaster raster, TerrainSurfaces surfaces,
+        UnityEngine.Object context, TerrainQuadRecorder recorder)
     {
         vertices.Clear();
         normals.Clear();
@@ -36,6 +37,11 @@ public static class TerrainTopMeshBuilder
 
             float u0, u1, v0, v1;
 
+            // where this quad sits inside its tile, in texels from the slice origin. Invariant
+            // across remaps, which is what lets the quad map store these rather than UVs
+            Vector4 texelOffsets = Vector4.zero;
+            bool recordable = false;
+
             if (atlas != null)
             {
                 Sprite sprite = raster.GetSprite(run.levelIndex, run.ownerCellX, run.ownerCellY);
@@ -49,20 +55,36 @@ public static class TerrainTopMeshBuilder
                 int tileBaseU = (run.ownerCellX - raster.cellOriginX) * pixelsPerTile;
                 int tileBaseV = (run.ownerCellY - raster.cellOriginY) * pixelsPerTile;
 
-                u0 = (slice.x + run.startU - tileBaseU) / atlasWidth;
-                u1 = (slice.x + run.endU - tileBaseU) / atlasWidth;
-                v0 = (slice.y + run.startV - tileBaseV) / atlasHeight;
-                v1 = (slice.y + run.endV - tileBaseV) / atlasHeight;
+                texelOffsets = new Vector4(
+                    run.startU - tileBaseU, run.startV - tileBaseV,
+                    run.endU - tileBaseU, run.endV - tileBaseV);
+
+                u0 = (slice.x + texelOffsets.x) / atlasWidth;
+                u1 = (slice.x + texelOffsets.z) / atlasWidth;
+                v0 = (slice.y + texelOffsets.y) / atlasHeight;
+                v1 = (slice.y + texelOffsets.w) / atlasHeight;
+
+                // the branch below projects UVs from world position, which no remap can change,
+                // so there is nothing to record there and nothing to patch later
+                recordable = recorder != null;
             }
             else
             {
                 u0 = x0; u1 = x1; v0 = z0; v1 = z1;
             }
 
+            int vertexStart = vertices.Count;
+
             AddQuad(new Vector3(x0, y, z0), new Vector2(u0, v0),
                     new Vector3(x0, y, z1), new Vector2(u0, v1),
                     new Vector3(x1, y, z1), new Vector2(u1, v1),
                     new Vector3(x1, y, z0), new Vector2(u1, v0));
+
+            if (recordable)
+            {
+                recorder.Record(new Vector3Int(run.ownerCellX, run.levelIndex, run.ownerCellY),
+                    vertexStart, texelOffsets);
+            }
         }
 
         if (missingSprites > 0)

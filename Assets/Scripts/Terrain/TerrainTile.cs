@@ -231,6 +231,16 @@ public class TerrainTile : TileBase
     }
 
 
+    // Same thing for callers that have a Tilemap rather than an ITilemap
+    // because apparently these things are completely unreconcilable by Unity
+    public Sprite SpriteFor(Vector3Int position, Tilemap tilemap)
+    {
+        Sprite edge = Edges.ForMask(NeighbourMask(position, tilemap));
+
+        return edge != null ? edge : VariantFor(position);
+    }
+
+
     public static int NeighbourMask(Vector3Int position, ITilemap tilemap)
     {
         int mask = 0;

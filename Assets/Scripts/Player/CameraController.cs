@@ -49,7 +49,12 @@ public class CameraController : MonoBehaviour
         AudioManager.Instance.PlayMusic(testSO);
 
         // DEBUG: remap a random grass tile to water and save
-        if (terrainGrid != null && terrainGrid.DebugRemapRandomTile("grass", "water", out Vector3Int remapped))
+        if (terrainGrid == null)
+        {
+            Debug.LogError("CameraController: terrainGrid is not assigned, so the terrain debug " +
+                "remap is being skipped", this);
+        }
+        else if (terrainGrid.DebugRemapRandomTile("grass", "water", out Vector3Int remapped))
         {
             Debug.Log($"DEBUG: remapped grass to water at {remapped}");
 
