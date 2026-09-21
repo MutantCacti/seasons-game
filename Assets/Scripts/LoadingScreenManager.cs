@@ -63,19 +63,19 @@ public class LoadingScreenManager : MonoBehaviour {
         // in
         loadingScreenRT.anchoredPosition = transitionFromPosition;
         loadingScreenCanvasGO.SetActive(true);
-        yield return loadingScreenRT.DOAnchorPos(screenCenter, ANIMATION_DURATION).SetEase(Ease.InOutQuad).WaitForCompletion();
+        yield return loadingScreenRT.DOAnchorPos(screenCenter, ANIMATION_DURATION).SetEase(Ease.InOutQuad).SetUpdate(true).WaitForCompletion();
 
         // load behind the loading screen
         elapsedTime = 0f;
         AsyncOperation load = SceneManager.LoadSceneAsync(sceneName);
 
-        while (!load.isDone || elapsedTime < ANIMATION_HOLD_DURATION) {
+        while (!load.isDone && elapsedTime < ANIMATION_HOLD_DURATION) {
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
         // out
-        yield return loadingScreenRT.DOAnchorPos(transitionToPosition, ANIMATION_DURATION).SetEase(Ease.InOutQuad).WaitForCompletion();
+        yield return loadingScreenRT.DOAnchorPos(transitionToPosition, ANIMATION_DURATION).SetEase(Ease.InOutQuad).SetUpdate(true).WaitForCompletion();
         loadingScreenCanvasGO.SetActive(false);
 
         InputManager.Instance.EnableInput();

@@ -33,4 +33,8 @@ public class InGameOptionsHelper : MonoBehaviour {
         optionsMenu.SetActive(!optionsMenu.activeSelf);
     }
 
+    public void OnTitleScreen() {
+        LoadingScreenManager.Instance.LoadScene("Title Screen");
+    }
+
 }
