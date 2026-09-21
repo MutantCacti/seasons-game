@@ -30,8 +30,9 @@ public class PlacementController : MonoBehaviour
     private GameItem dragging;
     private GameObject ghost;
 
-    // scratch for the resident query, so a per-frame check does not allocate
     private readonly List<GameItem> residents = new List<GameItem>();
+
+    private bool warnedAboutMissingCursor;
 
     private Vector3Int previewCell;
     private bool hasPreview;
@@ -177,7 +178,12 @@ public class PlacementController : MonoBehaviour
     {
         if (dragging == null) return;
 
-        if (!TryResolveTarget(screenPosition, out Vector3Int cell))
+        bool valid = TryResolveTarget(screenPosition, out Vector3Int cell);
+
+        // show that placement is disallowed via the cursor
+        ShowCursor(valid ? CursorType.Default : CursorType.Disabled);
+
+        if (!valid)
         {
             ClearPreview();
             return;
@@ -225,12 +231,29 @@ public class PlacementController : MonoBehaviour
 
     public void CancelDrag()
     {
+        ShowCursor(CursorType.Default);
+
         ClearPreview();
 
         if (ghost != null) Destroy(ghost);
         ghost = null;
 
         dragging = null;
+    }
+
+
+    private void ShowCursor(CursorType cursorType)
+    {
+        if (CursorManager.Instance == null)
+        {
+            if (warnedAboutMissingCursor) return;
+
+            warnedAboutMissingCursor = true;
+            Debug.LogWarning("PlacementController: no CursorManager in the scene", this);
+            return;
+        }
+
+        CursorManager.Instance.SetCursor(cursorType);
     }
 
 
