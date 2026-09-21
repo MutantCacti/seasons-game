@@ -1,17 +1,11 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-// What is actually on the map, one tile per cell.
-//
-// Dense per level over the union of every tilemap's bounds, which is the same region the
-// bake rasterises, so a state cell and a raster cell are the same cell. That matters later:
-// a tile swap has to find the quads that were baked for its cell.
-//
-// The map's shape never changes at runtime, only which tile sits in a cell, so this is
-// sized once and then only ever written through SetTile.
+// Invariant: the map never changes shape at runtime
+// TerrainState is thus sized once and only SetTile modifies it
 public class TerrainState
 {
-    // cell space bounds, matching world axes (the raster calls z "y" because it thinks in tilemaps)
+    // cell space bounds
     public readonly int originX;
     public readonly int originZ;
     public readonly int width;
@@ -19,6 +13,8 @@ public class TerrainState
 
     public readonly float[] levelHeights;  // world y per level, ascending
 
+    // this is called a jagged array and is apparently much faster than using a
+    // 3D array for caching reasons. The 2nd dimsension flattens the XZ plane
     private readonly TileBase[][] tileByCell;  // [level][z * width + x]
 
 
@@ -42,7 +38,7 @@ public class TerrainState
     public int LevelCount { get { return levelHeights.Length; } }
 
 
-    // cell is (x, level, z) - see TerrainGrid
+    // cell is (x, level, z); see TerrainGrid
     public bool Contains(Vector3Int cell)
     {
         if (cell.y < 0 || cell.y >= levelHeights.Length) return false;
@@ -54,7 +50,7 @@ public class TerrainState
     }
 
 
-    // null for an empty cell, or for one outside the map
+    // null for an empty or nonexistent cell
     public TileBase GetTile(Vector3Int cell)
     {
         if (!Contains(cell)) return null;
