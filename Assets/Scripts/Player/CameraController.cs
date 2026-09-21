@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -20,6 +21,7 @@ public class CameraController : MonoBehaviour
     [SerializeField] private SoundObject testSO;        // DEBUG
     [SerializeField] private TerrainGrid terrainGrid;   // DEBUG
     [SerializeField] private GameItem testGameItem;     // DEBUG
+    [SerializeField] private GameItem treeGameItem;     // DEBUG
 
     private bool leftClickDown = false;
     private Vector3 right;
@@ -31,6 +33,11 @@ public class CameraController : MonoBehaviour
     private bool dragStartedOnWorld = false;
     private Camera viewCamera;
     private bool warnedAboutMissingPointerPosition = false;
+
+
+    private readonly List<RaycastResult> uiRaycastResults = new List<RaycastResult>();
+    private PointerEventData uiRaycastPointer;
+    private EventSystem uiRaycastSystem;
 
 
     public void Start()
@@ -84,6 +91,9 @@ public class CameraController : MonoBehaviour
 
         // DEBUG: Add water to inventory
         InventoryManager.Instance.Add(testGameItem, 2);
+
+        // DEBUG: Add tree to inventory
+        InventoryManager.Instance.Add(treeGameItem, 1);
     }
 
 
@@ -114,14 +124,8 @@ public class CameraController : MonoBehaviour
     }
 
 
-    // Decided once, at press time, and deliberately never re-evaluated: testing this per frame would
-    // start panning the moment a placement drag left the inventory panel, and stop panning the
-    // moment a camera drag crossed over it.
     private bool CanStartCameraDrag()
     {
-        // the UI owns a press that lands on it, whatever world geometry is behind it
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return false;
-
         if (viewCamera == null) return false;
 
         InputManager input = InputManager.Instance;
@@ -132,26 +136,49 @@ public class CameraController : MonoBehaviour
             {
                 warnedAboutMissingPointerPosition = true;
 
-                // pans anyway, which is the behaviour from before world presses mattered, so a
-                // missing binding degrades instead of freezing the camera
-                Debug.LogWarning("CameraController: the Mouse Position action has not fired, so a press " +
-                    "cannot be tested against the world and is being treated as a world drag. Either its " +
-                    "binding is missing from the PlayerInput action events, or the mouse has not moved yet.", this);
+                Debug.LogWarning("CameraController: the Mouse Position action has not fired but we are in CanStartCameraDrag. This should be impossible, so I'm letting it happen anyways", this);
             }
 
             return true;
         }
 
-        Ray ray = viewCamera.ScreenPointToRay(input.PointerPosition);
+        Vector2 screenPosition = input.PointerPosition;
 
-        // Deliberately unmasked: a world object that wants the click has to be hit in order to block
-        // the drag, so masking the ray down to the drag surfaces would defeat the allow-list.
+        // The UI owns a press that lands on it, whatever world geometry is behind it
+        if (IsPointerOverUI(screenPosition)) return false;
+
+        Ray ray = viewCamera.ScreenPointToRay(screenPosition);
+
+        // stays unmasked so that we can hit nothing, because hitting nothing is a
+        // valid drag target
         if (!Physics.Raycast(ray, out RaycastHit hit, dragRayDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
         {
             return true;
         }
 
         return (dragSurfaceMask.value & (1 << hit.collider.gameObject.layer)) != 0;
+    }
+
+
+    // Live UI hit test at a screen position
+    private bool IsPointerOverUI(Vector2 screenPosition)
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null) return false;
+
+        // rebuilt only when the EventSystem changes, which means a scene load
+        if (uiRaycastPointer == null || uiRaycastSystem != eventSystem)
+        {
+            uiRaycastSystem = eventSystem;
+            uiRaycastPointer = new PointerEventData(eventSystem);
+        }
+
+        uiRaycastPointer.position = screenPosition;
+
+        // RaycastAll clears the results list itself
+        eventSystem.RaycastAll(uiRaycastPointer, uiRaycastResults);
+
+        return uiRaycastResults.Count > 0;
     }
 
 
