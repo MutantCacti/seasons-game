@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class CameraController : MonoBehaviour
 {
@@ -13,6 +14,9 @@ public class CameraController : MonoBehaviour
 
     private const float REFERENCE_FRAMERATE = 60.0f;  // framerate the authored snappiness value is tuned against
 
+    [SerializeField] private LayerMask dragSurfaceMask;
+    [SerializeField] private float dragRayDistance = 1000.0f;
+
     [SerializeField] private SoundObject testSO;        // DEBUG
     [SerializeField] private TerrainGrid terrainGrid;   // DEBUG
     [SerializeField] private GameItem testGameItem;     // DEBUG
@@ -24,6 +28,9 @@ public class CameraController : MonoBehaviour
     private float zoomOffset = 0.0f;
     private Vector2 direction = Vector2.zero;
     private bool holdingWasd = false;
+    private bool dragStartedOnWorld = false;
+    private Camera viewCamera;
+    private bool warnedAboutMissingPointerPosition = false;
 
 
     public void Start()
@@ -32,6 +39,19 @@ public class CameraController : MonoBehaviour
         InputManager.Instance.onMouseDelta += OnMouseMove;
         InputManager.Instance.onScrollWheel += OnScrollWheel;
         InputManager.Instance.onMovement += OnMovement;
+
+        viewCamera = GetComponent<Camera>();
+        if (viewCamera == null) viewCamera = Camera.main;
+
+        if (viewCamera == null)
+        {
+            Debug.LogError("CameraController: no Camera on this GameObject and none in the scene, add it!!!", this);
+        }
+
+        if (dragSurfaceMask.value == 0)
+        {
+            Debug.LogError("CameraController: dragSurfaceMask is empty, so no layer counts as a drag", this);
+        }
 
         // the camera never rotates so the right and forward
         // direction can be computed once at start time
@@ -87,12 +107,57 @@ public class CameraController : MonoBehaviour
     public void OnLeftClickDown(bool newLeftClickDown)
     {
         leftClickDown = newLeftClickDown;
+
+        if (!newLeftClickDown) return;
+
+        dragStartedOnWorld = CanStartCameraDrag();
+    }
+
+
+    // Decided once, at press time, and deliberately never re-evaluated: testing this per frame would
+    // start panning the moment a placement drag left the inventory panel, and stop panning the
+    // moment a camera drag crossed over it.
+    private bool CanStartCameraDrag()
+    {
+        // the UI owns a press that lands on it, whatever world geometry is behind it
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return false;
+
+        if (viewCamera == null) return false;
+
+        InputManager input = InputManager.Instance;
+
+        if (input == null || !input.HasPointerPosition)
+        {
+            if (!warnedAboutMissingPointerPosition)
+            {
+                warnedAboutMissingPointerPosition = true;
+
+                // pans anyway, which is the behaviour from before world presses mattered, so a
+                // missing binding degrades instead of freezing the camera
+                Debug.LogWarning("CameraController: the Mouse Position action has not fired, so a press " +
+                    "cannot be tested against the world and is being treated as a world drag. Either its " +
+                    "binding is missing from the PlayerInput action events, or the mouse has not moved yet.", this);
+            }
+
+            return true;
+        }
+
+        Ray ray = viewCamera.ScreenPointToRay(input.PointerPosition);
+
+        // Deliberately unmasked: a world object that wants the click has to be hit in order to block
+        // the drag, so masking the ray down to the drag surfaces would defeat the allow-list.
+        if (!Physics.Raycast(ray, out RaycastHit hit, dragRayDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        {
+            return true;
+        }
+
+        return (dragSurfaceMask.value & (1 << hit.collider.gameObject.layer)) != 0;
     }
 
 
     public void OnMouseMove(Vector2 delta)
     {
-        if (!leftClickDown) return;
+        if (!leftClickDown || !dragStartedOnWorld) return;
 
         // delta is negative so that the camera moves the opposite direction of the mouse
         // otherwise dragging down would move the camera down, visually moving the map upwards

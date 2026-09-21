@@ -3080,7 +3080,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.16470589}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -134992,6 +134992,10 @@ MonoBehaviour:
   testSO: {fileID: 11400000, guid: 37df897fd2e48c72f8ade9e939f56cf6, type: 2}
   terrainGrid: {fileID: 1793132076}
   testGameItem: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
+  dragSurfaceMask:
+    serializedVersion: 2
+    m_Bits: 256
+  dragRayDistance: 1000
 --- !u!1001 &1780435335
 PrefabInstance:
   m_ObjectHideFlags: 0
