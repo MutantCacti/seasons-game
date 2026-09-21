@@ -75,7 +75,7 @@ public class LoadingScreenManager : MonoBehaviour {
 
         InputManager.Instance.EnableInput();
         if (sceneName.Equals("Title Screen")) {
-            foreach (Button button in TitleScreenManager.Instance.buttons) {
+            foreach (Button button in TitleScreenManager.Instance.Buttons) {
                 button.enabled = true;
             }
         }
