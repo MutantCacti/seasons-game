@@ -37,9 +37,6 @@ public class InputManager : MonoBehaviour
 
     public void DisableInput()
     {
-        foreach (Button button in TitleScreenManager.Instance.Buttons) {
-            button.enabled = false;
-        }
         playerInput.enabled = false;
     }
 
@@ -100,5 +97,12 @@ public class InputManager : MonoBehaviour
     public void OnMovement(InputAction.CallbackContext ctx)
     {
         onMovement?.Invoke(ctx.action.ReadValue<Vector2>());
+    }
+    
+    public event Action onPause;
+    public void OnPause(InputAction.CallbackContext ctx) {
+        if (ctx.performed) {
+            onPause?.Invoke();
+        }
     }
 }
