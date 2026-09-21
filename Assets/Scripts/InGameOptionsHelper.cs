@@ -18,7 +18,7 @@ public class InGameOptionsHelper : MonoBehaviour {
     }
 
 
-    private void OnPause() {
+    public void OnPause() {
         OnOptions(); //temporary functionality
 
         if (optionsMenu.activeSelf) {
@@ -29,7 +29,7 @@ public class InGameOptionsHelper : MonoBehaviour {
     }
 
 
-    public void OnOptions() {
+    private void OnOptions() {
         optionsMenu.SetActive(!optionsMenu.activeSelf);
     }
 
