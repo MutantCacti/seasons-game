@@ -1675,6 +1675,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35374078a53046c4a912a1b7c4176d7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TitleScreenManager
+  mainMenu: {fileID: 1222017089}
+  optionsMenu: {fileID: 1613431821}
 --- !u!1 &1453240846
 GameObject:
   m_ObjectHideFlags: 0

@@ -9,6 +9,10 @@ public class TitleScreenManager : MonoBehaviour {
     public Button[] Buttons { get; private set; }
 
 
+    [SerializeField] private GameObject mainMenu;
+    [SerializeField] private GameObject optionsMenu;
+
+
     private void Awake() {
         if (instance != null && instance != this) {
             Debug.LogWarning("Found more than one TitleScreenManager in the scene - destroying newest!!");
@@ -17,6 +21,9 @@ public class TitleScreenManager : MonoBehaviour {
         }
 
         instance = this;
+
+        mainMenu.SetActive(true);
+        optionsMenu.SetActive(false);
     }
 
     private void Start() {
@@ -28,16 +35,23 @@ public class TitleScreenManager : MonoBehaviour {
     {
         LoadingScreenManager.Instance.LoadScene("Game");
     }
-    
-    public void OnOptions() {
-        Debug.Log("this would show options");
-    }
 
+    public void OnOptions() {
+        SwitchActiveMenu();
+    }
+    
+    //on options close
+    //SwitchActiveMenu()
 
     public void OnQuit()
     {
         Debug.Log("Quitting");
         Application.Quit();
+    }
+    
+    private void SwitchActiveMenu() {
+        mainMenu.SetActive(!mainMenu.activeSelf);
+        optionsMenu.SetActive(!optionsMenu.activeSelf);
     }
 
 }
