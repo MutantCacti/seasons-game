@@ -90,4 +90,11 @@ public class InputManager : MonoBehaviour
     {
         onMovement?.Invoke(ctx.action.ReadValue<Vector2>());
     }
+    
+    public event Action onPause;
+    public void OnPause(InputAction.CallbackContext ctx) {
+        if (ctx.performed) {
+            onPause?.Invoke();
+        }
+    }
 }
