@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class ItemInventorySlot : MonoBehaviour {
 
+    [SerializeField] private string id;
+    public string ID => id;
     [SerializeField] private string displayName;
     [SerializeField] private TextMeshProUGUI countText;
     private int count = 0;
