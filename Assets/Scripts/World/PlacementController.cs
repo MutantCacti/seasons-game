@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -8,6 +9,14 @@ public class PlacementController : MonoBehaviour
 {
     private static PlacementController instance;
     public static PlacementController Instance { get { return instance; } }
+
+    // we can't have ghosts running their prefab behaviours so any component
+    // that isn't of this type (or a Transform) gets destroyed
+    private static readonly HashSet<Type> ghostWhitelist = new HashSet<Type>()
+    {
+        typeof(SpriteRenderer),
+        typeof(BillboardSprite),
+    };
 
 
     [SerializeField] private TerrainGrid terrainGrid;
@@ -33,6 +42,7 @@ public class PlacementController : MonoBehaviour
     private readonly List<GameItem> residents = new List<GameItem>();
 
     private bool warnedAboutMissingCursor;
+    private Transform ghostStaging;
 
     private Vector3Int previewCell;
     private bool hasPreview;
@@ -381,11 +391,11 @@ public class PlacementController : MonoBehaviour
     {
         if (dragging == null || dragging.Prefab == null) return;
 
-        ghost = Instantiate(dragging.Prefab);
+        // Instantiated into an inactive parent on purpose, see GhostStaging
+        ghost = Instantiate(dragging.Prefab, GhostStaging);
         ghost.name = dragging.Prefab.name + " (ghost)";
 
-        // a preview must not answer the drop raycast, and must not be mistaken for a real entity
-        foreach (Collider collider in ghost.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
+        PruneGhost(ghost);
 
         if (ghostMaterial == null)
         {
@@ -397,7 +407,41 @@ public class PlacementController : MonoBehaviour
             ApplyGhostMaterial(ghost);
         }
 
+        ghost.transform.SetParent(null);
+
         ghost.SetActive(false);
+    }
+
+
+    // A preview has to be a picture and nothing more, so anything off the whitelist is destroyed
+    private void PruneGhost(GameObject instance)
+    {
+        foreach (Component component in instance.GetComponentsInChildren<Component>(true))
+        {
+            if (component is Transform) continue;
+            if (ghostWhitelist.Contains(component.GetType())) continue;
+            DestroyImmediate(component);
+        }
+    }
+
+
+    // we don't want ghosts running Awake or Start methods either, so here's a fun solution
+    // make an empty staging GO that's always inactive and instantiate ghosts onto it
+    // before castrating their undesirable behaviours (lol that sounds so weird)
+    private Transform GhostStaging
+    {
+        get
+        {
+            if (ghostStaging == null)
+            {
+                GameObject staging = new GameObject("Ghost Staging");
+                staging.SetActive(false);
+
+                ghostStaging = staging.transform;
+            }
+
+            return ghostStaging;
+        }
     }
 
 

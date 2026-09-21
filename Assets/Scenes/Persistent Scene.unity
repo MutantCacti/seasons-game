@@ -316,7 +316,7 @@ MonoBehaviour:
   defaultCursor: {fileID: 2800000, guid: 81d8e96b62f541cb2bba59ed0708f0c7, type: 3}
   defaultHotSpot: {x: 0, y: 0}
   disabledCursor: {fileID: 2800000, guid: 4a43bbe3a31b8402ab247f354344bf35, type: 3}
-  disabledHotSpot: {x: 32, y: 32}
+  disabledHotSpot: {x: 16, y: 16}
   cursorMode: 1
   fallbackHotSpot: {x: 0, y: 0}
 --- !u!1 &1041355075
