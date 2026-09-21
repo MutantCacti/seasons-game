@@ -14,6 +14,7 @@ public class CameraController : MonoBehaviour
     private const float REFERENCE_FRAMERATE = 60.0f;  // framerate the authored snappiness value is tuned against
 
     [SerializeField] private SoundObject testSO;    // DEBUG
+    [SerializeField] private TerrainGrid terrainGrid;    // DEBUG
 
     private bool leftClickDown = false;
     private Vector3 right;
@@ -43,7 +44,22 @@ public class CameraController : MonoBehaviour
 
         targetPosition = transform.position;
 
+
+        // DEBUG: play the intro song
         AudioManager.Instance.PlayMusic(testSO);
+
+        // DEBUG: remap a random grass tile to water and save
+        if (terrainGrid == null)
+        {
+            Debug.LogError("CameraController: terrainGrid is not assigned, so the terrain debug " +
+                "remap is being skipped", this);
+        }
+        else if (terrainGrid.DebugRemapRandomTile("grass", "water", out Vector3Int remapped))
+        {
+            Debug.Log($"DEBUG: remapped grass to water at {remapped}");
+
+            if (SaveDataManager.Instance != null) SaveDataManager.Instance.Save();
+        }
     }
 
 

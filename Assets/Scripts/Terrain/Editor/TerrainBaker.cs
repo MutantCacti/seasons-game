@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 // Runs the terrain bake and writes the result as shipped mesh assets
 public static class TerrainBaker
@@ -9,18 +11,19 @@ public static class TerrainBaker
     private const string TOPS_SUFFIX = "_Tops";
     private const string WALLS_SUFFIX = "_Walls";
     private const string COLLISION_SUFFIX = "_Collision";
+    private const string QUAD_MAP_SUFFIX = "_Quads";
 
 
     public static void Bake(TerrainBakeSettings settings)
     {
-        TerrainLayer[] terrainLayers = settings.GetComponentsInChildren<TerrainLayer>();
-        if (terrainLayers.Length == 0)
+        List<TerrainGrid.Level> levels = TerrainGrid.DiscoverLevels(settings.transform);
+        if (levels.Count == 0)
         {
-            Debug.LogError("No TerrainLayer components found under the bake settings object", settings);
+            Debug.LogError("No tilemaps with tiles in them were found under the bake settings object", settings);
             return;
         }
 
-        TerrainRaster raster = TerrainRasterizer.Rasterize(terrainLayers, settings.pixelsPerTile, settings.alphaThreshold, settings);
+        TerrainRaster raster = TerrainRasterizer.Rasterize(levels, settings.pixelsPerTile, settings.alphaThreshold, settings);
         if (raster == null)
         {
             Debug.LogError("Terrain bake produced no levels, probably there are no tiles", settings);
@@ -45,16 +48,21 @@ public static class TerrainBaker
 
         EnsureFolder(settings.outputFolder);
 
+        // the quad maps are what let a runtime remap patch UVs instead of rebaking, so the
+        // builders record where every quad's cell is as they emit it
+        TerrainQuadRecorder topRecorder = new TerrainQuadRecorder();
+        TerrainQuadRecorder wallRecorder = new TerrainQuadRecorder();
+
         Mesh topMesh = LoadOrCreateMesh(
             MeshPath(settings, sceneName, TOPS_SUFFIX),
             sceneName + TOPS_SUFFIX,
-            mesh => TerrainTopMeshBuilder.Fill(mesh, raster, render, settings)
+            mesh => TerrainTopMeshBuilder.Fill(mesh, raster, render, settings, topRecorder)
         );
 
         Mesh wallMesh = LoadOrCreateMesh(
             MeshPath(settings, sceneName, WALLS_SUFFIX),
             sceneName + WALLS_SUFFIX,
-            mesh => TerrainWallMeshBuilder.Fill(mesh, raster, render, settings.wallAtlas, settings)
+            mesh => TerrainWallMeshBuilder.Fill(mesh, raster, render, settings.wallAtlas, settings, wallRecorder)
         );
 
         Mesh collisionMesh = LoadOrCreateMesh(
@@ -63,15 +71,40 @@ public static class TerrainBaker
             mesh => TerrainCollisionMeshBuilder.Fill(mesh, raster, collision)
         );
 
-        MeshRenderer topRenderer = WireRenderMesh(settings, "Terrain Tops", topMesh, settings.topMaterial);
-        MeshRenderer wallRenderer = WireRenderMesh(settings, "Terrain Walls", wallMesh, settings.wallMaterial);
+        // one stamp for both maps: they share the map's occupancy, and it is what a load compares
+        // against the scene's tilemaps to catch a map that was edited without re-baking
+        uint occupancyHash = TerrainGrid.OccupancyHash(levels);
+
+        TerrainQuadMap topQuadMap = LoadOrCreateQuadMap(
+            QuadMapPath(settings, sceneName, TOPS_SUFFIX),
+            sceneName + TOPS_SUFFIX + QUAD_MAP_SUFFIX,
+            map => TerrainQuadMapBuilder.Fill(map, topRecorder, topMesh, settings.pixelsPerTile,
+                TerrainAtlasValidation.FindTileAtlas(raster), occupancyHash)
+        );
+
+        TerrainQuadMap wallQuadMap = LoadOrCreateQuadMap(
+            QuadMapPath(settings, sceneName, WALLS_SUFFIX),
+            sceneName + WALLS_SUFFIX + QUAD_MAP_SUFFIX,
+            map => TerrainQuadMapBuilder.Fill(map, wallRecorder, wallMesh, settings.pixelsPerTile,
+                settings.wallAtlas, occupancyHash)
+        );
+
+        // baking shouldn't flip which of the two views you are looking at, so work out
+        // what is on screen right now and leave it that way
+        bool showBaked = !AnyTilemapRendererEnabled(settings);
+
+        MeshRenderer topRenderer = WireRenderMesh(settings, "Terrain Tops", topMesh, settings.topMaterial, showBaked);
+        MeshRenderer wallRenderer = WireRenderMesh(settings, "Terrain Walls", wallMesh, settings.wallMaterial, showBaked);
         WireCollision(settings, collisionMesh);
         WireRuntimeVisibility(settings, new MeshRenderer[] { topRenderer, wallRenderer });
+        WireQuadMaps(settings, new TerrainQuadMap[] { topQuadMap, wallQuadMap });
 
         AssetDatabase.SaveAssets();
         EditorSceneManager.MarkSceneDirty(settings.gameObject.scene);
 
-        Debug.Log($"Terrain baked successfully (render: {topMesh.vertexCount + wallMesh.vertexCount} vertices, collision: {collisionMesh.vertexCount} vertices)\n");
+        Debug.Log($"Terrain baked successfully (render: {topMesh.vertexCount + wallMesh.vertexCount} vertices, " +
+            $"collision: {collisionMesh.vertexCount} vertices, quad maps: " +
+            $"{topQuadMap.CellCount + wallQuadMap.CellCount} cells / {topQuadMap.QuadCount + wallQuadMap.QuadCount} quads)\n");
     }
 
 
@@ -98,7 +131,30 @@ public static class TerrainBaker
     }
 
 
-    private static MeshRenderer WireRenderMesh(TerrainBakeSettings settings, string childName, Mesh mesh, Material material)
+    private static string QuadMapPath(TerrainBakeSettings settings, string sceneName, string suffix)
+    {
+        return Path.Combine(settings.outputFolder, sceneName + suffix + QUAD_MAP_SUFFIX + ".asset").Replace('\\', '/');
+    }
+
+
+    private static TerrainQuadMap LoadOrCreateQuadMap(string path, string name, System.Action<TerrainQuadMap> fill)
+    {
+        TerrainQuadMap map = AssetDatabase.LoadAssetAtPath<TerrainQuadMap>(path);
+        bool isNew = map == null;
+
+        if (isNew) map = ScriptableObject.CreateInstance<TerrainQuadMap>();
+        map.name = name;
+
+        fill(map);
+
+        if (isNew) AssetDatabase.CreateAsset(map, path);
+        else EditorUtility.SetDirty(map);
+
+        return map;
+    }
+
+
+    private static MeshRenderer WireRenderMesh(TerrainBakeSettings settings, string childName, Mesh mesh, Material material, bool showBaked)
     {
         Transform holder = GetOrCreateChild(settings.transform, childName);
 
@@ -110,10 +166,23 @@ public static class TerrainBaker
         if (material != null) meshRenderer.sharedMaterial = material;
         else Debug.LogWarning($"No material assigned for '{childName}' - it will render as the magenta default", settings);
 
-        // this will later be toggled by TerrainBakeSettingsEditor:ToggleRenderers
-        meshRenderer.enabled = false;
+        // tilemaps and meshes sit at the same height, so only ever one of them renders
+        Undo.RecordObject(meshRenderer, "Bake Terrain");
+        meshRenderer.enabled = showBaked;
 
         return meshRenderer;
+    }
+
+
+    // the tilemaps are the authoring view and always exist, so they decide which view is up
+    private static bool AnyTilemapRendererEnabled(TerrainBakeSettings settings)
+    {
+        foreach (TilemapRenderer tilemapRenderer in settings.GetComponentsInChildren<TilemapRenderer>(true))
+        {
+            if (tilemapRenderer.enabled) return true;
+        }
+
+        return false;
     }
 
 
@@ -145,6 +214,25 @@ public static class TerrainBaker
         Undo.RecordObject(visibility, "Bake Terrain");
         visibility.SetBakedRenderers(bakedRenderers);
         EditorUtility.SetDirty(visibility);
+    }
+
+
+    private static void WireQuadMaps(TerrainBakeSettings settings, TerrainQuadMap[] quadMaps)
+    {
+        TerrainVisuals visuals = GetOrAddComponent<TerrainVisuals>(settings.gameObject);
+
+        Undo.RecordObject(visuals, "Bake Terrain");
+        visuals.SetQuadMaps(quadMaps);
+        EditorUtility.SetDirty(visuals);
+
+        // also point the grid at it, so the link shows in the inspector instead of only working
+        // through Awake's GetComponent fallback
+        TerrainGrid grid = settings.GetComponent<TerrainGrid>();
+        if (grid == null) return;
+
+        Undo.RecordObject(grid, "Bake Terrain");
+        grid.SetVisuals(visuals);
+        EditorUtility.SetDirty(grid);
     }
 
 
