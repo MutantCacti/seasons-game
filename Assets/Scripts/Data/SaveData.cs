@@ -15,6 +15,8 @@ public class SaveData
     // readable as inventory, quests and crops arrive
     public TerrainSaveData terrain;
 
+    public SerializableDictionary<string, int> inventory;
+
 
     // default constructor
     public SaveData()
@@ -23,6 +25,8 @@ public class SaveData
         lastSaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         playTimeElapsed = 0L;
         terrain = new TerrainSaveData();
+
+        inventory = new SerializableDictionary<string, int>();
     }
 
 
@@ -31,5 +35,13 @@ public class SaveData
     public void PrepareForWrite()
     {
         terrain.Sort();
+
+        foreach (ItemInventorySlot itemInventorySlot in InventoryManager.instance.ItemInventorySlots) {
+            if (inventory.ContainsKey(itemInventorySlot.ID)) {
+                inventory[itemInventorySlot.ID] = itemInventorySlot.Count;
+            } else {
+                inventory.Add(itemInventorySlot.ID, itemInventorySlot.Count);
+            }
+        }
     }
 }
