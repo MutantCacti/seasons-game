@@ -7,7 +7,8 @@ public class InventoryManager : MonoBehaviour {
     public static InventoryManager instance { get; private set; }
 
     [SerializeField] private ItemInventorySlot[] itemInventorySlots;
-    private Dictionary<string, ItemInventorySlot> keyValuePairs = new();
+    public ItemInventorySlot[] ItemInventorySlots => itemInventorySlots;
+    private Dictionary<string, ItemInventorySlot> identifiedInventorySlots = new();
 
 
 
@@ -22,13 +23,22 @@ public class InventoryManager : MonoBehaviour {
 
 
         foreach (ItemInventorySlot itemInventorySlot in itemInventorySlots) {
-            keyValuePairs.Add(itemInventorySlot.ID, itemInventorySlot);
+            identifiedInventorySlots.Add(itemInventorySlot.ID, itemInventorySlot);
+        }
+
+        foreach (KeyValuePair<string, int> keyValuePair in SaveDataManager.Instance.SaveData.inventory) {
+            UpdateItemCount(keyValuePair.Key, keyValuePair.Value);
         }
     }
 
 
     public void UpdateItemCount(string itemID, int quantity) {
-        keyValuePairs[itemID].AddQuantity(quantity);
+        identifiedInventorySlots[itemID].AddQuantity(quantity);
+        SaveDataManager.Instance.Save();
+    }
+
+    private void SetItemCount(string itemID, int quantity) {
+        identifiedInventorySlots[itemID].SetQuantity(quantity);
     }
     
 

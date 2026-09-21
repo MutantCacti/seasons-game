@@ -35,5 +35,13 @@ public class SaveData
     public void PrepareForWrite()
     {
         terrain.Sort();
+
+        foreach (ItemInventorySlot itemInventorySlot in InventoryManager.instance.ItemInventorySlots) {
+            if (inventory.ContainsKey(itemInventorySlot.ID)) {
+                inventory[itemInventorySlot.ID] = itemInventorySlot.Count;
+            } else {
+                inventory.Add(itemInventorySlot.ID, itemInventorySlot.Count);
+            }
+        }
     }
 }
