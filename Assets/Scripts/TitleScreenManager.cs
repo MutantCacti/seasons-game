@@ -3,7 +3,8 @@ using UnityEngine.UI;
 
 public class TitleScreenManager : MonoBehaviour {
 
-    public static TitleScreenManager instance { get; private set; }
+    private static TitleScreenManager instance;
+    public static TitleScreenManager Instance { get { return instance; } }
 
     public Button[] buttons { get; private set; }
 
@@ -25,7 +26,7 @@ public class TitleScreenManager : MonoBehaviour {
 
     public void OnPlay()
     {
-        LoadingScreenManager.instance.LoadScene("Game");
+        LoadingScreenManager.Instance.LoadScene("Game");
     }
 
 

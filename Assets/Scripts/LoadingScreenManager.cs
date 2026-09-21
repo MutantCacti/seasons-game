@@ -7,8 +7,8 @@ using UnityEngine.UI;
 
 public class LoadingScreenManager : MonoBehaviour {
 
-    public static LoadingScreenManager instance { get; private set; }
-
+    private static LoadingScreenManager instance;
+    public static LoadingScreenManager Instance { get { return instance; } }
 
     [SerializeField] private GameObject loadingScreenCanvasGO;
     [SerializeField] private GameObject loadingScreenGO;
@@ -49,7 +49,6 @@ public class LoadingScreenManager : MonoBehaviour {
     private IEnumerator LoadSceneRoutine(string sceneName) {
         isLoading = true;
 
-        
         InputManager.Instance.DisableInput();
 
         RectTransform loadingScreenRT = loadingScreenGO.GetComponent<RectTransform>();
@@ -76,7 +75,7 @@ public class LoadingScreenManager : MonoBehaviour {
 
         InputManager.Instance.EnableInput();
         if (sceneName.Equals("Title Screen")) {
-            foreach (Button button in TitleScreenManager.instance.buttons) {
+            foreach (Button button in TitleScreenManager.Instance.buttons) {
                 button.enabled = true;
             }
         }

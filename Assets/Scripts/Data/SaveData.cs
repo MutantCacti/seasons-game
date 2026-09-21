@@ -36,7 +36,7 @@ public class SaveData
     {
         terrain.Sort();
 
-        foreach (ItemInventorySlot itemInventorySlot in InventoryManager.instance.ItemInventorySlots) {
+        foreach (ItemInventorySlot itemInventorySlot in InventoryManager.Instance.ItemInventorySlots) {
             if (inventory.ContainsKey(itemInventorySlot.ID)) {
                 inventory[itemInventorySlot.ID] = itemInventorySlot.Count;
             } else {
