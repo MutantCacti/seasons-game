@@ -6,7 +6,7 @@ public class TitleScreenManager : MonoBehaviour {
     private static TitleScreenManager instance;
     public static TitleScreenManager Instance { get { return instance; } }
 
-    public Button[] buttons { get; private set; }
+    public Button[] Buttons { get; private set; }
 
 
     private void Awake() {
@@ -20,7 +20,7 @@ public class TitleScreenManager : MonoBehaviour {
     }
 
     private void Start() {
-        buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
+        Buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
     }
 
 
