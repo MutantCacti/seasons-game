@@ -488,9 +488,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4678da5defef1373ab590883f7fc8533, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SFXPlayer
-  audioMixerGroup: {fileID: 0}
+  audioMixerGroup: {fileID: 6642810903071830317, guid: 42e00332f3026b86f8e729085439c634, type: 2}
   sfxPriority: 128
-  numVoices: 8
+  numVoices: 32
   maxDistance: 30
 --- !u!1 &1400548504
 GameObject:

@@ -8,7 +8,6 @@ public class SFXPlayer : MonoBehaviour
     [SerializeField] private AudioMixerGroup audioMixerGroup;
     [SerializeField] private int sfxPriority = 128;
     [SerializeField] private int numVoices = 16;
-    [SerializeField] private float maxDistance = 30.0f;
 
 
     private List<GameObject> voiceGOs = new List<GameObject>();
@@ -30,14 +29,10 @@ public class SFXPlayer : MonoBehaviour
             newAudioSource.priority = sfxPriority;
             newAudioSource.loop = false;
 
-            newAudioSource.spatialBlend = 1f;
+            // spatialBlend, minDistance and maxDistance belong to the SoundObject instead, because one
+            // voice ends up playing a footstep and thunder and they want very different distances
             newAudioSource.dopplerLevel = 0f;
             newAudioSource.rolloffMode = AudioRolloffMode.Logarithmic;
-
-            // this might need hoisting to a SoundObject field if we get
-            // sounds with varying distances (e.g. thunder versus footstep)
-            newAudioSource.minDistance = 1f;
-            newAudioSource.maxDistance = maxDistance;
 
             voiceGOs.Add(newVoiceGO);
             audioSources.Add(newAudioSource);
@@ -75,6 +70,11 @@ public class SFXPlayer : MonoBehaviour
         audioSource.clip = clip;
         audioSource.volume = soundObject.PickRandomVolume();
         audioSource.pitch = soundObject.PickRandomPitch();
+
+        // set per play rather than once per voice, since a voice is reused for any sound
+        audioSource.spatialBlend = soundObject.SpatialBlend;
+        audioSource.minDistance = soundObject.MinDistance;
+        audioSource.maxDistance = soundObject.MaxDistance;
 
         audioSource.transform.position = worldPos;
 

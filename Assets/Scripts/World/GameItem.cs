@@ -12,6 +12,7 @@ public class GameItem : ScriptableObject
     [SerializeField] private Sprite icon;
     [SerializeField] private TerrainTile tile;
     [SerializeField] private GameObject prefab;
+    [SerializeField] private SoundObject placeSound;
 
 
     [Header("all tags must be present on the tile for this item to be placeable")]
@@ -26,6 +27,7 @@ public class GameItem : ScriptableObject
     public Sprite Icon => icon;
     public TerrainTile Tile => tile;
     public GameObject Prefab => prefab;
+    public SoundObject PlaceSound => placeSound;
 
 
     public bool IsPlaceableOn(TerrainTile target)

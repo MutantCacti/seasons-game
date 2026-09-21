@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -23,6 +24,7 @@ public class PlacementController : MonoBehaviour
     [SerializeField] private EntityManager entityManager;
     [SerializeField] private InventoryManager inventoryManager;
     [SerializeField] private Camera viewCamera;
+    [SerializeField] private CameraController cameraController;
 
     [Header("Drop target")]
     [SerializeField] private LayerMask terrainMask;
@@ -30,6 +32,24 @@ public class PlacementController : MonoBehaviour
 
     [Header("Preview")]
     [SerializeField] private Material ghostMaterial;
+
+    [Header("Placement feedback")]
+    [SerializeField] private SoundObject defaultPlaceSound;
+    [SerializeField] private Sprite rippleSprite;
+    [SerializeField] private Material rippleMaterial;
+    [SerializeField] private Color rippleColour = new Color(1.0f, 1.0f, 1.0f, 0.8f);
+    [SerializeField] private float rippleDiameter = 1.4f;
+    [SerializeField] private float rippleDuration = 0.25f;
+
+    [SerializeField] private float growDuration = 0.08f;
+    [SerializeField] private float growSettleDuration = 0.07f;
+    [SerializeField] private float growOvershoot = 1.10f;
+
+    [SerializeField] private float shakeMagnitude = 0.02f;
+    [SerializeField] private float shakeDuration = 0.08f;
+
+    private const float RIPPLE_OFFSET = 0.002f;
+    private const float RIPPLE_START_SCALE = 0.2f;
 
 
     private readonly List<RaycastResult> uiRaycastResults = new List<RaycastResult>();
@@ -42,6 +62,8 @@ public class PlacementController : MonoBehaviour
     private readonly List<GameItem> residents = new List<GameItem>();
 
     private bool warnedAboutMissingCursor;
+    private bool warnedAboutMissingSound;
+    private bool warnedAboutMissingRipple;
     private Transform ghostStaging;
 
     private Vector3Int previewCell;
@@ -62,6 +84,7 @@ public class PlacementController : MonoBehaviour
         if (terrainGrid == null) terrainGrid = GetComponent<TerrainGrid>();
         if (entityManager == null) entityManager = GetComponent<EntityManager>();
         if (viewCamera == null) viewCamera = Camera.main;
+        if (cameraController == null && viewCamera != null) cameraController = viewCamera.GetComponent<CameraController>();
 
         if (terrainGrid == null) Debug.LogError("PlacementController: no TerrainGrid, so a drop has no cell to land in", this);
         if (entityManager == null) Debug.LogError("PlacementController: no EntityManager, so a prefab item cannot be placed", this);
@@ -241,7 +264,9 @@ public class PlacementController : MonoBehaviour
 
     public void CancelDrag()
     {
-        ShowCursor(CursorType.Default);
+        // Only a live drag owns the cursor. The guard matters on teardown, where this runs after the
+        // CursorManager has already been destroyed and would warn about a manager nothing needed.
+        if (dragging != null) ShowCursor(CursorType.Default);
 
         ClearPreview();
 
@@ -485,18 +510,90 @@ public class PlacementController : MonoBehaviour
     // MARK: animation hook
 
 
-    // Reached only from a player placement, never from EntityManager's load path, so loading a save
-    // does not replay every spawn animation.
-    //
-    // Everything is committed by the time this runs: the tile is remapped, the instance is live, the
-    // entity is in the save, the item is consumed and the file is flushed. An animation started here
-    // can therefore assume the world is already in its final state and owes nobody a callback when
-    // it finishes - if it needs to hide the instance first, it does that to itself.
-    //
+    // Everything is committed by the time this runs: An animation started here
+    // can therefore assume the world is already in its final state
     // instance is null for a tile-only item.
     private void PlayPlacementAnimation(GameItem item, Vector3Int cell, GameObject instance)
     {
-        // TODO: play the placement animation for `item` at `cell` on `instance`
+        Vector3 worldPosition = terrainGrid != null ? terrainGrid.CellToWorld(cell) : Vector3.zero;
+
+        if (instance != null) GrowFromBase(instance);
+
+        if (item.Tile != null) SpawnRipple(worldPosition);
+
+        PlayPlaceSound(item, worldPosition);
+
+        if (cameraController != null) cameraController.Shake(shakeMagnitude, shakeDuration);
+
+        if (instance != null)
+        {
+            PlacementAnimation[] animations = instance.GetComponentsInChildren<PlacementAnimation>(true);
+
+            for (int i = 0; i < animations.Length; i++) animations[i].Play();
+        }
+    }
+
+
+    // Ensure that the root stays at the tile level
+    private void GrowFromBase(GameObject instance)
+    {
+        Transform root = instance.transform;
+
+        root.localScale = Vector3.zero;
+
+        root.DOScale(Vector3.one * growOvershoot, growDuration)
+            .SetEase(Ease.OutQuad)
+            .OnComplete(() => root.DOScale(Vector3.one, growSettleDuration).SetEase(Ease.InQuad));
+    }
+
+
+    // A one shot quad at the cell that scales out and fades
+    private void SpawnRipple(Vector3 worldPosition)
+    {
+        if (rippleSprite == null)
+        {
+            WarnOnce(ref warnedAboutMissingRipple, "no rippleSprite assigned");
+            return;
+        }
+
+        GameObject ripple = new GameObject("Placement Ripple");
+        ripple.transform.position = worldPosition + Vector3.up * RIPPLE_OFFSET;
+
+        SpriteRenderer rippleRenderer = ripple.AddComponent<SpriteRenderer>();
+        rippleRenderer.sprite = rippleSprite;
+        rippleRenderer.color = rippleColour;
+
+        if (rippleMaterial != null) rippleRenderer.sharedMaterial = rippleMaterial;
+
+        ripple.transform.localScale = Vector3.one * (rippleDiameter * RIPPLE_START_SCALE);
+
+        ripple.transform.DOScale(Vector3.one * rippleDiameter, rippleDuration).SetEase(Ease.OutQuad);
+        rippleRenderer.DOFade(0.0f, rippleDuration).SetEase(Ease.InQuad).OnComplete(() => Destroy(ripple));
+    }
+
+
+    private void PlayPlaceSound(GameItem item, Vector3 worldPosition)
+    {
+        SoundObject sound = item.PlaceSound != null ? item.PlaceSound : defaultPlaceSound;
+
+        if (sound == null)
+        {
+            WarnOnce(ref warnedAboutMissingSound, "no placement sound assigned");
+            return;
+        }
+
+        if (AudioManager.Instance == null) return;
+
+        AudioManager.Instance.PlaySFX(sound, worldPosition);
+    }
+
+
+    private void WarnOnce(ref bool warned, string message)
+    {
+        if (warned) return;
+
+        warned = true;
+        Debug.LogWarning($"PlacementController: {message}", this);
     }
 
 
