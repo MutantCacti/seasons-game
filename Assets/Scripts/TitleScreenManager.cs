@@ -28,6 +28,10 @@ public class TitleScreenManager : MonoBehaviour {
     {
         LoadingScreenManager.Instance.LoadScene("Game");
     }
+    
+    public void OnOptions() {
+        Debug.Log("this would show options");
+    }
 
 
     public void OnQuit()
