@@ -561,6 +561,8 @@ public class PlacementController : MonoBehaviour
         GameObject ripple = new GameObject("Placement Ripple");
         ripple.transform.position = worldPosition + Vector3.up * RIPPLE_OFFSET;
 
+        ripple.transform.rotation = Quaternion.Euler(90.0f, 0.0f, 0.0f);
+
         SpriteRenderer rippleRenderer = ripple.AddComponent<SpriteRenderer>();
         rippleRenderer.sprite = rippleSprite;
         rippleRenderer.color = rippleColour;

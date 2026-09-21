@@ -38,7 +38,7 @@ MonoBehaviour:
   dropRayDistance: 1000
   ghostMaterial: {fileID: 2100000, guid: 7e6606b7956a4fb0a319b6aa6553dd1b, type: 2}
   defaultPlaceSound: {fileID: 11400000, guid: 85c9fc90cad5e589985cfe7f0a72b638, type: 2}
-  rippleSprite: {fileID: 5545935261613767603, guid: 5a270fdd17492634ab10137a727432a7, type: 3}
+  rippleSprite: {fileID: -7815652836739853191, guid: 01e5bbf074dd5dbecb003fbe0821ebfd, type: 3}
   rippleMaterial: {fileID: 2100000, guid: 7e6606b7956a4fb0a319b6aa6553dd1b, type: 2}
   rippleColour: {r: 1, g: 1, b: 1, a: 0.8}
   rippleDiameter: 1.4
@@ -135974,6 +135974,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   dragRayDistance: 1000
+  audioListener: {fileID: 0}
+  listenerDistance: 5
   testSO: {fileID: 11400000, guid: 37df897fd2e48c72f8ade9e939f56cf6, type: 2}
   testGameItem: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
   treeGameItem: {fileID: 11400000, guid: 8a411905243b1919b9f03600a40296ce, type: 2}
