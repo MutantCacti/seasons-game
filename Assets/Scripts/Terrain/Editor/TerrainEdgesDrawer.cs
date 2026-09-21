@@ -69,7 +69,7 @@ public class TerrainEdgesDrawer : PropertyDrawer
     private static Cell Fill(int mask) { return new Cell { slot = TerrainEdges.SlotForMask(mask) }; }
     private static Cell Mirror(int mask) { return new Cell { slot = TerrainEdges.SlotForMask(mask), note = "edit the cell opposite" }; }
     private static Cell Gap() { return new Cell { slot = GAP }; }
-    private static Cell Preview() { return new Cell { slot = FILL_PREVIEW, note = "a surrounded cell always takes a random sprite from Variants" }; }
+    private static Cell Preview() { return new Cell { slot = FILL_PREVIEW, note = "a surrounded cell always takes a random sprite from FillVariants" }; }
 
 
     private static Section[] BuildLayout()
@@ -260,7 +260,7 @@ public class TerrainEdgesDrawer : PropertyDrawer
     // Variant. Showing the first one keeps the ring looking like a page out of the tileset
     private static void DrawFillPreview(Rect rect, SerializedProperty property, Cell cell)
     {
-        SerializedProperty variants = property.serializedObject.FindProperty("Variants");
+        SerializedProperty variants = property.serializedObject.FindProperty("FillVariants");
         Sprite first = variants != null && variants.isArray && variants.arraySize > 0
             ? variants.GetArrayElementAtIndex(0).objectReferenceValue as Sprite
             : null;
