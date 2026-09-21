@@ -6,7 +6,11 @@ public class TitleScreenManager : MonoBehaviour {
     private static TitleScreenManager instance;
     public static TitleScreenManager Instance { get { return instance; } }
 
-    public Button[] buttons { get; private set; }
+    public Button[] Buttons { get; private set; }
+
+
+    [SerializeField] private GameObject mainMenu;
+    [SerializeField] private GameObject optionsMenu;
 
 
     private void Awake() {
@@ -17,10 +21,13 @@ public class TitleScreenManager : MonoBehaviour {
         }
 
         instance = this;
+
+        mainMenu.SetActive(true);
+        optionsMenu.SetActive(false);
     }
 
     private void Start() {
-        buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
+        Buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
     }
 
 
@@ -29,11 +36,19 @@ public class TitleScreenManager : MonoBehaviour {
         LoadingScreenManager.Instance.LoadScene("Game");
     }
 
+    public void OnOptions() {
+        SwitchActiveMenu();
+    }
 
     public void OnQuit()
     {
         Debug.Log("Quitting");
         Application.Quit();
+    }
+    
+    private void SwitchActiveMenu() {
+        mainMenu.SetActive(!mainMenu.activeSelf);
+        optionsMenu.SetActive(!optionsMenu.activeSelf);
     }
 
 }
