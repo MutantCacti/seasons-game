@@ -8,7 +8,7 @@ public class AudioManager : MonoBehaviour
 
 
     [SerializeField] private MusicPlayer musicPlayer;
-    //[SerializeField] private SFXPlayer sfxPlayer;
+    [SerializeField] private SFXPlayer sfxPlayer;
     //[SerializeField] private UIPlayer uiPlayer;
 
 
@@ -30,11 +30,27 @@ public class AudioManager : MonoBehaviour
     }
 
 
+    public void StopMusic(SoundObject musicObject)
+    {
+        musicPlayer.Stop(musicObject);
+    }
+
+
+    public void StopAllMusic()
+    {
+        musicPlayer.StopAll();
+    }
+
+
     public void PlaySFX(SoundObject sfxObject, Vector3 worldPos)
     {
-        // TODO
-        Debug.LogWarning("AudioManager.PlaySFX is not yet implemented");
-        return;
+        sfxPlayer.Play(sfxObject, worldPos);
+    }
+
+
+    public void StopAllSFX()
+    {
+        sfxPlayer.StopAll();
     }
 
 
@@ -43,5 +59,12 @@ public class AudioManager : MonoBehaviour
         // TODO
         Debug.LogWarning("AudioManager.PlayUI is not yet implemented");
         return;
+    }
+
+
+    public void StopAllAudio()
+    {
+        musicPlayer.StopAll();
+        sfxPlayer.StopAll();
     }
 }

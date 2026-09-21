@@ -35,6 +35,7 @@ public class InGameOptionsHelper : MonoBehaviour {
     }
 
     public void OnTitleScreen() {
+        AudioManager.Instance.StopAllAudio();
         LoadingScreenManager.Instance.LoadScene("Title Screen");
     }
 
