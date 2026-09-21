@@ -14,21 +14,16 @@ public class GameItem : ScriptableObject
     [SerializeField] private GameObject prefab;
 
 
-    [Header("Placement Logic")]
-    // false: prefab only --- true: tile and prefab, except if prefab is null
-    [SerializeField] private bool isTile;
-
-    // conjunctive; all tags must be present on the tile for this item to be placeable
+    [Header("all tags must be present on the tile for this item to be placeable")]
     [SerializeField] private string[] placedOnTags;
 
-    // disjunctive; any of these tags present on the tile makes the item unplaceable
+    [Header("any of these tags present on the tile makes the item unplaceable")]
     [SerializeField] private string[] antiPlacedOnTags;
 
 
     public string Id => id;
     public string Name => name; // Object.name, the name in the inspector
     public Sprite Icon => icon;
-    public bool IsTile => isTile;
     public TerrainTile Tile => tile;
     public GameObject Prefab => prefab;
 

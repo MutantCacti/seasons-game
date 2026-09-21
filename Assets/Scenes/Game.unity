@@ -134989,13 +134989,14 @@ MonoBehaviour:
   maxZoomOffset: 7
   zoomMovementSpeedFactor: 1.4
   snappiness: 0.2
-  testSO: {fileID: 11400000, guid: 37df897fd2e48c72f8ade9e939f56cf6, type: 2}
-  terrainGrid: {fileID: 1793132076}
-  testGameItem: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
   dragSurfaceMask:
     serializedVersion: 2
     m_Bits: 256
   dragRayDistance: 1000
+  testSO: {fileID: 11400000, guid: 37df897fd2e48c72f8ade9e939f56cf6, type: 2}
+  terrainGrid: {fileID: 1793132076}
+  testGameItem: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
+  treeGameItem: {fileID: 11400000, guid: 8a411905243b1919b9f03600a40296ce, type: 2}
 --- !u!1001 &1780435335
 PrefabInstance:
   m_ObjectHideFlags: 0
