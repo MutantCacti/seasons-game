@@ -79,6 +79,9 @@ public class SaveDataManager : MonoBehaviour
                 return new SaveData();
             }
 
+            if (loaded.terrain == null) loaded.terrain = new TerrainSaveData();
+            if (loaded.inventory == null) loaded.inventory = new SerializableDictionary<string, int>();
+
             return loaded;
         }
         catch (System.Exception e)

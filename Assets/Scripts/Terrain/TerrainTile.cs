@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 
 
+// MARK: TerrainEdges
+
 // Any unfilled slot falls back to a random fill from FillVariants
 // don't change the slot order or everything breaks
 [System.Serializable]
@@ -164,6 +166,8 @@ public struct TerrainEdges
     }
 }
 
+
+// MARK: TerrainTile
 
 [CreateAssetMenu(
     fileName="TerrainTile",
