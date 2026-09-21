@@ -165,6 +165,8 @@ public class PlacementController : MonoBehaviour
 
     private void OnSlotDragBegan(ItemInventorySlot slot, PointerEventData eventData)
     {
+        if (cameraController != null) cameraController.CancelPan();
+
         BeginDrag(slot);
     }
 

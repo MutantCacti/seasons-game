@@ -34,6 +34,7 @@ public class CameraController : MonoBehaviour
     private Vector3 forward;
     private Vector3 targetPosition;
     private Vector3 currentPosition;
+    private Vector3 panOrigin;
     private float zoomOffset = 0.0f;
     private Vector2 direction = Vector2.zero;
     private bool holdingWasd = false;
@@ -134,7 +135,21 @@ public class CameraController : MonoBehaviour
 
         if (!newLeftClickDown) return;
 
+        panOrigin = targetPosition;
         dragStartedOnWorld = CanStartCameraDrag();
+    }
+
+
+    // Called when uGUI claims a press this camera had already begun panning for. The press test above
+    // runs from the input callback, which happens before the EventSystem routes the press, so on a fast
+    // drag the two can disagree. Putting targetPosition back undoes whatever the pan applied, and the
+    // smoothing eases the camera home rather than snapping it.
+    public void CancelPan()
+    {
+        if (!dragStartedOnWorld) return;
+
+        dragStartedOnWorld = false;
+        targetPosition = panOrigin;
     }
 
 
