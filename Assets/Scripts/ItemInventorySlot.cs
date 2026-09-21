@@ -2,7 +2,7 @@ using System;
 using TMPro;
 using UnityEngine;
 
-public class Item : MonoBehaviour {
+public class ItemInventorySlot : MonoBehaviour {
 
     [SerializeField] private string displayName;
     [SerializeField] private TextMeshProUGUI countText;

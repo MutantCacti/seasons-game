@@ -148,9 +148,9 @@ GameObject:
   - component: {fileID: 1495480416097639654}
   - component: {fileID: 5508951667558082496}
   - component: {fileID: 133334389450208410}
-  - component: {fileID: 3658178392230803667}
+  - component: {fileID: -4015296499103746662}
   m_Layer: 5
-  m_Name: Item Icon
+  m_Name: Item Inventory Slot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -214,7 +214,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &3658178392230803667
+--- !u!114 &-4015296499103746662
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
