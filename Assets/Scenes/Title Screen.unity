@@ -339,7 +339,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1222017091}
+      - m_Target: {fileID: 1451970824}
         m_TargetAssemblyTypeName: TitleScreenManager, Assembly-CSharp
         m_MethodName: OnPlay
         m_Mode: 1
@@ -1320,7 +1320,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1222017090}
-  - component: {fileID: 1222017091}
   - component: {fileID: 1222017092}
   m_Layer: 0
   m_Name: Main Menu
@@ -1350,18 +1349,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 40}
   m_SizeDelta: {x: 1920, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1222017091
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1222017089}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35374078a53046c4a912a1b7c4176d7a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TitleScreenManager
 --- !u!114 &1222017092
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1611,6 +1598,7 @@ GameObject:
   - component: {fileID: 1451970821}
   - component: {fileID: 1451970823}
   - component: {fileID: 1451970822}
+  - component: {fileID: 1451970824}
   m_Layer: 5
   m_Name: Background Panel
   m_TagString: Untagged
@@ -1675,6 +1663,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1451970820}
   m_CullTransparentMesh: 1
+--- !u!114 &1451970824
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1451970820}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35374078a53046c4a912a1b7c4176d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TitleScreenManager
 --- !u!1 &1453240846
 GameObject:
   m_ObjectHideFlags: 0
@@ -1869,7 +1869,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1222017091}
+      - m_Target: {fileID: 1451970824}
         m_TargetAssemblyTypeName: TitleScreenManager, Assembly-CSharp
         m_MethodName: OnQuit
         m_Mode: 1
@@ -2195,7 +2195,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1222017091}
+      - m_Target: {fileID: 1451970824}
         m_TargetAssemblyTypeName: TitleScreenManager, Assembly-CSharp
         m_MethodName: OnOptions
         m_Mode: 1
