@@ -19,7 +19,6 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float dragRayDistance = 1000.0f;
 
     [SerializeField] private SoundObject testSO;        // DEBUG
-    [SerializeField] private TerrainGrid terrainGrid;   // DEBUG
     [SerializeField] private GameItem testGameItem;     // DEBUG
     [SerializeField] private GameItem treeGameItem;     // DEBUG
 
@@ -75,19 +74,6 @@ public class CameraController : MonoBehaviour
 
         // DEBUG: play the intro song
         AudioManager.Instance.PlayMusic(testSO);
-
-        // DEBUG: remap a random grass tile to water and save
-        if (terrainGrid == null)
-        {
-            Debug.LogError("CameraController: terrainGrid is not assigned, so the terrain debug " +
-                "remap is being skipped", this);
-        }
-        else if (terrainGrid.DebugRemapRandomTile("grass", "water", out Vector3Int remapped))
-        {
-            Debug.Log($"DEBUG: remapped grass to water at {remapped}");
-
-            if (SaveDataManager.Instance != null) SaveDataManager.Instance.Save();
-        }
 
         // DEBUG: Add water to inventory
         InventoryManager.Instance.Add(testGameItem, 2);

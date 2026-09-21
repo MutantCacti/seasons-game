@@ -21,6 +21,8 @@ public class InventoryManager : MonoBehaviour {
 
     public int SlotCount { get { return itemInventorySlots != null ? itemInventorySlots.Length : 0; } }
 
+    public IReadOnlyList<ItemInventorySlot> Slots { get { return itemInventorySlots; } }
+
     // One slot per distinct item
     public int ActiveSlotCount { get { return counts.Count; } }
 

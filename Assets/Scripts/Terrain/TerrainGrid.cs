@@ -286,11 +286,63 @@ public partial class TerrainGrid : MonoBehaviour
     }
 
 
+    // MARK: placement targeting
+
+
+    // How far past a surface to step before flooring to a cell
+    private const float SURFACE_PROBE = 0.01f;
+
+
+    // The topmost occupied level in a column, or -1 when the column is empty. Occupancy is fixed at
+    // build time, so unlike a tile's identity this never changes at runtime.
+    public int GetTopLevel(int x, int z)
+    {
+        for (int level = Levels.Count - 1; level >= 0; level--)
+        {
+            if (state.GetTile(new Vector3Int(x, level, z)) != null) return level;
+        }
+
+        return -1;
+    }
+
+
+    // Resolves a point on the terrain's surface to the cell a player means by pointing at it.
+    public bool TryGetTopCellAt(Vector3 surfacePoint, Vector3 rayDirection, out Vector3Int cell)
+    {
+        cell = default;
+
+        Vector3 point = surfacePoint;
+        int level = TopLevelAt(point);
+
+        if (level < 0 || Mathf.Abs(point.y - GetLevelHeight(level)) > LEVEL_THRESHOLD)
+        {
+            point = surfacePoint + rayDirection * SURFACE_PROBE;
+            level = TopLevelAt(point);
+        }
+
+        if (level < 0) return false;
+
+        Vector3Int resolved = new Vector3Int(Mathf.FloorToInt(point.x), level, Mathf.FloorToInt(point.z));
+
+        // the tilemap has the final say on the x/z mapping, because the state is keyed by tilemap cell
+        if (!MatchesTilemap(point, resolved)) return false;
+
+        cell = resolved;
+
+        return true;
+    }
+
+
+    private int TopLevelAt(Vector3 point)
+    {
+        return GetTopLevel(Mathf.FloorToInt(point.x), Mathf.FloorToInt(point.z));
+    }
+
+
     // MARK: remapping
 
 
-    // The one and only way terrain changes. Everything that needs to know about a remap hangs off
-    // here: the state, the live save, and the rendered mesh.
+    // The one and only way terrain changes
     public bool Remap(Vector3Int cell, TerrainTile tile)
     {
         if (tile == null) return false;
@@ -314,8 +366,7 @@ public partial class TerrainGrid : MonoBehaviour
     }
 
 
-    // The one place a tile becomes visible. Both Remap and ApplyRemaps go through here, so a
-    // remap restored from a save looks the same as one the player just made.
+    // The one place a tile becomes visible
     private void SetCellVisual(Vector3Int cell, TerrainTile tile)
     {
         if (visuals == null || tile == null) return;
@@ -334,6 +385,33 @@ public partial class TerrainGrid : MonoBehaviour
             : tile.VariantFor(tilemapCell);
 
         visuals.Patch(cell, sprite);
+    }
+
+
+    // MARK: preview
+
+
+    // Patches a cell's visuals without touching the state or the save, for a placement drag
+    public bool PreviewCell(Vector3Int cell, TerrainTile tile)
+    {
+        if (tile == null) return false;
+
+        // same guard as Remap: previewing a hole would promise something that cannot happen
+        if (state.GetTile(cell) == null) return false;
+
+        SetCellVisual(cell, tile);
+
+        return true;
+    }
+
+
+    // Restores whatever the cell actually holds
+    public void ClearPreview(Vector3Int cell)
+    {
+        TerrainTile tile = state.GetTile(cell);
+        if (tile == null) return;
+
+        SetCellVisual(cell, tile);
     }
 
 
@@ -478,53 +556,6 @@ public partial class TerrainGrid : MonoBehaviour
         }
 
         return hash;
-    }
-
-
-    // MARK: debug
-
-
-    // DEBUG: remap one random occupied cell holding fromId over to toId
-    public bool DebugRemapRandomTile(string fromId, string toId, out Vector3Int changedCell)
-    {
-        changedCell = default;
-
-        if (state == null || registry == null) return false;
-
-        if (!registry.TryGetTileById(toId, out TerrainTile toTile))
-        {
-            Debug.LogError($"TerrainGrid: no registered tile with id '{toId}'", this);
-            return false;
-        }
-
-        List<Vector3Int> candidates = new List<Vector3Int>();
-
-        for (int level = 0; level < state.LevelCount; level++)
-        {
-            for (int z = state.originZ; z < state.originZ + state.depth; z++)
-            {
-                for (int x = state.originX; x < state.originX + state.width; x++)
-                {
-                    Vector3Int cell = new Vector3Int(x, level, z);
-
-                    TerrainTile tile = state.GetTile(cell);
-                    if (tile == null) continue;
-
-                    if (!registry.TryGetIdByTile(tile, out string id) || id != fromId) continue;
-
-                    candidates.Add(cell);
-                }
-            }
-        }
-
-        if (candidates.Count == 0)
-        {
-            Debug.LogWarning($"TerrainGrid: no occupied cells holding tile id '{fromId}'", this);
-            return false;
-        }
-
-        changedCell = candidates[Random.Range(0, candidates.Count)];
-        return Remap(changedCell, toTile);
     }
 
 

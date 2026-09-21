@@ -134997,6 +134997,7 @@ MonoBehaviour:
   terrainGrid: {fileID: 1793132076}
   testGameItem: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
   treeGameItem: {fileID: 11400000, guid: 8a411905243b1919b9f03600a40296ce, type: 2}
+  entityManager: {fileID: -1890437522}
 --- !u!1001 &1780435335
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -135142,6 +135143,42 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7b400023f351bf48a5f1febb09c8d33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemInventorySlot
+--- !u!114 &-1890437522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1793132071}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81e6974ed7da4653aec5b53a3f513851, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityManager
+  terrainGrid: {fileID: 1793132076}
+  registry: {fileID: 11400000, guid: 03db0fd31fcdc6297b2946be5ba96786, type: 2}
+  entityParent: {fileID: 0}
+--- !u!114 &-1438906125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1793132071}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bea7f5d4d13044309f36bada5ea4d300, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlacementController
+  terrainGrid: {fileID: 1793132076}
+  entityManager: {fileID: -1890437522}
+  inventoryManager: {fileID: 230018482}
+  viewCamera: {fileID: 1764824870}
+  terrainMask:
+    serializedVersion: 2
+    m_Bits: 256
+  dropRayDistance: 1000
+  ghostMaterial: {fileID: 2100000, guid: 7e6606b7956a4fb0a319b6aa6553dd1b, type: 2}
 --- !u!1 &1793132071
 GameObject:
   m_ObjectHideFlags: 0
@@ -135156,6 +135193,8 @@ GameObject:
   - component: {fileID: 1793132075}
   - component: {fileID: 1793132074}
   - component: {fileID: 1793132077}
+  - component: {fileID: -1890437522}
+  - component: {fileID: -1438906125}
   m_Layer: 0
   m_Name: Grid
   m_TagString: Untagged

@@ -1,10 +1,12 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 
-public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler 
+public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler,
+    IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [SerializeField] private Image iconImage;
 
@@ -17,6 +19,12 @@ public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerEx
 
     private TextMeshProUGUI tooltipText;
     private bool validated;
+
+
+    // PlacementController subscribes to these
+    public event Action<ItemInventorySlot, PointerEventData> DragBegan;
+    public event Action<ItemInventorySlot, PointerEventData> Dragged;
+    public event Action<ItemInventorySlot, PointerEventData> DragEnded;
 
 
     // idempotent
@@ -62,6 +70,25 @@ public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerEx
 
     public void OnPointerExit(PointerEventData eventData) {
         if (tooltipGO != null) tooltipGO.SetActive(false);
+    }
+
+
+    public void OnBeginDrag(PointerEventData eventData) {
+        if (item == null) return;
+
+        if (tooltipGO != null) tooltipGO.SetActive(false);
+
+        DragBegan?.Invoke(this, eventData);
+    }
+
+
+    public void OnDrag(PointerEventData eventData) {
+        Dragged?.Invoke(this, eventData);
+    }
+
+
+    public void OnEndDrag(PointerEventData eventData) {
+        DragEnded?.Invoke(this, eventData);
     }
 
 
