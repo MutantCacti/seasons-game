@@ -3,11 +3,9 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-// Presentation only. InventoryManager decides what this slot holds, and a slot with nothing in it
-// is inactive, which is also what keeps it out of the layout group's arrangement.
-public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler {
 
-    // optional; shows the item's icon over a child image so the slot's own frame sprite survives
+public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler 
+{
     [SerializeField] private Image iconImage;
 
     [SerializeField] private GameObject tooltipGO;
@@ -21,8 +19,7 @@ public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerEx
     private bool validated;
 
 
-    // Safe to call repeatedly with the same item: the icon and tooltip are only rewritten when the
-    // item actually changes, so a count going up does not redo that work.
+    // idempotent
     public void Display(GameItem newItem, int count) {
         if (newItem == null) {
             Hide();
@@ -48,8 +45,6 @@ public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerEx
     }
 
 
-    // The slot keeps its place in the hierarchy; the layout group skips inactive children, so an
-    // emptied slot collapses instead of leaving a gap.
     public void Hide() {
         item = null;
 
@@ -74,9 +69,18 @@ public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerEx
         if (validated) return;
         validated = true;
 
-        if (tooltipGO != null) tooltipText = tooltipGO.GetComponent<TextMeshProUGUI>();
-
         if (countText == null) Debug.LogError($"ItemInventorySlot '{name}' has no countText assigned", this);
-        if (tooltipGO == null) Debug.LogWarning($"ItemInventorySlot '{name}' has no tooltipGO assigned", this);
+
+        if (tooltipGO == null) {
+            Debug.LogWarning($"ItemInventorySlot '{name}' has no tooltipGO assigned", this);
+            return;
+        }
+
+        // the tooltip is the panel that sizes itself around the text, so the text is its child
+        tooltipText = tooltipGO.GetComponentInChildren<TextMeshProUGUI>(true);
+
+        if (tooltipText == null) {
+            Debug.LogError($"ItemInventorySlot '{name}': '{tooltipGO.name}' has no TextMeshProUGUI in its children", this);
+        }
     }
 }

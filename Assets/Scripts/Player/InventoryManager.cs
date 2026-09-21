@@ -6,28 +6,22 @@ public class InventoryManager : MonoBehaviour {
     private static InventoryManager instance;
     public static InventoryManager Instance { get { return instance; } }
 
-    // The pool of slots, in hierarchy order. A slot carries no item of its own: which slot shows
-    // which item is decided here, and a slot is only ever active while it is bound to something.
     [SerializeField] private ItemInventorySlot[] itemInventorySlots;
 
     // Resolves the ids in a save back to assets
     [SerializeField] private GameItemRegistry registry;
 
     // inventory
-    // counts and slotsByItem are kept in step so that "has a count" and "has a slot" can never
-    // disagree, and slotsByItem / itemBySlot are inverses of each other.
     private readonly Dictionary<GameItem, int> counts = new();
     private readonly Dictionary<GameItem, ItemInventorySlot> slotsByItem = new();
     private readonly Dictionary<ItemInventorySlot, GameItem> itemBySlot = new();
 
-    // Fires when a slot is taken or freed - not when the count changes on an item that already has
-    // one. That is what a layout sizing itself from the occupied slot count needs.
     public event Action SlotsChanged;
 
 
     public int SlotCount { get { return itemInventorySlots != null ? itemInventorySlots.Length : 0; } }
 
-    // One slot per distinct item, so this is the occupied slot count too
+    // One slot per distinct item
     public int ActiveSlotCount { get { return counts.Count; } }
 
     public bool IsFull { get { return ActiveSlotCount >= SlotCount; } }
@@ -42,7 +36,6 @@ public class InventoryManager : MonoBehaviour {
 
         instance = this;
 
-        // nothing is held yet, so nothing is shown
         HideAllSlots();
         LoadFromSave();
     }
@@ -64,9 +57,6 @@ public class InventoryManager : MonoBehaviour {
 
 
     // MARK: mutations
-    // Add and TryRemove are the public ways in. Both funnel through SetCount, which is the only
-    // place the counts, the slot bindings and the live save blob change together - the same shape
-    // as TerrainGrid.Remap.
 
 
     public bool Add(GameItem item, int quantity) {
@@ -123,7 +113,7 @@ public class InventoryManager : MonoBehaviour {
         if (quantity == 0) {
             counts.Remove(item);
 
-            // emptied: hand the slot back so the next new item can take it
+            // free up the slot so the next new item can take it
             if (isBound) {
                 ReleaseSlot(item, slot);
                 slotsChanged = true;
@@ -131,7 +121,7 @@ public class InventoryManager : MonoBehaviour {
         }
         else {
             if (!isBound) {
-                // refuses the whole change rather than tracking an item that no slot can show
+                // cannot give a slot to an item that does not exist
                 if (!TryTakeSlot(item, out slot)) return false;
 
                 slotsChanged = true;
@@ -150,7 +140,7 @@ public class InventoryManager : MonoBehaviour {
     }
 
 
-    // First free slot in hierarchy order, so a freed slot gets reused rather than leaving a hole.
+    // First free slot in hierarchy order (ascending index)
     private bool TryTakeSlot(GameItem item, out ItemInventorySlot slot) {
         slot = null;
 
@@ -197,13 +187,12 @@ public class InventoryManager : MonoBehaviour {
     }
 
 
-    // Keeps the live blob current, so SaveDataManager.Save() is only ever a serialise and this
-    // manager's lifetime stops mattering to persistence.
+    // Write through the SaveDataManager's live loaded save rather than directly to disk
     private void WriteThrough(GameItem item, int quantity) {
         SaveDataManager manager = SaveDataManager.Instance;
         if (manager == null || manager.SaveData == null || manager.SaveData.inventory == null) return;
 
-        // logs and gives up if the item is not in the registry, rather than writing a bogus key
+        // log and give up if the item is not in the registry
         if (registry == null || !registry.TryGetIdByItem(item, out string id)) return;
 
         if (quantity == 0) manager.SaveData.inventory.Remove(id);
@@ -228,10 +217,6 @@ public class InventoryManager : MonoBehaviour {
             Debug.LogError("InventoryManager: no GameItemRegistry assigned, so none of the saved items can be resolved", this);
             return;
         }
-
-        // Resolve everything before taking any slots. A dictionary that has had entries removed does
-        // not enumerate in insertion order, so allocating slots as the save is read would let the bar
-        // reshuffle between sessions; sorting into registry order makes the loaded layout stable.
         List<GameItem> resolved = new List<GameItem>();
 
         foreach (KeyValuePair<string, int> pair in saved) {
@@ -250,8 +235,8 @@ public class InventoryManager : MonoBehaviour {
         foreach (GameItem item in resolved) {
             if (SetCount(item, saved[item.Id])) continue;
 
-            // No slot for it. The blob has to keep mirroring what is actually held, or the stale
-            // entry would silently overwrite a later pickup of the same item.
+            // a save with more items than there are slots for is obviously corrupt
+            // so since we can only display so many items, we remove the extra ones
             saved.Remove(item.Id);
 
             Debug.LogError($"InventoryManager: dropped '{item.name}' from the save because the inventory has no free slot for it", this);
@@ -265,7 +250,6 @@ public class InventoryManager : MonoBehaviour {
 
         if (indexA != indexB) return indexA.CompareTo(indexB);
 
-        // ties only happen for items the registry does not know about, which cannot be saved anyway
         return string.CompareOrdinal(a.Id, b.Id);
     }
 

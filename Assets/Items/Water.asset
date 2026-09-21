@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Water
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
   id: water
-  icon: {fileID: 0}
+  icon: {fileID: -1694231024, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
   tile: {fileID: 0}
   prefab: {fileID: 0}
   isTile: 0

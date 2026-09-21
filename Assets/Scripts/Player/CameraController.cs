@@ -13,8 +13,9 @@ public class CameraController : MonoBehaviour
 
     private const float REFERENCE_FRAMERATE = 60.0f;  // framerate the authored snappiness value is tuned against
 
-    [SerializeField] private SoundObject testSO;    // DEBUG
-    [SerializeField] private TerrainGrid terrainGrid;    // DEBUG
+    [SerializeField] private SoundObject testSO;        // DEBUG
+    [SerializeField] private TerrainGrid terrainGrid;   // DEBUG
+    [SerializeField] private GameItem testGameItem;     // DEBUG
 
     private bool leftClickDown = false;
     private Vector3 right;
@@ -60,6 +61,9 @@ public class CameraController : MonoBehaviour
 
             if (SaveDataManager.Instance != null) SaveDataManager.Instance.Save();
         }
+
+        // DEBUG: Add water to inventory
+        InventoryManager.Instance.Add(testGameItem, 2);
     }
 
 
