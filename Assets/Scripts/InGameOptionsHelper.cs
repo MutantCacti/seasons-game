@@ -20,6 +20,12 @@ public class InGameOptionsHelper : MonoBehaviour {
 
     private void OnPause() {
         OnOptions(); //temporary functionality
+
+        if (optionsMenu.activeSelf) {
+            Time.timeScale = 0f;
+        } else {
+            Time.timeScale = 1f;
+        }
     }
 
 
