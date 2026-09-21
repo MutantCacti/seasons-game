@@ -7,6 +7,7 @@ public class InGameOptionsHelper : MonoBehaviour {
 
     private void Awake() {
         optionsMenu.SetActive(false);
+        Time.timeScale = 1f;
     }
 
     private void OnEnable() {
