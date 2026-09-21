@@ -39,9 +39,6 @@ public class TitleScreenManager : MonoBehaviour {
     public void OnOptions() {
         SwitchActiveMenu();
     }
-    
-    //on options close
-    //SwitchActiveMenu()
 
     public void OnQuit()
     {
