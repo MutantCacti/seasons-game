@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class InventoryManager : MonoBehaviour {
-
-    public static InventoryManager instance { get; private set; }
+    private static InventoryManager instance;
+    public static InventoryManager Instance { get { return instance; } }
 
     [SerializeField] private ItemInventorySlot[] itemInventorySlots;
     public ItemInventorySlot[] ItemInventorySlots => itemInventorySlots;
     private Dictionary<string, ItemInventorySlot> identifiedInventorySlots = new();
-
 
 
     private void Awake() {
@@ -37,9 +36,8 @@ public class InventoryManager : MonoBehaviour {
         SaveDataManager.Instance.Save();
     }
 
+
     private void SetItemCount(string itemID, int quantity) {
         identifiedInventorySlots[itemID].SetQuantity(quantity);
     }
-    
-
 }

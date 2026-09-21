@@ -27,7 +27,7 @@ public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerEx
     public void OnPointerEnter(PointerEventData eventData) {
         tooltipGO.SetActive(true);
     }
-    
+
     public void OnPointerExit(PointerEventData eventData) {
         tooltipGO.SetActive(false);
     }

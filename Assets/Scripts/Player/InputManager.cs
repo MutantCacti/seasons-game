@@ -37,7 +37,7 @@ public class InputManager : MonoBehaviour
 
     public void DisableInput()
     {
-        foreach (Button button in TitleScreenManager.instance.buttons) {
+        foreach (Button button in TitleScreenManager.Instance.buttons) {
             button.enabled = false;
         }
         playerInput.enabled = false;
