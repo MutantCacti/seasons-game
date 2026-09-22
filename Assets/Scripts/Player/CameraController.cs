@@ -158,7 +158,7 @@ public class CameraController : MonoBehaviour
             {
                 warnedAboutMissingPointerPosition = true;
 
-                Debug.LogWarning("CameraController: the Mouse Position action has not fired but we are in CanStartCameraDrag. This should be impossible, so I'm letting it happen anyways", this);
+                Debug.LogWarning("CameraController: the Mouse Position action has never fired but we are in CanStartCameraDrag. This should be impossible, so I'm letting it happen anyways", this);
             }
 
             return true;
