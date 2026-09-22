@@ -4,6 +4,8 @@ public class CompendiumManager : MonoBehaviour {
 
     private static CompendiumManager instance;
     public static CompendiumManager Instance { get { return instance; } }
+
+    [SerializeField] private GameItemRegistry registry;
     
 
     public void Awake() {
@@ -18,16 +20,14 @@ public class CompendiumManager : MonoBehaviour {
     
 
 
-    public string GetEntityInformation(int index) {
+    public GameItem GetEntityInformation(int index) {
 
         try {
-            return SaveDataManager.Instance.SaveData.entities.entities[index].itemId;
+            return registry.Items[index];
         } catch {
-            return "";
+            return null;
         }
-        // foreach (EntitySave entity in SaveDataManager.Instance.SaveData.entities.entities) {
-            
-        // }
+        
     }
 
 
