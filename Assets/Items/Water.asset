@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: Water
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
   id: water
+  description: THIS LIQUID IS HELPFUL
   icon: {fileID: -1694231024, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
   tile: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
   prefab: {fileID: 0}
-  isTile: 1
+  placeSound: {fileID: 0}
   placedOnTags:
   - grass
   antiPlacedOnTags: []

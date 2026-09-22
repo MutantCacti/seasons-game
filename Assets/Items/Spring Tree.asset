@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: Spring Tree
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
   id: spring_tree
+  description: SPRING HAS SPRUNG
   icon: {fileID: 1231129729630168129, guid: 0e688ad67d680fb819b235f53b641ed0, type: 3}
   tile: {fileID: 0}
   prefab: {fileID: 9028055878281512701, guid: 97b32e99050984c499e4578b0ec149de, type: 3}
-  isTile: 0
+  placeSound: {fileID: 0}
   placedOnTags:
   - grass
   antiPlacedOnTags: []
