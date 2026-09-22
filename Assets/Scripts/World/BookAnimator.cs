@@ -32,6 +32,8 @@ public class BookAnimator : MonoBehaviour
         public float flip;          // 0 authored side, 1 turned over; those are the sheet's two sides
         public float flipTarget;    // where a turn was heading, so an interrupted one settles there
         public float driftPhase;    // random per page, so the sheets do not move in lockstep
+        public float packAngle;     // the angle the sheet lies at while the read has it packed flat
+        public bool placed;         // scratch, while the pack is worked out from the widest sheet in
 
         public Tween openTween;
         public Tween flipTween;
@@ -52,6 +54,9 @@ public class BookAnimator : MonoBehaviour
     // Degrees of fine tuning on top of the spine base aim below
     [SerializeField] private float yawOffset;
 
+    // The book's own direction that its spine faces, which is straight down while it stands at rest
+    [SerializeField] private Vector3 spineFacing = Vector3.down;
+
 
     [Header("Open")]
     [SerializeField] private float openDuration = 0.35f;
@@ -71,6 +76,19 @@ public class BookAnimator : MonoBehaviour
     [SerializeField] private float flipClearance = 2.0f;
     [SerializeField] private float flipIntervalMin = 3.0f;
     [SerializeField] private float flipIntervalMax = 6.0f;
+
+    // How far into the read flight the loose sheets drop out. Past 1 they never do. Dropping them
+    // partway through means the movement covers the change, instead of the click showing it.
+    [SerializeField] private float looseSheetsHideAt = 0.25f;
+
+
+    [Header("Read")]    // the click pose: out at the camera and open the rest of the way
+    [SerializeField] private float readDistance = 3.0f;
+
+    // Degrees the widest part opens to when read, which scales onto every other part
+    [SerializeField] private float readOpenAngle = 90.0f;
+    [SerializeField] private float readDuration = 0.6f;
+    [SerializeField] private Ease readEase = Ease.InOutQuad;
 
 
     private const float SPINE_BASE_YAW = -90.0f;
@@ -101,15 +119,50 @@ public class BookAnimator : MonoBehaviour
     private bool warnedAboutParts;
     private bool warnedAboutHoverTarget;
     private bool warnedAboutYawTarget;
+    private bool warnedAboutInput;
+
+    private Transform readPivot;    // runtime pivot, so the flight does not fight the bob or the yaw
+    private Vector3 readOffset;     // the book node's offset inside that pivot, for aiming its base
+    private float readScale = 1.0f; // the pose multiplier that brings the widest part to readOpenAngle
+    private float read;
+    private Tween readTween;
+    private bool looseSheetsShown = true;
+    private bool ambientRunning = true;
 
 
     private void Awake()
     {
         if (viewCamera == null) viewCamera = Camera.main;
 
+        // captured once, so restarting the bob after a read settles the book at the same height
+        if (yawTarget != null) bobRestY = yawTarget.localPosition.y;
+
         BuildStates();
+        BuildReadPivot();
         StartBob();
         ApplyAll();
+    }
+
+
+    private void OnEnable()
+    {
+        InputManager input = InputManager.Instance;
+
+        if (input == null)
+        {
+            WarnOnce(ref warnedAboutInput, "no InputManager, so the book cannot be clicked open");
+            return;
+        }
+
+        input.onLeftClickDown += OnLeftClickDown;
+    }
+
+
+    private void OnDisable()
+    {
+        InputManager input = InputManager.Instance;
+
+        if (input != null) input.onLeftClickDown -= OnLeftClickDown;
     }
 
 
@@ -117,6 +170,7 @@ public class BookAnimator : MonoBehaviour
     {
         KillTween(ref openTween);
         KillTween(ref bobTween);
+        KillTween(ref readTween);
 
         for (int i = 0; i < states.Count; i++)
         {
@@ -140,8 +194,102 @@ public class BookAnimator : MonoBehaviour
     // LateUpdate so the camera has already settled for this frame
     private void LateUpdate()
     {
+        UpdateRead();
+        UpdateAmbient();
+        UpdateLooseSheets();
         UpdateYaw();
         ApplyAll();
+    }
+
+
+    // MARK: read
+
+
+    // The click pose, driven from outside: a physical canvas now, and later the menu that sits on it
+    // owns the way back. For the moment the click is the only thing calling this.
+    public void SetRead(bool reading)
+    {
+        KillTween(ref readTween);
+
+        // scaled, so a pause freezes the book where it stands instead of animating it behind the menu
+        readTween = DOTween.To(() => read, value => read = value, reading ? 1.0f : 0.0f, readDuration)
+            .SetEase(readEase);
+    }
+
+
+    public bool IsReading { get { return read > 0.0f; } }
+
+
+    private void OnLeftClickDown(bool pressed)
+    {
+        // the press only, and not while a menu has the game stopped behind it
+        if (!pressed || Time.timeScale <= 0.0f) return;
+        if (!IsHovered()) return;
+
+        SetRead(!IsReading);
+    }
+
+
+    // Slides the book out in front of the camera, on its own pivot so the bob and the yaw keep theirs
+    private void UpdateRead()
+    {
+        if (readPivot == null) return;
+
+        if (read <= 0.0f)
+        {
+            readPivot.localPosition = Vector3.zero;
+            return;
+        }
+
+        if (viewCamera == null) return;
+
+        // where the book's base settles: out along the view, dropped so its body sits in the middle
+        Vector3 point = viewCamera.transform.position
+            + viewCamera.transform.forward * readDistance;
+
+        // the book node keeps its own offset inside the pivot, so the pivot takes the difference
+        Vector3 local = readPivot.parent.InverseTransformPoint(point) - readOffset;
+
+        readPivot.localPosition = Vector3.Lerp(Vector3.zero, local, read);
+    }
+
+
+    // The sheets drop out and come back with the movement, and only pay for a hierarchy change on the
+    // frame the state actually flips
+    private void UpdateLooseSheets()
+    {
+        bool shown = read < looseSheetsHideAt;
+
+        if (shown == looseSheetsShown) return;
+
+        looseSheetsShown = shown;
+
+        for (int i = 0; i < loosePages.Count; i++)
+        {
+            loosePages[i].config.part.gameObject.SetActive(shown);
+        }
+    }
+
+
+    private void BuildReadPivot()
+    {
+        if (yawTarget == null) return;
+
+        GameObject pivot = new GameObject("ReadPivot");
+
+        readPivot = pivot.transform;
+        readPivot.SetParent(yawTarget.parent, false);
+        readPivot.localPosition = Vector3.zero;
+        readPivot.localRotation = Quaternion.identity;
+        readPivot.localScale = Vector3.one;
+
+        // world position stays, so nothing about the book moves on the frame this runs
+        yawTarget.SetParent(readPivot, true);
+
+        readOffset = yawTarget.localPosition;
+
+        // the hover volume comes along, or the click could not reach the book once it has flown out
+        if (hoverTarget != null) hoverTarget.transform.SetParent(readPivot, true);
     }
 
 
@@ -150,6 +298,9 @@ public class BookAnimator : MonoBehaviour
 
     private void UpdateHover()
     {
+        // while the book is out at the camera the click owns the pose, so the hover lets it be
+        if (read > 0.0f) return;
+
         bool hovered = IsHovered();
 
         if (hovered == wasHovered) return;
@@ -191,7 +342,17 @@ public class BookAnimator : MonoBehaviour
 
     private void ApplyAll()
     {
+        // the pack is only ever wanted under the read, and it moves with the block, so it is worked out
+        // per frame from where the fan actually is
+        if (read > 0.0f) AssignPackAngles();
+
         for (int i = 0; i < states.Count; i++) Apply(states[i]);
+    }
+
+
+    private float PoseScale()
+    {
+        return Mathf.Lerp(1.0f, readScale, read);
     }
 
 
@@ -199,22 +360,118 @@ public class BookAnimator : MonoBehaviour
     {
         Transform part = state.config.part;
 
-        float angle = AngleAt(state, state.flip) * state.open;
+        // the read pose scales every part's angle, which is what takes the widest one to readOpenAngle
+        float angle = AngleAt(state, state.flip) * PoseScale() * state.open;
 
         float lift = state.config.liftOnOpen * state.open;
 
-        if (state.config.loosePage && driftDegrees > 0.0f)
+        if (state.config.loosePage)
         {
-            // scaled, so the idle sway holds still with the rest of the book while the game is paused
-            float sway = Mathf.Sin(Time.time * driftSpeed + state.driftPhase) * openAmount;
-            float swing = Mathf.Min(driftDegrees, DriftRoom(state));
+            if (driftDegrees > 0.0f)
+            {
+                // scaled, so the idle sway holds still with the rest of the book while the game is paused
+                float sway = Mathf.Sin(Time.time * driftSpeed + state.driftPhase) * openAmount;
+                float swing = Mathf.Min(driftDegrees, DriftRoom(state));
 
-            angle += sway * swing;
-            lift += sway * driftLift * (swing / driftDegrees);
+                angle += sway * swing;
+                lift += sway * driftLift * (swing / driftDegrees);
+            }
+
+            // A read packs the sheet flat onto the page block, giving up its fan angle, its lift and its
+            // drift together. That is the pose it is hidden in and the pose it comes back in, so neither
+            // the vanish nor the return is a sheet changing shape in mid air.
+            float pack = PackAmount();
+
+            angle = Mathf.Lerp(angle, state.packAngle, pack);
+            lift = Mathf.Lerp(lift, 0.0f, pack);
         }
 
         part.localRotation = state.restRotation * Quaternion.AngleAxis(angle, Vector3.right);
         part.localPosition = state.restPosition + Vector3.up * lift;
+    }
+
+
+    // How far the sheets have packed themselves flat for the read. The pack finishes exactly where they
+    // are hidden, so the hide lands on a stack already lying on the block, and on the way back they
+    // reappear in that same packed pose and peel off it as the book comes home.
+    private float PackAmount()
+    {
+        float window = looseSheetsHideAt < 1.0f ? Mathf.Max(looseSheetsHideAt, 0.0001f) : 1.0f;
+
+        return Mathf.Clamp01(read / window);
+    }
+
+
+    // Squeezes every loose sheet up against the part outside it in the fan, one clearance apart, which
+    // is the highest each of them can sit without breaking the clearance the rest of the book keeps.
+    // The result is a stack pressed flat on the page block that is about to be revealed underneath.
+    private void AssignPackAngles()
+    {
+        for (int i = 0; i < states.Count; i++) states[i].placed = false;
+
+        AssignPackAnglesForSide(1.0f);
+        AssignPackAnglesForSide(-1.0f);
+    }
+
+
+    private void AssignPackAnglesForSide(float side)
+    {
+        float ceiling = 0.0f;
+        float search = float.MaxValue;
+
+        for (int step = 0; step < states.Count; step++)
+        {
+            PartState part = WidestInside(side, search);
+
+            if (part == null) return;
+
+            part.placed = true;
+            search = ScaledAngle(part);
+
+            // the covers and the blocks are what the sheets press against, and they do not give ground
+            if (!part.config.loosePage)
+            {
+                ceiling = search;
+                continue;
+            }
+
+            ceiling -= flipClearance;
+
+            part.packAngle = Mathf.Sign(EffectiveAngle(part)) * ceiling;
+        }
+    }
+
+
+    // The part on one side with the largest absolute angle that is still inside the bound and has not
+    // been placed, which walks the fan from its widest sheet inwards
+    private PartState WidestInside(float side, float bound)
+    {
+        PartState best = null;
+        float bestAngle = float.MinValue;
+
+        for (int i = 0; i < states.Count; i++)
+        {
+            PartState part = states[i];
+
+            if (part.placed) continue;
+            if (Mathf.Sign(EffectiveAngle(part)) != side) continue;
+
+            float angle = ScaledAngle(part);
+
+            if (angle > bound + 0.0001f) continue;
+            if (angle <= bestAngle) continue;
+
+            best = part;
+            bestAngle = angle;
+        }
+
+        return best;
+    }
+
+
+    private float ScaledAngle(PartState part)
+    {
+        return Mathf.Abs(EffectiveAngle(part)) * PoseScale() * part.open;
     }
 
 
@@ -225,11 +482,38 @@ public class BookAnimator : MonoBehaviour
     {
         if (yawTarget == null) return;
 
-        bobRestY = yawTarget.localPosition.y;
-
         bobTween = yawTarget.DOLocalMoveY(bobRestY + bobAmplitude, bobPeriod)
             .SetEase(Ease.InOutSine)
             .SetLoops(-1, LoopType.Yoyo);
+    }
+
+
+    // The bob is the one ambient effect on the book node itself, so stopping it also settles the book
+    // back to its rest height. The read pose has to land in exactly the same place every time, or a
+    // menu sitting on the book would sit somewhere different on every read.
+    private void StopBob()
+    {
+        KillTween(ref bobTween);
+
+        if (yawTarget == null) return;
+
+        Vector3 position = yawTarget.localPosition;
+        position.y = bobRestY;
+        yawTarget.localPosition = position;
+    }
+
+
+    // Ambient life stops while the book is out, and starts again once it is back on the stump
+    private void UpdateAmbient()
+    {
+        bool running = read <= 0.0f;
+
+        if (running == ambientRunning) return;
+
+        ambientRunning = running;
+
+        if (running) StartBob();
+        else StopBob();
     }
 
 
@@ -239,6 +523,10 @@ public class BookAnimator : MonoBehaviour
     private void UpdateFlips()
     {
         if (loosePages.Count == 0) return;
+
+        // a turn started under the read flight would be hidden while it happened, quietly rearranging
+        // the fan, so no sheet turns at all until the book is back
+        if (read > 0.0f) return;
 
         if (openAmount < FLIP_OPEN_THRESHOLD) return;
         // scaled, so page turning stops with the rest of the book while the game is paused
@@ -449,15 +737,23 @@ public class BookAnimator : MonoBehaviour
         if (viewCamera == null) return;
 
         // the horizontal direction from the book to the camera
-        Vector3 toCamera = viewCamera.transform.position - yawTarget.position;
-        toCamera.y = 0.0f;
+        Vector3 flat = viewCamera.transform.position - yawTarget.position;
+        flat.y = 0.0f;
 
         // what if the camera is directly overhead
-        if (toCamera.sqrMagnitude < 0.000001f) return;
+        if (flat.sqrMagnitude < 0.000001f) return;
 
-        Quaternion aim = Quaternion.LookRotation(toCamera, Vector3.up);
+        // the yaw the book always carries: standing upright, spine down, turned to face the camera
+        Quaternion look = Quaternion.LookRotation(flat, Vector3.up);
+        Quaternion rest = look * Quaternion.Euler(0.0f, SPINE_BASE_YAW + yawOffset, 0.0f);
 
-        yawTarget.rotation = aim * Quaternion.Euler(0.0f, SPINE_BASE_YAW + yawOffset, 0.0f);
+        // Reading lays the book back on its spine, and the spine is what aims: it turns to face along
+        // the view, so it ends up pointing away from the camera. From the rest pose it points straight
+        // down, so the tilt is the shortest rotation from that to the aim. At read 0 this is the rest
+        // pose exactly, which is what puts it back on the stump.
+        Quaternion tip = Quaternion.FromToRotation(rest * spineFacing, viewCamera.transform.forward);
+
+        yawTarget.rotation = Quaternion.Slerp(rest, tip * rest, read);
     }
 
 
@@ -507,6 +803,8 @@ public class BookAnimator : MonoBehaviour
 
         if (parts == null) return;
 
+        float widest = 0.0f;
+
         for (int i = 0; i < parts.Length; i++)
         {
             Transform part = parts[i].part;
@@ -527,8 +825,13 @@ public class BookAnimator : MonoBehaviour
 
             states.Add(state);
 
+            widest = Mathf.Max(widest, Mathf.Abs(parts[i].openAngle));
+
             if (parts[i].loosePage) loosePages.Add(state);
         }
+
+        // read takes the widest part to readOpenAngle, and everything else follows it round
+        readScale = widest > 0.0001f ? readOpenAngle / widest : 1.0f;
     }
 
 
