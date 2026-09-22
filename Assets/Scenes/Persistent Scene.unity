@@ -491,7 +491,6 @@ MonoBehaviour:
   audioMixerGroup: {fileID: 6642810903071830317, guid: 42e00332f3026b86f8e729085439c634, type: 2}
   sfxPriority: 128
   numVoices: 32
-  maxDistance: 30
 --- !u!1 &1400548504
 GameObject:
   m_ObjectHideFlags: 0
