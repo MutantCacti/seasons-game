@@ -50,12 +50,29 @@ public class CompendiumUIManager : MonoBehaviour {
 
     private void FillCompendium() {
         Debug.Log("the compendium will now display all details");
-        foreach (CompendiumEntry compendiumEntry in compendiumEntries) { //?? or maybe we loop through CompendiumManager
-            // TODO: THIS
-            // compendiumEntry.SetImage();
-            // compendiumEntry.SetNameText();
-            // compendiumEntry.SetDescriptionText();
+        // foreach (CompendiumEntry compendiumEntry in compendiumEntries) { //?? or maybe we loop through CompendiumManager
+        //     // TODO: THIS
+        //     // compendiumEntry.SetImage();
+        //     // compendiumEntry.SetNameText();
+        //     // compendiumEntry.SetDescriptionText();
+
+        //     CompendiumManager.Instance.Thing(0);
+        // }
+
+
+        for (int i = 0; i < compendiumEntries.Length; i++) {
+            GameItem gameItem = CompendiumManager.Instance.GetEntityInformation(i);
+            if (gameItem == null) {
+                compendiumEntries[i].gameObject.SetActive(false);
+                continue;
+            }
+
+            compendiumEntries[i].SetImage(gameItem.Icon);
+            compendiumEntries[i].SetNameText(gameItem.name);
+            compendiumEntries[i].SetDescriptionText(gameItem.Description);
+            compendiumEntries[i].gameObject.SetActive(true);
         }
+
     }
     
 

@@ -18,7 +18,7 @@ public class CompendiumEntry : MonoBehaviour {
     }
     
     public void SetDescriptionText(string description) {
-        entryNameText.text = description;
+        entryDescriptionText.text = description;
     }
 
 }

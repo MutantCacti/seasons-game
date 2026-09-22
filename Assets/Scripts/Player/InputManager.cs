@@ -50,14 +50,16 @@ public class InputManager : MonoBehaviour
     public event Action<bool> onLeftClickDown;
     public void OnLeftClickDown(InputAction.CallbackContext ctx)
     {
-        onLeftClickDown?.Invoke(ctx.action.ReadValue<float>() == 1);
+        if (ctx.performed) onLeftClickDown?.Invoke(true);
+        else if (ctx.canceled) onLeftClickDown?.Invoke(false);
     }
 
 
     public event Action<bool> onRightClickDown;
     public void OnRightClickDown(InputAction.CallbackContext ctx)
     {
-        onRightClickDown?.Invoke(ctx.action.ReadValue<float>() == 1);
+        if (ctx.performed) onRightClickDown?.Invoke(true);
+        else if (ctx.canceled) onRightClickDown?.Invoke(false);
     }
 
 
@@ -98,7 +100,8 @@ public class InputManager : MonoBehaviour
     {
         onMovement?.Invoke(ctx.action.ReadValue<Vector2>());
     }
-    
+
+
     public event Action onPause;
     public void OnPause(InputAction.CallbackContext ctx) {
         if (ctx.performed) {
