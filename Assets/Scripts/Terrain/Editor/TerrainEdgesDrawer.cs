@@ -8,7 +8,7 @@ using UnityEngine;
 
 
 
-// Draws the 47 shape slots laid out where they belong rather than in a list, because no naming
+// Draws the shape slots laid out where they belong rather than in a list, because no naming
 // scheme survives "north edge with a south east notch". Each cell carries a 3x3 of the
 // neighbourhood it stands for:
 //
@@ -16,7 +16,9 @@ using UnityEngine;
 //     faint   a diagonal that cannot be seen from here, so its state does not matter
 //
 // A greyed cell is the same slot as its opposite number, drawn only to keep the shape of the
-// diagram - edit the one across from it. Leave a slot empty and it falls back to a fill.
+// diagram - edit the one across from it. Leave a slot empty and it falls back to a fill. The middle
+// of the ring is left blank for the same reason the interior has no slot: a cell surrounded on every
+// side is always a random fill, so there is nothing there to edit.
 [CustomPropertyDrawer(typeof(TerrainEdges))]
 public class TerrainEdgesDrawer : PropertyDrawer
 {
@@ -42,12 +44,11 @@ public class TerrainEdgesDrawer : PropertyDrawer
 
 
     private const int GAP = -1;
-    private const int FILL_PREVIEW = -2;
 
 
     private struct Cell
     {
-        public int slot;     // or GAP / FILL_PREVIEW
+        public int slot;     // or GAP
         public string note;  // set means the cell is shown but cannot be edited, and says why
     }
 
@@ -66,10 +67,23 @@ public class TerrainEdgesDrawer : PropertyDrawer
 
     // Each cell is written as the neighbourhood it represents, then resolved to whichever slot
     // that collapses onto. Nothing here hard codes a slot index
-    private static Cell Fill(int mask) { return new Cell { slot = TerrainEdges.SlotForMask(mask) }; }
-    private static Cell Mirror(int mask) { return new Cell { slot = TerrainEdges.SlotForMask(mask), note = "edit the cell opposite" }; }
+    private static Cell Fill(int mask)
+    {
+        int slot = TerrainEdges.SlotForMask(mask);
+
+        // a shape with no slot of its own - only the interior - is drawn as an empty cell
+        return slot == TerrainEdges.NO_SLOT ? Gap() : new Cell { slot = slot };
+    }
+
+    private static Cell Mirror(int mask)
+    {
+        Cell cell = Fill(mask);
+        cell.note = "edit the cell opposite";
+
+        return cell;
+    }
+
     private static Cell Gap() { return new Cell { slot = GAP }; }
-    private static Cell Preview() { return new Cell { slot = FILL_PREVIEW, note = "a surrounded cell always takes a random sprite from FillVariants" }; }
 
 
     private static Section[] BuildLayout()
@@ -80,12 +94,12 @@ public class TerrainEdgesDrawer : PropertyDrawer
             new Section
             {
                 title = "Fill and its edges",
-                hint = "the centre shows the first Variant, it is not a slot",
+                hint = "the centre is left empty: a surrounded cell always takes a random fill",
                 columns = 3,
                 cells = new[]
                 {
                     Fill(E | S | SE),           Fill(E | S | W | SE | SW),  Fill(S | W | SW),
-                    Fill(N | E | S | NE | SE),  Preview(),                  Fill(N | S | W | NW | SW),
+                    Fill(N | E | S | NE | SE),  Gap(),                      Fill(N | S | W | NW | SW),
                     Fill(N | E | NE),           Fill(N | E | W | NE | NW),  Fill(N | W | NW),
                 },
             },
@@ -221,8 +235,7 @@ public class TerrainEdgesDrawer : PropertyDrawer
                     y + (i / section.columns) * (RowHeight() + gap),
                     CELL, CELL);
 
-                if (cell.slot == FILL_PREVIEW) DrawFillPreview(rect, property, cell);
-                else DrawSlot(rect, slots.GetArrayElementAtIndex(cell.slot), cell);
+                DrawSlot(rect, slots.GetArrayElementAtIndex(cell.slot), cell);
             }
 
             int rows = Mathf.CeilToInt(section.cells.Length / (float)section.columns);
@@ -253,26 +266,6 @@ public class TerrainEdgesDrawer : PropertyDrawer
         if (cell.note != null) tip += " (" + cell.note + ")";
 
         GUI.Label(rect, new GUIContent(string.Empty, tip));
-    }
-
-
-    // The middle of the ring is a surrounded cell, which never reads a slot - it takes a random
-    // Variant. Showing the first one keeps the ring looking like a page out of the tileset
-    private static void DrawFillPreview(Rect rect, SerializedProperty property, Cell cell)
-    {
-        SerializedProperty variants = property.serializedObject.FindProperty("FillVariants");
-        Sprite first = variants != null && variants.isArray && variants.arraySize > 0
-            ? variants.GetArrayElementAtIndex(0).objectReferenceValue as Sprite
-            : null;
-
-        using (new EditorGUI.DisabledScope(true))
-        {
-            EditorGUI.ObjectField(rect, first, typeof(Sprite), false);
-        }
-
-        DrawDiagram(DiagramRect(rect), 0xFF);
-
-        GUI.Label(rect, new GUIContent(string.Empty, "interior (" + cell.note + ")"));
     }
 
 

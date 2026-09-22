@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c26e09b07590bfa38afe2dcf2c5dee71, type: 3}
+  m_Name: Wasteland
+  m_EditorClassIdentifier: Assembly-CSharp::TerrainTile
+  Id: wasteland
+  Tags:
+  - wasteland
+  FillVariants:
+  - {fileID: -65760121, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  VariantSeed: 99
+  Edges:
+    Slots:
+    - {fileID: 2109417224, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: -350837693, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: -823290228, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 1784513885, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: 2012041471, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: 1972754653, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -954994022, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 1003348671, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -781186351, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: -1624577079, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 1998457089, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: -1895330124, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: -1304499274, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -815409190, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -819773599, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 704824884, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -1616181595, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 485348297, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -96709383, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -1551110895, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -1267490963, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -91682465, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 501214549, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 546343992, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -201077788, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -26264591, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -203957328, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -391350670, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}

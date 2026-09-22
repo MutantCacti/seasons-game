@@ -407,6 +407,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1025489523141923638, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 370
+      objectReference: {fileID: 0}
+    - target: {fileID: 1025489523141923638, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -510,6 +514,38 @@ PrefabInstance:
       propertyPath: m_text
       value: UI Volume
       objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontStyle
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4278190080
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.b
+      value: 0.69062144
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.g
+      value: 0.69062144
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.r
+      value: 0.69062144
+      objectReference: {fileID: 0}
     - target: {fileID: 7519181960781015077, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -567,6 +603,10 @@ PrefabInstance:
     - target: {fileID: 1025489523141923638, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_AnchorMin.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1025489523141923638, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 370
       objectReference: {fileID: 0}
     - target: {fileID: 1025489523141923638, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -668,6 +708,38 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontStyle
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4278190080
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.b
+      value: 0.69062144
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.g
+      value: 0.69062144
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.r
+      value: 0.69062144
+      objectReference: {fileID: 0}
     - target: {fileID: 7519181960781015077, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -721,6 +793,10 @@ PrefabInstance:
     - target: {fileID: 1025489523141923638, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_AnchorMin.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1025489523141923638, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 370
       objectReference: {fileID: 0}
     - target: {fileID: 1025489523141923638, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -826,6 +902,38 @@ PrefabInstance:
       propertyPath: m_text
       value: Music Volume
       objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontStyle
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4278190080
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.b
+      value: 0.69062144
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.g
+      value: 0.69062144
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.r
+      value: 0.69062144
+      objectReference: {fileID: 0}
     - target: {fileID: 7519181960781015077, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -883,6 +991,10 @@ PrefabInstance:
     - target: {fileID: 1025489523141923638, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_AnchorMin.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1025489523141923638, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 370
       objectReference: {fileID: 0}
     - target: {fileID: 1025489523141923638, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -988,6 +1100,38 @@ PrefabInstance:
       propertyPath: m_text
       value: SFX Control
       objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontStyle
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504458784658086224, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4278190080
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.b
+      value: 0.69062144
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.g
+      value: 0.69062144
+      objectReference: {fileID: 0}
+    - target: {fileID: 7473265651830103669, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
+      propertyPath: m_Color.r
+      value: 0.69062144
+      objectReference: {fileID: 0}
     - target: {fileID: 7519181960781015077, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -1006,7 +1150,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8337938909252608217, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: m_Name
-      value: SFX Control
+      value: SFX Volume
       objectReference: {fileID: 0}
     - target: {fileID: 8963551303119523906, guid: dac3e51e03efad2438ebc0412397a86c, type: 3}
       propertyPath: audioMixerGroupName

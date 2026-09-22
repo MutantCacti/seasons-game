@@ -5,7 +5,7 @@ using UnityEngine;
 [System.Serializable]
 public class SaveData
 {
-    public const int CURRENT_VERSION = 1;
+    public const int CURRENT_VERSION = 2;
 
     public int saveVersion;
     public long lastSaveTime;       // milliseconds since unix epoch
@@ -13,6 +13,9 @@ public class SaveData
 
 
     public TerrainSaveData terrain;
+
+
+    public EntitySaveData entities;
 
 
     public SerializableDictionary<string, int> inventory;
@@ -25,6 +28,7 @@ public class SaveData
         lastSaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         playTimeElapsed = 0L;
         terrain = new TerrainSaveData();
+        entities = new EntitySaveData();
 
         inventory = new SerializableDictionary<string, int>();
     }
@@ -33,5 +37,8 @@ public class SaveData
     public void PrepareForWrite()
     {
         if (terrain != null) terrain.Sort();
+        if (entities != null) entities.Sort();
+
+        saveVersion = CURRENT_VERSION;
     }
 }

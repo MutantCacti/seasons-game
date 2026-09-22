@@ -71,22 +71,23 @@ public static class TerrainBaker
             mesh => TerrainCollisionMeshBuilder.Fill(mesh, raster, collision)
         );
 
-        // one stamp for both maps: they share the map's occupancy, and it is what a load compares
-        // against the scene's tilemaps to catch a map that was edited without re-baking
-        uint occupancyHash = TerrainGrid.OccupancyHash(levels);
+        // one stamp for both maps: they share the map's occupancy and sprites, and it is what a load
+        // compares against the scene's tilemaps to catch a map that was edited, or whose tiles were
+        // re-sliced or reassigned, without re-baking
+        uint visualHash = TerrainGrid.VisualHash(levels);
 
         TerrainQuadMap topQuadMap = LoadOrCreateQuadMap(
             QuadMapPath(settings, sceneName, TOPS_SUFFIX),
             sceneName + TOPS_SUFFIX + QUAD_MAP_SUFFIX,
             map => TerrainQuadMapBuilder.Fill(map, topRecorder, topMesh, settings.pixelsPerTile,
-                TerrainAtlasValidation.FindTileAtlas(raster), occupancyHash)
+                TerrainAtlasValidation.FindTileAtlas(raster), visualHash)
         );
 
         TerrainQuadMap wallQuadMap = LoadOrCreateQuadMap(
             QuadMapPath(settings, sceneName, WALLS_SUFFIX),
             sceneName + WALLS_SUFFIX + QUAD_MAP_SUFFIX,
             map => TerrainQuadMapBuilder.Fill(map, wallRecorder, wallMesh, settings.pixelsPerTile,
-                settings.wallAtlas, occupancyHash)
+                settings.wallAtlas, visualHash)
         );
 
         // baking shouldn't flip which of the two views you are looking at, so work out

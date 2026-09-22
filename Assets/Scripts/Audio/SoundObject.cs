@@ -27,6 +27,14 @@ public class SoundObject : ScriptableObject
 
     [System.NonSerialized] private int lastClipIndex = -1;  // used to avoid repeating the last clip in random order
 
+
+    [Header("Spatial")]
+    // 0 is fully 2D and ignores the distances below entirely, which is what feedback for a game
+    // action wants; 1 is fully 3D and attenuates with distance from the listener
+    [Range(0f, 1f)] [SerializeField] private float spatialBlend = 1f;
+    [SerializeField] private float minDistance = 1f;
+    [SerializeField] private float maxDistance = 30f;
+
     // AudioSource.pitch is clamped by Unity to [-3..3], and the AudioRandomContainer path
     // treats anything below 0.0001 as a pause. Stay well inside both so a randomised pitch
     // can never come out silent or reversed.
@@ -37,6 +45,9 @@ public class SoundObject : ScriptableObject
     public bool Loop => loop;
     public float Volume => volume;
     public float Pitch => pitch;
+    public float SpatialBlend => spatialBlend;
+    public float MinDistance => minDistance;
+    public float MaxDistance => maxDistance;
 
 
     public AudioClip PickRandomClip()

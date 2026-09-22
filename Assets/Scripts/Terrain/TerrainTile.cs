@@ -6,6 +6,8 @@ using UnityEngine.Tilemaps;
 // MARK: TerrainEdges
 
 // Any unfilled slot falls back to a random fill from FillVariants
+// The fully surrounded shape has no slot at all: it is always a random fill, so a field of it never
+// repeats. It keeps a row in the table regardless, see the constructor.
 // don't change the slot order or everything breaks
 [System.Serializable]
 public struct TerrainEdges
@@ -14,6 +16,9 @@ public struct TerrainEdges
 
 
     public const int SLOT_COUNT = 47;
+
+    // What SlotForMask returns for a shape that has no slot of its own
+    public const int NO_SLOT = -1;
 
     public const int N = 1 << 0;
     public const int NE = 1 << 1;
@@ -25,6 +30,9 @@ public struct TerrainEdges
     public const int NW = 1 << 7;
 
     public const int CARDINALS = N | E | S | W;
+
+    // Every neighbour there is: a cell surrounded on all sides, filled from FillVariants
+    public const int INTERIOR = CARDINALS | NE | SE | SW | NW;
 
     private static readonly int[,] Diagonals =
     {
@@ -65,7 +73,11 @@ public struct TerrainEdges
 
         for (int mask = 0; mask < 256; mask++)
         {
-            slotByMask[mask] = distinct.IndexOf(Canonicalise(mask));
+            int shape = Canonicalise(mask);
+
+            // The interior keeps its row so that giving the shape up cannot move any other shape's slot
+            // index, but nothing ever reads it: a surrounded cell fills from FillVariants instead
+            slotByMask[mask] = shape == INTERIOR ? NO_SLOT : distinct.IndexOf(shape);
         }
     }
 
@@ -87,6 +99,7 @@ public struct TerrainEdges
     }
 
 
+    // NO_SLOT for a shape that has no slot of its own, which is only ever the interior
     public static int SlotForMask(int mask)
     {
         return slotByMask[mask & 0xFF];
@@ -160,6 +173,7 @@ public struct TerrainEdges
     }
 
 
+    // null when the shape has no slot, which is what sends SpriteFor on to a random fill
     public Sprite ForMask(int mask)
     {
         return this[SlotForMask(mask)];
@@ -225,8 +239,7 @@ public class TerrainTile : TileBase
 
 
     // Whatever art this tile has for the cell's shape, or a random fill when it has none.
-    // Interior is just another shape, so a tileset can pin it to one sprite by filling that
-    // slot instead of leaving it to FillVariants
+    // A fully surrounded cell has no slot, so it always lands on a random fill
     public Sprite SpriteFor(Vector3Int position, ITilemap tilemap)
     {
         Sprite edge = Edges.ForMask(NeighbourMask(position, tilemap));

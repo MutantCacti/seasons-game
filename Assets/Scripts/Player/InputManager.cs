@@ -68,10 +68,21 @@ public class InputManager : MonoBehaviour
     }
 
 
+    private Vector2 pointerPosition;
+    private bool hasPointerPosition;
+
+    // Cached from Mouse Position action so consumers can read the pointer without the event
+    // HasPointerPosition stays false until that action has fired once
+    public Vector2 PointerPosition { get { return pointerPosition; } }
+    public bool HasPointerPosition { get { return hasPointerPosition; } }
+
+
     public event Action<Vector2> onMousePosition;
     public void OnMousePosition(InputAction.CallbackContext ctx)
     {
-        onMousePosition?.Invoke(ctx.action.ReadValue<Vector2>());
+        pointerPosition = ctx.action.ReadValue<Vector2>();
+        hasPointerPosition = true;
+        onMousePosition?.Invoke(pointerPosition);
     }
 
 
