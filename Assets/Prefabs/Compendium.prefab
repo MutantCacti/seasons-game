@@ -63,6 +63,7 @@ GameObject:
   m_Component:
   - component: {fileID: 848912792066633182}
   - component: {fileID: -1738293104}
+  - component: {fileID: -6126043591685162756}
   m_Layer: 0
   m_Name: Compendium
   m_TagString: Untagged
@@ -167,6 +168,18 @@ MonoBehaviour:
   readOpenAngle: 90
   readDuration: 0.6
   readEase: 7
+--- !u!114 &-6126043591685162756
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8202063350275754688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd8813d76a91cd740bac2ce0a45cb560, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CompendiumManager
 --- !u!1001 &5613218549347612856
 PrefabInstance:
   m_ObjectHideFlags: 0
