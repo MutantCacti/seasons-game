@@ -15,7 +15,7 @@ public class TerrainVisuals : MonoBehaviour
     private readonly List<bool> patchable = new List<bool>();
 
     private bool initialised;
-    private uint occupancyHash;
+    private uint visualHash;
     private bool hashKnown;
     private TerrainRuntimeVisibility visibility;
 
@@ -33,9 +33,9 @@ public class TerrainVisuals : MonoBehaviour
 
     // Called by TerrainGrid once it has built its state, because that is the only thing that
     // knows whether the scene's tilemaps still match what was baked
-    public void Validate(uint currentOccupancyHash)
+    public void Validate(uint currentVisualHash)
     {
-        occupancyHash = currentOccupancyHash;
+        visualHash = currentVisualHash;
         hashKnown = true;
 
         EnsureInitialised();
@@ -131,11 +131,11 @@ public class TerrainVisuals : MonoBehaviour
             {
                 Debug.LogError($"TerrainVisuals: quad map {i} is empty or has no mesh", this);
             }
-            else if (hashKnown && map.occupancyHash != occupancyHash)
+            else if (hashKnown && map.visualHash != visualHash)
             {
-                Debug.LogError($"TerrainVisuals: '{map.name}' was baked from a different map than the " +
-                    $"scene's tilemaps now describe - re-bake the terrain. Remapped tiles will not " +
-                    $"show until you do", map);
+                Debug.LogError($"TerrainVisuals: '{map.name}' was baked from a different map, or from " +
+                    $"different tile sprites, than the scene's tilemaps now describe - re-bake the " +
+                    $"terrain. Remapped tiles will not show until you do", map);
                 ok = false;
             }
             else if (map.quadVertexStart == null || map.quadTexelOffsets == null ||

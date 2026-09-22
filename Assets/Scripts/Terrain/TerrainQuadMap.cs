@@ -12,8 +12,10 @@ public class TerrainQuadMap : ScriptableObject
     public int atlasHeight;
     public int vertexCount;     // for validation purposes
 
-    // Also for validation purposes
-    public uint occupancyHash;
+    // Also for validation purposes. Covers both occupancy and the sprite each cell resolved to, so a
+    // reassigned edge slot or a re-imported atlas shows up as a stale bake instead of silently
+    // disagreeing with what a runtime remap patches in
+    public uint visualHash;
 
 
     // one entry per cell, sorted by (level, z, x)

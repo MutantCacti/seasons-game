@@ -21,6 +21,23 @@ public static class TerrainHash
     }
 
 
+    // Add a string to the hash, length first so a pair of shorter strings cannot land on the same
+    // state as one longer one where a sequence of them is folded in
+    public static uint Fold(uint hash, string value)
+    {
+        if (string.IsNullOrEmpty(value)) return Fold(hash, 0);
+
+        unchecked
+        {
+            hash = Fold(hash, value.Length);
+
+            for (int i = 0; i < value.Length; i++) hash = (hash ^ (byte)value[i]) * FNV_PRIME;
+
+            return hash;
+        }
+    }
+
+
     // https://blog.teamleadnet.com/2012/08/murmurhash3-ultra-fast-hash-algorithm.html
     // avalanching a hash means scrambling it so that if even one bit is different
     // from another hash pre-avalanche, post-avalanche average half the bits will be different.

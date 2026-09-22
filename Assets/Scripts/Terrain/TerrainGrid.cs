@@ -44,7 +44,7 @@ public partial class TerrainGrid : MonoBehaviour
         if (visuals != null)
         {
             // ensure that the map has not updated cuz we can't patch it then
-            visuals.Validate(OccupancyHash(Levels));
+            visuals.Validate(VisualHash(Levels));
         }
 
         // SaveDataManager is in the persistent scene so its Awake has already deserialised by now
@@ -511,12 +511,15 @@ public partial class TerrainGrid : MonoBehaviour
     }
 
 
-    // MARK: occupancy hash
+    // MARK: visual hash
 
 
-    // get a hash based on what cells are occupied
-    // this is sort of the only good way to check if the map has been updated in the editor
-    public static uint OccupancyHash(IReadOnlyList<Level> levels)
+    // Hash of everything the bake resolves per cell: which cells hold a tile, and which sprite each one
+    // renders. Occupancy on its own does not catch a stale bake - reassigning a tile's edge slots, or
+    // re-importing the atlas, leaves every occupied cell exactly where it was while changing every
+    // sprite on screen. The sprite's name and rect stand in for the sprite itself because, unlike an
+    // instance id, they survive a domain reload, and a re-slice moves both.
+    public static uint VisualHash(IReadOnlyList<Level> levels)
     {
         if (levels == null || levels.Count == 0) return 0u;
 
@@ -550,10 +553,32 @@ public partial class TerrainGrid : MonoBehaviour
             {
                 for (int x = minX; x < maxX; x++)
                 {
-                    hash = TerrainHash.Fold(hash, tilemap.HasTile(new Vector3Int(x, z, 0)) ? 1 : 0);
+                    Vector3Int cell = new Vector3Int(x, z, 0);
+                    bool occupied = tilemap.HasTile(cell);
+
+                    hash = TerrainHash.Fold(hash, occupied ? 1 : 0);
+
+                    if (occupied) hash = FoldSprite(hash, tilemap.GetSprite(cell));
                 }
             }
         }
+
+        return hash;
+    }
+
+
+    // What one cell resolves to, as far as the bake and a load can agree on it
+    private static uint FoldSprite(uint hash, Sprite sprite)
+    {
+        if (sprite == null) return TerrainHash.Fold(hash, 0);
+
+        hash = TerrainHash.Fold(hash, sprite.name);
+
+        Rect rect = sprite.rect;
+        hash = TerrainHash.Fold(hash, (int)rect.x);
+        hash = TerrainHash.Fold(hash, (int)rect.y);
+        hash = TerrainHash.Fold(hash, (int)rect.width);
+        hash = TerrainHash.Fold(hash, (int)rect.height);
 
         return hash;
     }

@@ -6,7 +6,7 @@ using UnityEngine;
 public static class TerrainQuadMapBuilder
 {
     public static void Fill(TerrainQuadMap map, TerrainQuadRecorder recorder, Mesh mesh,
-        int pixelsPerTile, Texture2D atlas, uint occupancyHash)
+        int pixelsPerTile, Texture2D atlas, uint visualHash)
     {
         List<TerrainQuadRecorder.Row> rows = recorder.rows;
 
@@ -47,7 +47,7 @@ public static class TerrainQuadMapBuilder
         map.atlasWidth = atlas != null ? atlas.width : 0;
         map.atlasHeight = atlas != null ? atlas.height : 0;
         map.vertexCount = mesh != null ? mesh.vertexCount : 0;
-        map.occupancyHash = occupancyHash;
+        map.visualHash = visualHash;
 
         map.cellX = cellX.ToArray();
         map.cellLevel = cellLevel.ToArray();
