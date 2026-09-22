@@ -15,6 +15,9 @@ public class EntityManager : MonoBehaviour
     // if this is null, EntityManager creates a new empty at the scene root
     [SerializeField] private Transform entityParent;
 
+    // The entities a brand new world starts with
+    [SerializeField] private WorldFixtures worldFixtures;
+
 
     private struct LiveEntity
     {
@@ -54,6 +57,14 @@ public class EntityManager : MonoBehaviour
         if (entityParent == null) entityParent = MakeContainer();
 
         EnsureLoaded();
+    }
+
+
+    // resolving a fixture's level needs TerrainGrid's state, which it builds in
+    // its own Awake
+    private void Start()
+    {
+        SeedWorldFixtures();
     }
 
 
@@ -110,6 +121,56 @@ public class EntityManager : MonoBehaviour
 
             CreateInstance(item, new Vector3Int(entry.x, level, entry.z));
         }
+    }
+
+
+    // MARK: world creation
+
+
+    // A new world starts as an empty save
+    // authored fixtures are seeded into it here
+    private void SeedWorldFixtures()
+    {
+        SaveDataManager manager = SaveDataManager.Instance;
+
+        if (manager == null || !manager.IsNewWorld) return;
+
+        if (worldFixtures == null)
+        {
+            Debug.LogError("EntityManager: no WorldFixtures assigned, so a new world starts with no entities", this);
+            return;
+        }
+
+        if (terrainGrid == null) return;
+
+        int seeded = 0;
+
+        for (int i = 0; i < worldFixtures.Count; i++)
+        {
+            WorldFixtures.Fixture fixture = worldFixtures.Entries[i];
+
+            if (fixture.item == null)
+            {
+                Debug.LogError($"EntityManager: world fixture {i} has no item", this);
+                continue;
+            }
+
+            int level = terrainGrid.GetTopLevel(fixture.column.x, fixture.column.y);
+
+            if (level < 0)
+            {
+                Debug.LogError($"EntityManager: world fixture '{fixture.item.name}' is authored at column " +
+                    $"({fixture.column.x}, {fixture.column.y}), which the tilemaps leave empty", this);
+                continue;
+            }
+
+            if (Spawn(fixture.item, new Vector3Int(fixture.column.x, level, fixture.column.y)) != null) seeded++;
+        }
+
+        if (seeded == 0) return;
+
+        // write the new world straight away, which is also what takes IsNewWorld down
+        manager.Save();
     }
 
 
