@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 
 public class BookAnimator : MonoBehaviour
@@ -90,6 +91,10 @@ public class BookAnimator : MonoBehaviour
     private readonly List<PartState> loosePages = new List<PartState>();
     private readonly List<PartState> flipCandidates = new List<PartState>();
 
+    private readonly List<RaycastResult> uiRaycastResults = new List<RaycastResult>();
+    private PointerEventData uiRaycastPointer;
+    private EventSystem uiRaycastSystem;
+
     private float openAmount;
     private Tween openTween;
     private Tween bobTween;
@@ -128,6 +133,10 @@ public class BookAnimator : MonoBehaviour
 
     private void Update()
     {
+        // the state machine stops with the rest of the game, so a hover that changes under the pause menu
+        // cannot start a close and snap a page that was mid turn; the tweens are on scaled time too
+        if (Time.timeScale <= 0.0f) return;
+
         UpdateHover();
         UpdateFlips();
     }
@@ -161,10 +170,9 @@ public class BookAnimator : MonoBehaviour
 
         KillTween(ref openTween);
 
-        // unscaled, so the book still responds while the game is paused behind the compendium menu
+        // scaled, so a pause freezes the book where it stands instead of animating it behind the menu
         openTween = DOTween.To(() => openAmount, value => openAmount = value, target, openDuration)
-            .SetEase(opening ? openEase : closeEase)
-            .SetUpdate(true);
+            .SetEase(opening ? openEase : closeEase);
 
         for (int i = 0; i < states.Count; i++)
         {
@@ -178,8 +186,7 @@ public class BookAnimator : MonoBehaviour
             float duration = opening ? openDuration * ScaleOf(state.config) : openDuration;
 
             state.openTween = DOTween.To(() => state.open, value => state.open = value, target, duration)
-                .SetEase(opening ? openEase : closeEase)
-                .SetUpdate(true);
+                .SetEase(opening ? openEase : closeEase);
         }
 
         // a page caught mid turn when the book closes has to settle back, or it stays askew
@@ -203,6 +210,7 @@ public class BookAnimator : MonoBehaviour
 
         if (state.config.loosePage && driftDegrees > 0.0f)
         {
+            // scaled, so the idle sway holds still with the rest of the book while the game is paused
             float sway = Mathf.Sin(Time.time * driftSpeed + state.driftPhase) * openAmount;
             float swing = Mathf.Min(driftDegrees, DriftRoom(state));
 
@@ -226,8 +234,7 @@ public class BookAnimator : MonoBehaviour
 
         bobTween = yawTarget.DOLocalMoveY(bobRestY + bobAmplitude, bobPeriod)
             .SetEase(Ease.InOutSine)
-            .SetLoops(-1, LoopType.Yoyo)
-            .SetUpdate(true);
+            .SetLoops(-1, LoopType.Yoyo);
     }
 
 
@@ -239,6 +246,7 @@ public class BookAnimator : MonoBehaviour
         if (loosePages.Count == 0) return;
 
         if (openAmount < FLIP_OPEN_THRESHOLD) return;
+        // scaled, so page turning stops with the rest of the book while the game is paused
         if (Time.time < nextFlipTime) return;
 
         nextFlipTime = Time.time + UnityEngine.Random.Range(flipIntervalMin, flipIntervalMax);
@@ -412,7 +420,6 @@ public class BookAnimator : MonoBehaviour
 
         page.flipTween = DOTween.To(() => page.flip, value => page.flip = value, target, FLIP_TURN_DURATION * scale)
             .SetEase(Ease.InOutQuad)
-            .SetUpdate(true)
             .OnComplete(() => page.flipping = false);
     }
 
@@ -481,12 +488,42 @@ public class BookAnimator : MonoBehaviour
         InputManager input = InputManager.Instance;
         if (input == null || !input.HasPointerPosition) return false;
 
-        Ray ray = viewCamera.ScreenPointToRay(input.PointerPosition);
+        Vector2 screenPosition = input.PointerPosition;
+
+        // The UI owns a pointer that lands on it, so a menu in front of the book cannot open it through
+        if (IsPointerOverUI(screenPosition)) return false;
+
+        Ray ray = viewCamera.ScreenPointToRay(screenPosition);
 
         // triggers included, so the volume can be switched to a trigger without changing this
         if (!Physics.Raycast(ray, out RaycastHit hit, hoverRayDistance, ~0, QueryTriggerInteraction.Collide)) return false;
 
         return hit.collider == hoverTarget;
+    }
+
+
+    // MARK: UI hit test
+
+
+    // Live UI hit test at a screen position
+    private bool IsPointerOverUI(Vector2 screenPosition)
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null) return false;
+
+        // rebuilt only when the EventSystem changes, which means a scene load
+        if (uiRaycastPointer == null || uiRaycastSystem != eventSystem)
+        {
+            uiRaycastSystem = eventSystem;
+            uiRaycastPointer = new PointerEventData(eventSystem);
+        }
+
+        uiRaycastPointer.position = screenPosition;
+
+        // RaycastAll clears the results list itself
+        eventSystem.RaycastAll(uiRaycastPointer, uiRaycastResults);
+
+        return uiRaycastResults.Count > 0;
     }
 
 
