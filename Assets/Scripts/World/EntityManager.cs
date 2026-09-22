@@ -221,18 +221,16 @@ public class EntityManager : MonoBehaviour
     }
 
 
-    public bool HasEntityAt(GameItem item, Vector3Int cell)
+    // returns true if there is *any* entity at that cell
+    // false if there isn't
+    public bool HasEntityAt(Vector3Int cell)
     {
-        if (item == null) return false;
-
         for (int i = 0; i < live.Count; i++)
         {
-            if (live[i].item != item) continue;
             if (live[i].cell != cell) continue;
 
             return true;
         }
-
         return false;
     }
 

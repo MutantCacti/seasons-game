@@ -319,7 +319,7 @@ public class PlacementController : MonoBehaviour
         if (dragging.Tile != null && target == dragging.Tile) return false;
 
         // already an entity at that location
-        if (dragging.Prefab != null && entityManager != null && entityManager.HasEntityAt(dragging, cell)) return false;
+        if (dragging.Prefab != null && entityManager != null && entityManager.HasEntityAt(cell)) return false;
 
         // Changing the ground must not invalidate the placement rules of entities
         // already at that cell
