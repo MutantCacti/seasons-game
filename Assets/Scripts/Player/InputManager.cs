@@ -50,7 +50,9 @@ public class InputManager : MonoBehaviour
     public event Action<bool> onLeftClickDown;
     public void OnLeftClickDown(InputAction.CallbackContext ctx)
     {
-        onLeftClickDown?.Invoke(ctx.action.ReadValue<float>() == 1);
+        if (ctx.performed) {
+            onLeftClickDown?.Invoke(ctx.action.ReadValue<float>() == 1);
+        }
     }
 
 
