@@ -15,6 +15,7 @@ MonoBehaviour:
   terrainGrid: {fileID: 1793132076}
   registry: {fileID: 11400000, guid: 03db0fd31fcdc6297b2946be5ba96786, type: 2}
   entityParent: {fileID: 0}
+  worldFixtures: {fileID: 11400000, guid: 9681ae7c80c44084a386e96ef65aee4f, type: 2}
 --- !u!114 &-1438906125
 MonoBehaviour:
   m_ObjectHideFlags: 0
