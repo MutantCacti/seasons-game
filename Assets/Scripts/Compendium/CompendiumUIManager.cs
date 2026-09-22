@@ -61,7 +61,12 @@ public class CompendiumUIManager : MonoBehaviour {
 
 
         for (int i = 0; i < compendiumEntries.Length; i++) {
-            Debug.LogWarning(CompendiumManager.Instance.GetEntityInformation(i));
+            string foo = CompendiumManager.Instance.GetEntityInformation(i);
+            if (foo == null) {
+                break;
+            }
+
+            compendiumEntries[i].SetNameText(foo);
         }
 
     }
