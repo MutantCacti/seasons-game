@@ -63,7 +63,10 @@ public class CompendiumUIManager : MonoBehaviour {
         for (int i = 0; i < compendiumEntries.Length; i++) {
             GameItem gameItem = CompendiumManager.Instance.GetEntityInformation(i);
             if (gameItem == null) {
-                break;
+                compendiumEntries[i].SetImage(null);
+                compendiumEntries[i].SetNameText("");
+                compendiumEntries[i].SetDescriptionText("");
+                continue;
             }
 
             compendiumEntries[i].SetImage(gameItem.Icon);
