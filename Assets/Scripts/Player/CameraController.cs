@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 public class CameraController : MonoBehaviour
 {
@@ -47,11 +45,6 @@ public class CameraController : MonoBehaviour
     private float shakeMagnitude;
     private float shakeDuration;
     private float shakeElapsed = float.PositiveInfinity;
-
-
-    private readonly List<RaycastResult> uiRaycastResults = new List<RaycastResult>();
-    private PointerEventData uiRaycastPointer;
-    private EventSystem uiRaycastSystem;
 
 
     public void Start()
@@ -174,7 +167,7 @@ public class CameraController : MonoBehaviour
         Vector2 screenPosition = input.PointerPosition;
 
         // The UI owns a press that lands on it, whatever world geometry is behind it
-        if (IsPointerOverUI(screenPosition)) return false;
+        if (UIRaycast.IsPointerOverUI(screenPosition)) return false;
 
         Ray ray = viewCamera.ScreenPointToRay(screenPosition);
 
@@ -186,28 +179,6 @@ public class CameraController : MonoBehaviour
         }
 
         return (dragSurfaceMask.value & (1 << hit.collider.gameObject.layer)) != 0;
-    }
-
-
-    // Live UI hit test at a screen position
-    private bool IsPointerOverUI(Vector2 screenPosition)
-    {
-        EventSystem eventSystem = EventSystem.current;
-        if (eventSystem == null) return false;
-
-        // rebuilt only when the EventSystem changes, which means a scene load
-        if (uiRaycastPointer == null || uiRaycastSystem != eventSystem)
-        {
-            uiRaycastSystem = eventSystem;
-            uiRaycastPointer = new PointerEventData(eventSystem);
-        }
-
-        uiRaycastPointer.position = screenPosition;
-
-        // RaycastAll clears the results list itself
-        eventSystem.RaycastAll(uiRaycastPointer, uiRaycastResults);
-
-        return uiRaycastResults.Count > 0;
     }
 
 

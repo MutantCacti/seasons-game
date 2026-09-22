@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 
 public class BookAnimator : MonoBehaviour
@@ -90,10 +89,6 @@ public class BookAnimator : MonoBehaviour
     private readonly List<PartState> states = new List<PartState>();
     private readonly List<PartState> loosePages = new List<PartState>();
     private readonly List<PartState> flipCandidates = new List<PartState>();
-
-    private readonly List<RaycastResult> uiRaycastResults = new List<RaycastResult>();
-    private PointerEventData uiRaycastPointer;
-    private EventSystem uiRaycastSystem;
 
     private float openAmount;
     private Tween openTween;
@@ -491,7 +486,7 @@ public class BookAnimator : MonoBehaviour
         Vector2 screenPosition = input.PointerPosition;
 
         // The UI owns a pointer that lands on it, so a menu in front of the book cannot open it through
-        if (IsPointerOverUI(screenPosition)) return false;
+        if (UIRaycast.IsPointerOverUI(screenPosition)) return false;
 
         Ray ray = viewCamera.ScreenPointToRay(screenPosition);
 
@@ -499,31 +494,6 @@ public class BookAnimator : MonoBehaviour
         if (!Physics.Raycast(ray, out RaycastHit hit, hoverRayDistance, ~0, QueryTriggerInteraction.Collide)) return false;
 
         return hit.collider == hoverTarget;
-    }
-
-
-    // MARK: UI hit test
-
-
-    // Live UI hit test at a screen position
-    private bool IsPointerOverUI(Vector2 screenPosition)
-    {
-        EventSystem eventSystem = EventSystem.current;
-        if (eventSystem == null) return false;
-
-        // rebuilt only when the EventSystem changes, which means a scene load
-        if (uiRaycastPointer == null || uiRaycastSystem != eventSystem)
-        {
-            uiRaycastSystem = eventSystem;
-            uiRaycastPointer = new PointerEventData(eventSystem);
-        }
-
-        uiRaycastPointer.position = screenPosition;
-
-        // RaycastAll clears the results list itself
-        eventSystem.RaycastAll(uiRaycastPointer, uiRaycastResults);
-
-        return uiRaycastResults.Count > 0;
     }
 
 

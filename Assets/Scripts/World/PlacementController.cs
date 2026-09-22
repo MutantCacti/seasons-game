@@ -52,10 +52,6 @@ public class PlacementController : MonoBehaviour
     private const float RIPPLE_START_SCALE = 0.2f;
 
 
-    private readonly List<RaycastResult> uiRaycastResults = new List<RaycastResult>();
-    private PointerEventData uiRaycastPointer;
-    private EventSystem uiRaycastSystem;
-
     private GameItem dragging;
     private GameObject ghost;
 
@@ -306,7 +302,7 @@ public class PlacementController : MonoBehaviour
         if (dragging == null || terrainGrid == null || viewCamera == null) return false;
 
         // Releasing over the inventory panel will cancel the placement
-        if (IsPointerOverUI(screenPosition)) return false;
+        if (UIRaycast.IsPointerOverUI(screenPosition)) return false;
 
         Ray ray = viewCamera.ScreenPointToRay(screenPosition);
 
@@ -598,29 +594,5 @@ public class PlacementController : MonoBehaviour
 
         warned = true;
         Debug.LogWarning($"PlacementController: {message}", this);
-    }
-
-
-    // MARK: UI hit test
-
-
-    // Live UI hit test at a screen position
-    private bool IsPointerOverUI(Vector2 screenPosition)
-    {
-        EventSystem eventSystem = EventSystem.current;
-        if (eventSystem == null) return false;
-
-        if (uiRaycastPointer == null || uiRaycastSystem != eventSystem)
-        {
-            uiRaycastSystem = eventSystem;
-            uiRaycastPointer = new PointerEventData(eventSystem);
-        }
-
-        uiRaycastPointer.position = screenPosition;
-
-        // RaycastAll clears the results list itself
-        eventSystem.RaycastAll(uiRaycastPointer, uiRaycastResults);
-
-        return uiRaycastResults.Count > 0;
     }
 }
