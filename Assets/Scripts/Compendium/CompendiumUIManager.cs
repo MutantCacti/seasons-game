@@ -63,15 +63,14 @@ public class CompendiumUIManager : MonoBehaviour {
         for (int i = 0; i < compendiumEntries.Length; i++) {
             GameItem gameItem = CompendiumManager.Instance.GetEntityInformation(i);
             if (gameItem == null) {
-                compendiumEntries[i].SetImage(null);
-                compendiumEntries[i].SetNameText("");
-                compendiumEntries[i].SetDescriptionText("");
+                compendiumEntries[i].gameObject.SetActive(false);
                 continue;
             }
 
             compendiumEntries[i].SetImage(gameItem.Icon);
             compendiumEntries[i].SetNameText(gameItem.name);
             compendiumEntries[i].SetDescriptionText(gameItem.Description);
+            compendiumEntries[i].gameObject.SetActive(true);
         }
 
     }
