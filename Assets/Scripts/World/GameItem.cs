@@ -9,6 +9,7 @@ using UnityEngine;
 public class GameItem : ScriptableObject
 {
     [SerializeField] private string id;
+    [SerializeField] [TextArea] private string description;
     [SerializeField] private Sprite icon;
     [SerializeField] private TerrainTile tile;
     [SerializeField] private GameObject prefab;
@@ -24,6 +25,7 @@ public class GameItem : ScriptableObject
 
     public string Id => id;
     public string Name => name; // Object.name, the name in the inspector
+    public string Description => description;
     public Sprite Icon => icon;
     public TerrainTile Tile => tile;
     public GameObject Prefab => prefab;

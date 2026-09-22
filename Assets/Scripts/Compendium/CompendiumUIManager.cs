@@ -68,7 +68,7 @@ public class CompendiumUIManager : MonoBehaviour {
 
             compendiumEntries[i].SetImage(gameItem.Icon);
             compendiumEntries[i].SetNameText(gameItem.name);
-            compendiumEntries[i].SetDescriptionText("lorem ipsum");
+            compendiumEntries[i].SetDescriptionText(gameItem.Description);
         }
 
     }
