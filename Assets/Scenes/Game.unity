@@ -3847,7 +3847,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_Pivot.x
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_Pivot.y
@@ -3855,27 +3855,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_AnchorMin.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3886,32 +3878,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -3.58383
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -10
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -6624,7 +6592,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_Pivot.x
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_Pivot.y
@@ -6636,7 +6604,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_AnchorMin.x
@@ -6644,15 +6612,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6663,32 +6623,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -3.58383
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 1181419349032186358, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -6988,6 +6924,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8959397934659923588, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
       propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8970594909436257138, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
+      propertyPath: m_Color.g
+      value: 0.22352941
+      objectReference: {fileID: 0}
+    - target: {fileID: 8970594909436257138, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
+      propertyPath: m_Color.r
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9000800821489009531, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
@@ -136933,7 +136877,6 @@ GameObject:
   - component: {fileID: 1666664041}
   - component: {fileID: 1666664040}
   - component: {fileID: 1666664045}
-  - component: {fileID: 1666664044}
   m_Layer: 5
   m_Name: Compendium Container Panel
   m_TagString: Untagged
@@ -136975,7 +136918,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.97663724, b: 0.83584905, a: 1}
+  m_Color: {r: 0.9254902, g: 0.89411765, b: 0.8039216, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -137000,32 +136943,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1666664038}
   m_CullTransparentMesh: 1
---- !u!114 &1666664044
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1666664038}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.HorizontalLayoutGroup
-  m_Padding:
-    m_Left: 10
-    m_Right: 10
-    m_Top: 10
-    m_Bottom: 10
-  m_ChildAlignment: 4
-  m_Spacing: 32
-  m_ChildForceExpandWidth: 1
-  m_ChildForceExpandHeight: 1
-  m_ChildControlWidth: 1
-  m_ChildControlHeight: 1
-  m_ChildScaleWidth: 0
-  m_ChildScaleHeight: 0
-  m_ReverseArrangement: 0
 --- !u!225 &1666664045
 CanvasGroup:
   m_ObjectHideFlags: 0
