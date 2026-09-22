@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 3613454018758440436}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.444, z: 0}
+  m_LocalPosition: {x: 0, y: 0.4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -51,7 +51,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.7, y: 0.77, z: 0.7}
+  m_Size: {x: 1, y: 0.8, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &8202063350275754688
 GameObject:
@@ -150,6 +150,7 @@ MonoBehaviour:
   hoverRayDistance: 1000
   yawTarget: {fileID: 5362821762151227219}
   yawOffset: 0
+  spineFacing: {x: 0, y: -1, z: 0}
   openDuration: 0.35
   openEase: 27
   closeEase: 7
@@ -161,6 +162,11 @@ MonoBehaviour:
   flipClearance: 2
   flipIntervalMin: 3
   flipIntervalMax: 6
+  looseSheetsHideAt: 0.25
+  readDistance: 3
+  readOpenAngle: 90
+  readDuration: 0.6
+  readEase: 7
 --- !u!1001 &5613218549347612856
 PrefabInstance:
   m_ObjectHideFlags: 0

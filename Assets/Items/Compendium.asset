@@ -17,5 +17,6 @@ MonoBehaviour:
   tile: {fileID: 11400000, guid: 033db43898455b3f6abeb4007e3dc393, type: 2}
   prefab: {fileID: 8202063350275754688, guid: cdb433820f45695459e30bcdf0ec4530, type: 3}
   placeSound: {fileID: 0}
-  placedOnTags: []
+  placedOnTags:
+  - grass
   antiPlacedOnTags: []
