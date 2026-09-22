@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class CompendiumUIManager : MonoBehaviour {
 
+    private static CompendiumUIManager instance;
+    public static CompendiumUIManager Instance{ get { return instance; }}
+
     [SerializeField] private GameObject compendium;
     private CanvasGroup compendiumCanvasGroup;
 
@@ -11,6 +14,16 @@ public class CompendiumUIManager : MonoBehaviour {
     [SerializeField] private CompendiumEntry[] compendiumEntries;
 
 
+    public void Awake() {
+        if (instance != null && instance != this) {
+            Debug.LogWarning("Found more than one CompendiumUIManager in the scene - destroying newest!!");
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
+    }
+
     private void Start() {
         compendiumCanvasGroup = compendium.GetComponent<CanvasGroup>();
         compendiumCanvasGroup.alpha = 0f;
@@ -18,10 +31,19 @@ public class CompendiumUIManager : MonoBehaviour {
     }
 
 
+    public void OnOpenCloseCompendium(bool isReading) {
+        if (isReading) {
+            OnOpenCompendium();
+        } else {
+            OnCloseCompendium();
+        }
+    }
+
+
     public void OnOpenCompendium() {
         compendiumCanvasGroup.alpha = 0f;
         compendium.SetActive(true);
-        compendiumCanvasGroup.DOFade(1f, fadeDuration).SetEase(Ease.InSine).WaitForCompletion(); //may need .SetUpdate(true) if we want to pause time with time scale whilst it's open
+        compendiumCanvasGroup.DOFade(1f, fadeDuration).SetEase(Ease.InQuad).WaitForCompletion(); //may need .SetUpdate(true) if we want to pause time with time scale whilst it's open
         FillCompendium();
     }
 

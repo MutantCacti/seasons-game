@@ -227,6 +227,7 @@ public class BookAnimator : MonoBehaviour
         if (!IsHovered()) return;
 
         SetRead(!IsReading);
+        CompendiumUIManager.Instance.OnOpenCloseCompendium(!IsReading);
     }
 
 
