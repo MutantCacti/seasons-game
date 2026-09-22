@@ -1,54 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-1890437522
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1793132071}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 81e6974ed7da4653aec5b53a3f513851, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EntityManager
-  terrainGrid: {fileID: 1793132076}
-  registry: {fileID: 11400000, guid: 03db0fd31fcdc6297b2946be5ba96786, type: 2}
-  entityParent: {fileID: 0}
-  worldFixtures: {fileID: 11400000, guid: 9681ae7c80c44084a386e96ef65aee4f, type: 2}
---- !u!114 &-1438906125
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1793132071}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bea7f5d4d13044309f36bada5ea4d300, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlacementController
-  terrainGrid: {fileID: 1793132076}
-  entityManager: {fileID: -1890437522}
-  inventoryManager: {fileID: 230018482}
-  viewCamera: {fileID: 1764824870}
-  cameraController: {fileID: 1764824873}
-  terrainMask:
-    serializedVersion: 2
-    m_Bits: 256
-  dropRayDistance: 1000
-  ghostMaterial: {fileID: 2100000, guid: 7e6606b7956a4fb0a319b6aa6553dd1b, type: 2}
-  defaultPlaceSound: {fileID: 11400000, guid: 85c9fc90cad5e589985cfe7f0a72b638, type: 2}
-  rippleSprite: {fileID: -7815652836739853191, guid: 01e5bbf074dd5dbecb003fbe0821ebfd, type: 3}
-  rippleMaterial: {fileID: 2100000, guid: 7e6606b7956a4fb0a319b6aa6553dd1b, type: 2}
-  rippleColour: {r: 1, g: 1, b: 1, a: 0.8}
-  rippleDiameter: 1.4
-  rippleDuration: 0.25
-  growDuration: 0.08
-  growSettleDuration: 0.07
-  growOvershoot: 1.1
-  shakeMagnitude: 0.02
-  shakeDuration: 0.08
 --- !u!29 &1
 OcclusionCullingSettings:
   m_ObjectHideFlags: 0
@@ -168,6 +119,39 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &734623
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 734624}
+  m_Layer: 0
+  m_Name: Managers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &734624
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 734623}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.18546, y: 0, z: -3.57839}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1689511886}
+  - {fileID: 899837240}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &23038410
 GameObject:
   m_ObjectHideFlags: 0
@@ -6309,6 +6293,71 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 1495480416097639654, guid: 4ef0fff1523ce3642b8133ae457f506b, type: 3}
   m_PrefabInstance: {fileID: 883996420}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &899837239
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 899837240}
+  - component: {fileID: 899837241}
+  m_Layer: 0
+  m_Name: PlacementController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &899837240
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 899837239}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 734624}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &899837241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 899837239}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bea7f5d4d13044309f36bada5ea4d300, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlacementController
+  terrainGrid: {fileID: 1793132076}
+  entityManager: {fileID: 1689511887}
+  inventoryManager: {fileID: 230018482}
+  viewCamera: {fileID: 1764824870}
+  cameraController: {fileID: 1764824873}
+  terrainMask:
+    serializedVersion: 2
+    m_Bits: 256
+  dropRayDistance: 1000
+  ghostMaterial: {fileID: 2100000, guid: 7e6606b7956a4fb0a319b6aa6553dd1b, type: 2}
+  defaultPlaceSound: {fileID: 11400000, guid: 85c9fc90cad5e589985cfe7f0a72b638, type: 2}
+  rippleSprite: {fileID: -7815652836739853191, guid: 01e5bbf074dd5dbecb003fbe0821ebfd, type: 3}
+  rippleMaterial: {fileID: 2100000, guid: 7e6606b7956a4fb0a319b6aa6553dd1b, type: 2}
+  rippleColour: {r: 1, g: 1, b: 1, a: 0.8}
+  rippleDiameter: 1.4
+  rippleDuration: 0.25
+  growDuration: 0.08
+  growSettleDuration: 0.07
+  growOvershoot: 1.1
+  shakeMagnitude: 0.02
+  shakeDuration: 0.08
 --- !u!1001 &962270287
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -137320,6 +137369,54 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!1 &1689511885
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1689511886}
+  - component: {fileID: 1689511887}
+  m_Layer: 0
+  m_Name: EntityManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1689511886
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1689511885}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 734624}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1689511887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1689511885}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81e6974ed7da4653aec5b53a3f513851, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityManager
+  terrainGrid: {fileID: 1793132076}
+  registry: {fileID: 11400000, guid: 03db0fd31fcdc6297b2946be5ba96786, type: 2}
+  entityParent: {fileID: 0}
+  worldFixtures: {fileID: 11400000, guid: 9681ae7c80c44084a386e96ef65aee4f, type: 2}
 --- !u!1 &1764824868
 GameObject:
   m_ObjectHideFlags: 0
@@ -137636,8 +137733,6 @@ GameObject:
   - component: {fileID: 1793132075}
   - component: {fileID: 1793132074}
   - component: {fileID: 1793132077}
-  - component: {fileID: -1890437522}
-  - component: {fileID: -1438906125}
   m_Layer: 0
   m_Name: Grid
   m_TagString: Untagged
@@ -138181,7 +138276,8 @@ MonoBehaviour:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1764824871}
+  - {fileID: 734624}
   - {fileID: 1484790765}
+  - {fileID: 1764824871}
   - {fileID: 1793132073}
   - {fileID: 650158107}
