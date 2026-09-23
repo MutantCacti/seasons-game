@@ -15,7 +15,10 @@ public class InGameOptionsHelper : MonoBehaviour {
     }
 
     private void OnDisable() {
-        InputManager.Instance.onPause -= OnPause;
+        if (InputManager.Instance != null)
+        {
+            InputManager.Instance.onPause -= OnPause;
+        }
     }
 
 

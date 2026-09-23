@@ -18,6 +18,7 @@ public class InventoryManager : MonoBehaviour {
 
     public event Action SlotsChanged;
 
+    public event Action<GameItem, int> ItemConsumed;
 
     public int SlotCount { get { return itemInventorySlots != null ? itemInventorySlots.Length : 0; } }
 
@@ -84,6 +85,8 @@ public class InventoryManager : MonoBehaviour {
         if (!Has(item, quantity)) return false;
 
         if (!SetCount(item, GetCount(item) - quantity)) return false;
+
+        ItemConsumed?.Invoke(item, quantity);
 
         Save();
         return true;

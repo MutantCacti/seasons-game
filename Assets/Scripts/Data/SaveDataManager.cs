@@ -101,6 +101,7 @@ public class SaveDataManager : MonoBehaviour
             if (loaded.terrain == null) loaded.terrain = new TerrainSaveData();
             if (loaded.entities == null) loaded.entities = new EntitySaveData();
             if (loaded.inventory == null) loaded.inventory = new SerializableDictionary<string, int>();
+            if (loaded.puzzles == null) loaded.puzzles = new PuzzleSaveData();
 
             return loaded;
         }
