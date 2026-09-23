@@ -77,6 +77,8 @@ public class PuzzleManager : MonoBehaviour
     private float softLockCheckAt;
     private bool softLockCheckScheduled;
 
+    private bool warnedAboutMissingNotifications;
+
 
     public bool CompletionEnabled { get { return completionEnabled; } }
     public PuzzleRegistry Registry { get { return registry; } }
@@ -246,9 +248,31 @@ public class PuzzleManager : MonoBehaviour
                 $"so the save cannot record which entity did it", source);
         }
 
-        GrantUnlocks(puzzle);
+        // The next puzzles now unlock when the player opens the completion ping, not here. Without a
+        // NotificationManager (a test scene, say) they unlock straight away so progress never stalls.
+        NotificationManager notifications = NotificationManager.Instance;
+
+        if (notifications == null)
+        {
+            if (!warnedAboutMissingNotifications)
+            {
+                warnedAboutMissingNotifications = true;
+                Debug.LogWarning("PuzzleManager: no NotificationManager in the scene, so completed puzzles " +
+                    "unlock the next ones immediately instead of through a ping", this);
+            }
+
+            GrantUnlocks(puzzle);
+        }
 
         WriteThrough();
+
+        // after the write-through, so the notification never reaches disk ahead of the completion
+        if (notifications != null)
+        {
+            notifications.Withdraw(NotificationType.FailPuzzle, puzzle);
+            notifications.Submit(NotificationType.CompletePuzzle, source, puzzle);
+        }
+
         Save();
 
         OnPuzzleComplete?.Invoke(puzzle);
@@ -417,6 +441,17 @@ public class PuzzleManager : MonoBehaviour
                 $"and is still incomplete, so it is flagged as soft locked", puzzle);
 
             OnPuzzleSoftLocked?.Invoke(puzzle);
+
+            // The ping points at the book, which is an entity: its EntityId is on the prefab root, the
+            // same object as CompendiumUIManager. Missing, the ping parks above the inventory instead.
+            if (NotificationManager.Instance != null)
+            {
+                EntityId compendium = CompendiumUIManager.Instance != null
+                    ? CompendiumUIManager.Instance.GetComponentInParent<EntityId>()
+                    : null;
+
+                NotificationManager.Instance.Submit(NotificationType.FailPuzzle, compendium, puzzle);
+            }
         }
 
         pendingSoftLockChecks.Clear();
