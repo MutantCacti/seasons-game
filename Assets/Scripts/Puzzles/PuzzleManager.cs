@@ -7,9 +7,6 @@ using UnityEngine;
 // world scripts call Complete(puzzle) when they decide the condition has been met
 // This manager is the only thing allowed to say no
 
-// Runs after the default-order scripts (TerrainGrid, EntityManager, InventoryManager, CameraController)
-// so that the world and the inventory are fully built before the starting puzzles are seeded
-[DefaultExecutionOrder(100)]
 public class PuzzleManager : MonoBehaviour
 {
     private static PuzzleManager instance;
@@ -19,6 +16,9 @@ public class PuzzleManager : MonoBehaviour
     [SerializeField] private PuzzleRegistry registry;
 
     [SerializeField] private InventoryManager inventoryManager;
+
+    // How long the manager waits after the last consumption before deciding a puzzle is stuck
+    [SerializeField] private float softLockGraceSeconds = 0.5f;
 
 
     public event Action<Puzzle> OnPuzzleComplete;
@@ -31,14 +31,20 @@ public class PuzzleManager : MonoBehaviour
     private readonly HashSet<Puzzle> unlocked = new HashSet<Puzzle>();
     private readonly HashSet<Puzzle> completed = new HashSet<Puzzle>();
 
-    // puzzles already announced as soft locked in case you missed the event
-    private readonly HashSet<Puzzle> announcedSoftLocks = new HashSet<Puzzle>();
+    // puzzles the manager has settled on being stuck, and therefore announced
+    private readonly HashSet<Puzzle> softLocked = new HashSet<Puzzle>();
+
+    // active puzzles waiting out the grace period before being judged
+    private readonly HashSet<Puzzle> pendingSoftLockChecks = new HashSet<Puzzle>();
 
     private readonly PuzzleLedger ledger = new PuzzleLedger();
 
     private readonly List<Puzzle> charged = new List<Puzzle>();
 
     private bool completionEnabled = true;
+
+    private float softLockCheckAt;
+    private bool softLockCheckScheduled;
 
 
     public bool CompletionEnabled { get { return completionEnabled; } }
@@ -89,6 +95,18 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
+    // Only does anything once a soft-lock judgement has been queued
+    private void Update()
+    {
+        if (!softLockCheckScheduled) return;
+        if (Time.time < softLockCheckAt) return;
+
+        softLockCheckScheduled = false;
+
+        EvaluateSoftLocks();
+    }
+
+
     // MARK: queries
 
 
@@ -111,13 +129,12 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
-    // True when every ingredient the puzzle required has been consumed
-    // and nobody has submitted its completion
+    // True once the manager has settled on the puzzle being stuck. Deliberately not the same as "the
+    // ledger is exhausted": that goes true the instant the last ingredient is spent, which is usually
+    // before the placement that spent it has finished being handled.
     public bool IsSoftLocked(Puzzle puzzle)
     {
-        if (!IsActive(puzzle)) return false;
-
-        return ledger.IsExhausted(puzzle);
+        return puzzle != null && softLocked.Contains(puzzle);
     }
 
 
@@ -165,7 +182,10 @@ public class PuzzleManager : MonoBehaviour
         // all this must happen before the event is invoked
         completed.Add(puzzle);
         ledger.Forget(puzzle);
-        announcedSoftLocks.Remove(puzzle);
+
+        // no longer stuck, and no longer worth judging
+        softLocked.Remove(puzzle);
+        pendingSoftLockChecks.Remove(puzzle);
 
         // all this must happen before the event is invoked
         if (puzzle.Unlocks != null)
@@ -246,13 +266,44 @@ public class PuzzleManager : MonoBehaviour
     {
         ledger.Charge(item, quantity, charged);
 
-        for (int i = 0; i < charged.Count; i++)
-        {
-            Puzzle puzzle = charged[i];
+        if (charged.Count == 0) return;
 
-            // a puzzle that completes later still completes
-            if (!IsSoftLocked(puzzle)) continue;
-            if (!announcedSoftLocks.Add(puzzle)) continue;
+        WriteThrough();
+
+        // Judged a grace period from now rather than immediately: the placement that just spent the
+        // final ingredient can complete the puzzle further down this very call stack
+        ScheduleSoftLockCheck();
+    }
+
+
+    // Queues every active puzzle to be judged once the world has settled. Re-queueing one that is
+    // already flagged is harmless, because the flag is only raised on the transition.
+    private void ScheduleSoftLockCheck()
+    {
+        pendingSoftLockChecks.Clear();
+
+        foreach (Puzzle puzzle in unlocked)
+        {
+            if (completed.Contains(puzzle)) continue;
+
+            pendingSoftLockChecks.Add(puzzle);
+        }
+
+        if (pendingSoftLockChecks.Count == 0) return;
+
+        softLockCheckAt = Time.time + softLockGraceSeconds;
+        softLockCheckScheduled = true;
+    }
+
+
+    private void EvaluateSoftLocks()
+    {
+        foreach (Puzzle puzzle in pendingSoftLockChecks)
+        {
+            // a puzzle completed during the grace period was never stuck
+            if (!IsActive(puzzle)) continue;
+            if (!ledger.IsExhausted(puzzle)) continue;
+            if (!softLocked.Add(puzzle)) continue;
 
             Debug.LogWarning($"PuzzleManager: '{puzzle.name}' has spent every ingredient it was given " +
                 $"and is still incomplete, so it is flagged as soft locked", puzzle);
@@ -260,9 +311,7 @@ public class PuzzleManager : MonoBehaviour
             OnPuzzleSoftLocked?.Invoke(puzzle);
         }
 
-        if (charged.Count == 0) return;
-
-        WriteThrough();
+        pendingSoftLockChecks.Clear();
     }
 
 
@@ -295,6 +344,10 @@ public class PuzzleManager : MonoBehaviour
         else Restore(saved);
 
         completionEnabled = true;
+
+        // Judge what was restored once the world has settled, so a puzzle that was already stuck when
+        // the game was closed is flagged without needing another consumption to trigger it
+        ScheduleSoftLockCheck();
     }
 
 
