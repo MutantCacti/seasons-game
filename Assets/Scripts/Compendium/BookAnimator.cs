@@ -135,6 +135,7 @@ public class BookAnimator : MonoBehaviour
     private PartState lastFlipped;
     private float nextFlipTime;
     private bool wasHovered;
+    private bool pointerHovering;
 
     // Anything else that counts as the pointer being on the book, e.g. UI in front of it, which
     // IsHovered ignores on purpose. A set, so several sources cannot fight over one flag.
@@ -528,12 +529,18 @@ public class BookAnimator : MonoBehaviour
     private void UpdateHover()
     {
         // while the book is out at the camera the click owns the pose, so the hover lets it be
-        if (read > 0.0f) return;
+        if (read > 0.0f)
+        {
+            pointerHovering = false;
+            return;
+        }
 
         // a source destroyed without letting go would hold the book open forever
         if (externalHover.Count > 0) externalHover.RemoveWhere(IsDeadSource);
 
-        bool hovered = IsHovered() || externalHover.Count > 0;
+        pointerHovering = IsHovered();
+
+        bool hovered = pointerHovering || externalHover.Count > 0;
 
         if (hovered == wasHovered) return;
 
@@ -990,6 +997,10 @@ public class BookAnimator : MonoBehaviour
 
 
     // MARK: hover
+
+
+    // The real pointer on the book, without any external hover
+    public bool IsPointerHovering { get { return pointerHovering; } }
 
 
     // Lets something other than the pointer hover the book. Every source that sets it must clear it.

@@ -68,6 +68,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     private float smoothedRoll;
 
     private bool pointerOver;
+    private bool grown;
     private BookAnimator hoveredBook;   // the book this ping is currently hovering on the player's behalf
 
 
@@ -164,7 +165,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public void OnPointerEnter(PointerEventData eventData)
     {
         pointerOver = true;
-        TweenPointerScale(pointerGrow);
+        RefreshGrow();
         UpdateBookHover();
     }
 
@@ -172,7 +173,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public void OnPointerExit(PointerEventData eventData)
     {
         pointerOver = false;
-        TweenPointerScale(1.0f);
+        RefreshGrow();
         UpdateBookHover();
     }
 
@@ -210,6 +211,20 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
         if (BookAnimator.Instance != null) BookAnimator.Instance.SetExternalHover(this, false);
 
         hoveredBook = null;
+    }
+
+
+    // Grows under the pointer, and a fail ping also grows while the pointer is on the book, so the
+    // pairing reads both ways
+    private void RefreshGrow()
+    {
+        bool want = pointerOver
+            || (type == NotificationType.FailPuzzle && BookAnimator.Instance != null && BookAnimator.Instance.IsPointerHovering);
+
+        if (want == grown) return;
+
+        grown = want;
+        TweenPointerScale(want ? pointerGrow : 1.0f);
     }
 
 
@@ -363,6 +378,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
         // leaving hover, suppression and so on all arrive here rather than as pointer events
         UpdateBookHover();
+        RefreshGrow();
     }
 
 
