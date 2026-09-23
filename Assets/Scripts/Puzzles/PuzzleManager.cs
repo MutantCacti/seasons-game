@@ -72,6 +72,8 @@ public class PuzzleManager : MonoBehaviour
 
     private bool completionEnabled = true;
 
+    private bool checkpointManagerWarningLogged;
+
     private float softLockCheckAt;
     private bool softLockCheckScheduled;
 
@@ -296,6 +298,17 @@ public class PuzzleManager : MonoBehaviour
         if (newlyUnlocked.Count == 0) return;
 
         WriteThrough();
+
+        if (CheckpointManager.Instance != null)
+        {
+            CheckpointManager.Instance.Capture(newlyUnlocked);
+        }
+        else if (!checkpointManagerWarningLogged)
+        {
+            checkpointManagerWarningLogged = true;
+            Debug.LogWarning("PuzzleManager: no CheckpointManager in the scene, so no checkpoint was captured");
+        }
+
         Save();
     }
 
