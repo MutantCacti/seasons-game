@@ -31,6 +31,10 @@ public class PuzzleManager : MonoBehaviour
     private readonly HashSet<Puzzle> unlocked = new HashSet<Puzzle>();
     private readonly HashSet<Puzzle> completed = new HashSet<Puzzle>();
 
+    // puzzle -> the guid of the entity that completed it. The runtime state is the source of truth:
+    // every save of this section is rebuilt from here by WriteThrough.
+    private readonly Dictionary<Puzzle, string> completedBy = new Dictionary<Puzzle, string>();
+
     // puzzles the manager has settled on being stuck, and therefore announced
     private readonly HashSet<Puzzle> softLocked = new HashSet<Puzzle>();
 
@@ -146,6 +150,22 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
+    // Which entity completed this puzzle. False when the completion was never attributed to one, or
+    // when the entity that did it is no longer in the world.
+    public bool TryGetCompletedBy(Puzzle puzzle, out EntityId entity)
+    {
+        entity = null;
+
+        if (puzzle == null) return false;
+
+        if (!completedBy.TryGetValue(puzzle, out string guid)) return false;
+
+        if (EntityManager.Instance == null) return false;
+
+        return EntityManager.Instance.TryGetEntity(guid, out entity);
+    }
+
+
     // MARK: gate
 
 
@@ -189,6 +209,14 @@ public class PuzzleManager : MonoBehaviour
         // no longer stuck, and no longer worth judging
         softLocked.Remove(puzzle);
         pendingSoftLockChecks.Remove(puzzle);
+
+        // a completion with no source is legal, it simply records nothing about who did it
+        if (source != null)
+        {
+            if (source.HasGuid) completedBy[puzzle] = source.Guid;
+            else Debug.LogError($"PuzzleManager: '{puzzle.name}' was completed by an entity with no guid, " +
+                $"so the save cannot record which entity did it", source);
+        }
 
         GrantUnlocks(puzzle);
 
@@ -387,6 +415,8 @@ public class PuzzleManager : MonoBehaviour
 
         completionEnabled = false;
 
+        completedBy.Clear();
+
         if (saved.IsEmpty) SeedStartingPuzzles();
         else Restore(saved);
 
@@ -469,6 +499,44 @@ public class PuzzleManager : MonoBehaviour
 
             ledger.Restore(puzzle, savedLedger.ingredients);
         }
+
+        RestoreCompletedBy(saved);
+    }
+
+
+    // Read after the completed list, because a row is meaningless unless its puzzle is in it
+    private void RestoreCompletedBy(PuzzleSaveData saved)
+    {
+        if (saved.completedBy == null) return;
+
+        for (int i = 0; i < saved.completedBy.Count; i++)
+        {
+            PuzzleCompletionSave entry = saved.completedBy[i];
+            if (entry == null) continue;
+
+            if (!registry.TryGetPuzzleById(entry.puzzleId, out Puzzle puzzle))
+            {
+                Debug.LogError($"PuzzleManager: the save says '{entry.puzzleId}' was completed by entity " +
+                    $"'{entry.entityGuid}', but no puzzle in '{registry.name}' has that id - dropping it", this);
+                continue;
+            }
+
+            if (!completed.Contains(puzzle))
+            {
+                Debug.LogError($"PuzzleManager: the save says '{puzzle.name}' was completed by entity " +
+                    $"'{entry.entityGuid}' but does not list it as completed - dropping it", this);
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(entry.entityGuid))
+            {
+                Debug.LogError($"PuzzleManager: the save attributes '{puzzle.name}' to an empty guid - " +
+                    $"dropping it", this);
+                continue;
+            }
+
+            completedBy[puzzle] = entry.entityGuid;
+        }
     }
 
 
@@ -493,6 +561,7 @@ public class PuzzleManager : MonoBehaviour
         saved.unlocked.Clear();
         saved.completed.Clear();
         saved.ledgers.Clear();
+        saved.completedBy.Clear();
 
         foreach (Puzzle puzzle in unlocked)
         {
@@ -506,6 +575,38 @@ public class PuzzleManager : MonoBehaviour
             if (!registry.TryGetIdByPuzzle(puzzle, out string id)) continue;
 
             saved.completed.Add(id);
+        }
+
+        // rebuilt from the runtime dictionary, so the file cannot disagree with what the manager knows
+        List<PuzzleCompletionSave> attributions = new List<PuzzleCompletionSave>();
+
+        foreach (KeyValuePair<Puzzle, string> attribution in completedBy)
+        {
+            if (attribution.Key == null) continue;
+            if (string.IsNullOrEmpty(attribution.Value)) continue;
+
+            if (!registry.TryGetIdByPuzzle(attribution.Key, out string attributedId))
+            {
+                Debug.LogError($"PuzzleManager: '{attribution.Key.name}' was completed by entity " +
+                    $"'{attribution.Value}', but it has no id in '{registry.name}', so the attribution " +
+                    $"cannot be saved", this);
+                continue;
+            }
+
+            attributions.Add(new PuzzleCompletionSave
+            {
+                puzzleId = attributedId,
+                entityGuid = attribution.Value,
+            });
+        }
+
+        // the dictionary enumerates in its own order, so sorting is what makes this section's file
+        // order deterministic
+        attributions.Sort(CompareAttributions);
+
+        for (int i = 0; i < attributions.Count; i++)
+        {
+            saved.completedBy.Add(attributions[i]);
         }
 
         foreach (Puzzle puzzle in unlocked)
@@ -555,5 +656,14 @@ public class PuzzleManager : MonoBehaviour
     private void Save()
     {
         if (SaveDataManager.Instance != null) SaveDataManager.Instance.Save();
+    }
+
+
+    private static int CompareAttributions(PuzzleCompletionSave a, PuzzleCompletionSave b)
+    {
+        int byPuzzle = string.CompareOrdinal(a != null ? a.puzzleId : "", b != null ? b.puzzleId : "");
+        if (byPuzzle != 0) return byPuzzle;
+
+        return string.CompareOrdinal(a != null ? a.entityGuid : "", b != null ? b.entityGuid : "");
     }
 }
