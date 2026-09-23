@@ -66,6 +66,10 @@ public class PlacementController : MonoBehaviour
     private bool hasPreview;
 
 
+    // Raised once a placement is fully committed and saved
+    public event Action<GameItem, Vector3Int, GameObject> ItemPlaced;
+
+
     private void Awake()
     {
         if (instance != null && instance != this)
@@ -253,6 +257,8 @@ public class PlacementController : MonoBehaviour
         }
 
         FlushSave();
+
+        ItemPlaced?.Invoke(item, cell, instance);
 
         PlayPlacementAnimation(item, cell, instance);
 
