@@ -71,8 +71,11 @@ public class LoadingScreenManager : MonoBehaviour {
         elapsedTime = 0f;
         AsyncOperation load = SceneManager.LoadSceneAsync(sceneName);
 
-        while (!load.isDone && elapsedTime < ANIMATION_HOLD_DURATION) {
-            elapsedTime += Time.deltaTime;
+        // hold until the load is done AND the minimum hold has passed, otherwise the slide-out
+        // runs during scene activation and the hitch makes it jump. Unscaled, because the
+        // pause menu sets timeScale to 0 and a scaled timer would never finish
+        while (!load.isDone || elapsedTime < ANIMATION_HOLD_DURATION) {
+            elapsedTime += Time.unscaledDeltaTime;
             yield return null;
         }
 
