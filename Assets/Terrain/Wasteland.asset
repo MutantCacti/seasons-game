@@ -17,6 +17,17 @@ MonoBehaviour:
   - wasteland
   FillVariants:
   - {fileID: -65760121, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: 764181272, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: -473751773, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: -2121456500, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: 718574110, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: 330189280, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: 1776370085, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: -658940260, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: -11524323, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: 1247290927, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: 471185842, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: 204293270, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
   VariantSeed: 99
   Edges:
     Slots:
