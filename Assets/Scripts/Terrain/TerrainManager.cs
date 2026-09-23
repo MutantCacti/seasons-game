@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+
 // Important notes:
 // the Grid sits at the origin with a 90 degree X rotation so grid x is world x, grid y is world z
 // and a level's height is world y. Tiles are exactly 1 unit by 1 unit in x and z, but levels
@@ -45,6 +46,8 @@ public partial class TerrainManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
+        instance = this;
 
         state = BuildStateFromTilemaps();
 
@@ -294,8 +297,6 @@ public partial class TerrainManager : MonoBehaviour
     // MARK: queries
 
 
-    // Reads the runtime state, not the tilemaps. The tilemaps stop being the truth the moment
-    // anything is remapped, which is what this whole path exists to do.
     public bool IsOccupied(Vector3Int cell)
     {
         return state.GetTile(cell) != null;
