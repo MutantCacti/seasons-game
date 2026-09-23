@@ -20,7 +20,7 @@ public class PlacementController : MonoBehaviour
     };
 
 
-    [SerializeField] private TerrainGrid terrainGrid;
+    [SerializeField] private TerrainManager terrainManager;
     [SerializeField] private EntityManager entityManager;
     [SerializeField] private InventoryManager inventoryManager;
     [SerializeField] private Camera viewCamera;
@@ -77,12 +77,12 @@ public class PlacementController : MonoBehaviour
 
         instance = this;
 
-        if (terrainGrid == null) terrainGrid = GetComponent<TerrainGrid>();
-        if (entityManager == null) entityManager = GetComponent<EntityManager>();
+        if (terrainManager == null) terrainManager = TerrainManager.Instance;
+        if (entityManager == null) entityManager = EntityManager.Instance;
         if (viewCamera == null) viewCamera = Camera.main;
         if (cameraController == null && viewCamera != null) cameraController = viewCamera.GetComponent<CameraController>();
 
-        if (terrainGrid == null) Debug.LogError("PlacementController: no TerrainGrid, so a drop has no cell to land in", this);
+        if (terrainManager == null) Debug.LogError("PlacementController: no TerrainManager, so a drop has no cell to land in", this);
         if (entityManager == null) Debug.LogError("PlacementController: no EntityManager, so a prefab item cannot be placed", this);
         if (viewCamera == null) Debug.LogError("PlacementController: no camera, so a drop cannot be raycast", this);
 
@@ -299,7 +299,7 @@ public class PlacementController : MonoBehaviour
     {
         cell = default;
 
-        if (dragging == null || terrainGrid == null || viewCamera == null) return false;
+        if (dragging == null || terrainManager == null || viewCamera == null) return false;
 
         // Releasing over the inventory panel will cancel the placement
         if (UIRaycast.IsPointerOverUI(screenPosition)) return false;
@@ -310,9 +310,9 @@ public class PlacementController : MonoBehaviour
 
         // Only the top of a column is ever a target
         // a wall face resolves to the tile that produced it
-        if (!terrainGrid.TryGetTopCellAt(hit.point, ray.direction, out cell)) return false;
+        if (!terrainManager.TryGetTopCellAt(hit.point, ray.direction, out cell)) return false;
 
-        TerrainTile target = terrainGrid.GetTile(cell);
+        TerrainTile target = terrainManager.GetTile(cell);
         if (target == null) return false;
 
         // already that tile, cannot place
@@ -357,7 +357,7 @@ public class PlacementController : MonoBehaviour
         // Tile first, because it can fail but spawn cannot
         if (item.Tile != null)
         {
-            if (terrainGrid == null || !terrainGrid.Remap(cell, item.Tile)) return false;
+            if (terrainManager == null || !terrainManager.Remap(cell, item.Tile)) return false;
         }
 
         if (item.Prefab != null && entityManager != null)
@@ -388,11 +388,11 @@ public class PlacementController : MonoBehaviour
         previewCell = cell;
         hasPreview = true;
 
-        if (dragging.Tile != null && terrainGrid != null) terrainGrid.PreviewCell(cell, dragging.Tile);
+        if (dragging.Tile != null && terrainManager != null) terrainManager.PreviewCell(cell, dragging.Tile);
 
-        if (ghost != null && terrainGrid != null)
+        if (ghost != null && terrainManager != null)
         {
-            ghost.transform.position = terrainGrid.CellToWorld(cell);
+            ghost.transform.position = terrainManager.CellToWorld(cell);
             ghost.SetActive(true);
         }
     }
@@ -406,7 +406,7 @@ public class PlacementController : MonoBehaviour
 
         hasPreview = false;
 
-        if (terrainGrid != null) terrainGrid.ClearPreview(previewCell);
+        if (terrainManager != null) terrainManager.ClearPreview(previewCell);
     }
 
 
@@ -513,7 +513,7 @@ public class PlacementController : MonoBehaviour
     // instance is null for a tile-only item.
     private void PlayPlacementAnimation(GameItem item, Vector3Int cell, GameObject instance)
     {
-        Vector3 worldPosition = terrainGrid != null ? terrainGrid.CellToWorld(cell) : Vector3.zero;
+        Vector3 worldPosition = terrainManager != null ? terrainManager.CellToWorld(cell) : Vector3.zero;
 
         if (instance != null) GrowFromBase(instance);
 

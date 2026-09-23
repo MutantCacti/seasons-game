@@ -5,7 +5,7 @@ using UnityEngine.Tilemaps;
 // Generates a TerrainRaster by converting tilemap sprite alpha into a bool bitmap
 public static class TerrainRasterizer
 {
-    public static TerrainRaster Rasterize(List<TerrainGrid.Level> levels, int pixelsPerTile, float alphaThreshold, UnityEngine.Object context)
+    public static TerrainRaster Rasterize(List<TerrainManager.Level> levels, int pixelsPerTile, float alphaThreshold, UnityEngine.Object context)
     {
         if (pixelsPerTile <= 0)
         {
@@ -19,7 +19,7 @@ public static class TerrainRasterizer
         int cellMinX = int.MaxValue, cellMinY = int.MaxValue;
         int cellMaxX = int.MinValue, cellMaxY = int.MinValue;
 
-        foreach (TerrainGrid.Level level in levels)
+        foreach (TerrainManager.Level level in levels)
         {
             BoundsInt bounds = level.tilemap.cellBounds;
 

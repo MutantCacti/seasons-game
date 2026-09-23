@@ -148,9 +148,10 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 236633207}
   - {fileID: 1689511886}
-  - {fileID: 899837240}
   - {fileID: 1074182840}
+  - {fileID: 899837240}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &23038410
@@ -3394,6 +3395,53 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventoryContainer
   inventory: {fileID: 230018482}
   layoutGroup: {fileID: 230018481}
+--- !u!1 &236633206
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 236633207}
+  - component: {fileID: 236633208}
+  m_Layer: 0
+  m_Name: TerrainManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &236633207
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 236633206}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 734624}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &236633208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 236633206}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0c11165838b2824b8cb0b7795a67b5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TerrainManager
+  registry: {fileID: 11400000, guid: 0b4821295401fba00850f71b2b671af1, type: 2}
+  visuals: {fileID: 1793132077}
+  tilemapRoot: {fileID: 1793132073}
 --- !u!1001 &257529031
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5678,7 +5726,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bea7f5d4d13044309f36bada5ea4d300, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlacementController
-  terrainGrid: {fileID: 1793132076}
+  terrainManager: {fileID: 236633208}
   entityManager: {fileID: 1689511887}
   inventoryManager: {fileID: 230018482}
   viewCamera: {fileID: 1764824870}
@@ -136051,7 +136099,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81e6974ed7da4653aec5b53a3f513851, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EntityManager
-  terrainGrid: {fileID: 1793132076}
+  terrainManager: {fileID: 236633208}
   registry: {fileID: 11400000, guid: 03db0fd31fcdc6297b2946be5ba96786, type: 2}
   entityParent: {fileID: 0}
   worldFixtures: {fileID: 11400000, guid: 9681ae7c80c44084a386e96ef65aee4f, type: 2}
@@ -136367,7 +136415,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1793132073}
   - component: {fileID: 1793132072}
-  - component: {fileID: 1793132076}
   - component: {fileID: 1793132075}
   - component: {fileID: 1793132074}
   - component: {fileID: 1793132077}
@@ -136447,20 +136494,6 @@ MonoBehaviour:
   bakedRenderers:
   - {fileID: 971058262}
   - {fileID: 268664225}
---- !u!114 &1793132076
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1793132071}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 614447f51c07f2d39ad936206fd11c0a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TerrainGrid
-  registry: {fileID: 11400000, guid: 0b4821295401fba00850f71b2b671af1, type: 2}
-  visuals: {fileID: 1793132077}
 --- !u!114 &1793132077
 MonoBehaviour:
   m_ObjectHideFlags: 0

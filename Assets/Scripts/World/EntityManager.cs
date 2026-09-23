@@ -9,7 +9,7 @@ public class EntityManager : MonoBehaviour
     public static EntityManager Instance { get { return instance; } }
 
 
-    [SerializeField] private TerrainGrid terrainGrid;
+    [SerializeField] private TerrainManager terrainManager;
     [SerializeField] private GameItemRegistry registry;
 
     // if this is null, EntityManager creates a new empty at the scene root
@@ -42,11 +42,11 @@ public class EntityManager : MonoBehaviour
 
         instance = this;
 
-        if (terrainGrid == null) terrainGrid = GetComponent<TerrainGrid>();
+        if (terrainManager == null) terrainManager = GetComponent<TerrainManager>();
 
-        if (terrainGrid == null)
+        if (terrainManager == null)
         {
-            Debug.LogError("EntityManager: no TerrainGrid, so a cell cannot be turned into a world position", this);
+            Debug.LogError("EntityManager: no TerrainManager, so a cell cannot be turned into a world position", this);
         }
 
         if (registry == null)
@@ -60,7 +60,7 @@ public class EntityManager : MonoBehaviour
     }
 
 
-    // resolving a fixture's level needs TerrainGrid's state, which it builds in
+    // resolving a fixture's level needs TerrainManager's state, which it builds in
     // its own Awake
     private void Start()
     {
@@ -85,7 +85,7 @@ public class EntityManager : MonoBehaviour
 
     private void LoadFromSave()
     {
-        if (terrainGrid == null || registry == null) return;
+        if (terrainManager == null || registry == null) return;
 
         SaveDataManager manager = SaveDataManager.Instance;
         if (manager == null || manager.SaveData == null) return;
@@ -112,7 +112,7 @@ public class EntityManager : MonoBehaviour
 
             // levels are keyed by height rather than index, so a save survives an elevation being
             // inserted into the terrain, which would shift every index above it
-            if (!terrainGrid.TryGetLevelAtMillimetres(entry.levelY, out int level))
+            if (!terrainManager.TryGetLevelAtMillimetres(entry.levelY, out int level))
             {
                 Debug.LogError($"EntityManager: the save holds '{entry.itemId}' at {entry.levelY}mm, " +
                     $"which is not a level in this terrain - dropping it", this);
@@ -141,7 +141,7 @@ public class EntityManager : MonoBehaviour
             return;
         }
 
-        if (terrainGrid == null) return;
+        if (terrainManager == null) return;
 
         int seeded = 0;
 
@@ -155,7 +155,7 @@ public class EntityManager : MonoBehaviour
                 continue;
             }
 
-            int level = terrainGrid.GetTopLevel(fixture.column.x, fixture.column.y);
+            int level = terrainManager.GetTopLevel(fixture.column.x, fixture.column.y);
 
             if (level < 0)
             {
@@ -190,12 +190,12 @@ public class EntityManager : MonoBehaviour
         // a tile-only item is a legal thing to place, it simply has no entity attached to it
         if (item.Prefab == null) return null;
 
-        if (terrainGrid == null) return null;
+        if (terrainManager == null) return null;
 
-        if (cell.y < 0 || cell.y >= terrainGrid.LevelCount)
+        if (cell.y < 0 || cell.y >= terrainManager.LevelCount)
         {
             Debug.LogError($"EntityManager: level {cell.y} is not a level in this terrain " +
-                $"(0 to {terrainGrid.LevelCount - 1}), so '{item.name}' cannot be spawned there", this);
+                $"(0 to {terrainManager.LevelCount - 1}), so '{item.name}' cannot be spawned there", this);
             return null;
         }
 
@@ -213,7 +213,7 @@ public class EntityManager : MonoBehaviour
                 itemId = id,
                 x = cell.x,
                 z = cell.z,
-                levelY = TerrainGrid.ToLevelMillimetres(terrainGrid.GetLevelHeight(cell.y))
+                levelY = TerrainManager.ToLevelMillimetres(terrainManager.GetLevelHeight(cell.y))
             });
         }
 
@@ -257,7 +257,7 @@ public class EntityManager : MonoBehaviour
 
     private GameObject CreateInstance(GameItem item, Vector3Int cell)
     {
-        GameObject instance = Instantiate(item.Prefab, terrainGrid.CellToWorld(cell), item.Prefab.transform.rotation, entityParent);
+        GameObject instance = Instantiate(item.Prefab, terrainManager.CellToWorld(cell), item.Prefab.transform.rotation, entityParent);
         instance.name = item.Prefab.name;
 
         live.Add(new LiveEntity { gameObject = instance, item = item, cell = cell });

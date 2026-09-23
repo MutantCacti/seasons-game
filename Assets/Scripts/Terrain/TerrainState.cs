@@ -3,9 +3,9 @@ using UnityEngine;
 
 // Invariant: the map never changes shape at runtime, so this is sized once and SetTile only ever
 // swaps the tile in an already-occupied cell.
-// State is a private class of TerrainGrid because nobody else should be calling SetTile!
+// State is a private class of TerrainManager because nobody else should be calling SetTile!
 // otherwise it will not get saved correctly to disk
-public partial class TerrainGrid
+public partial class TerrainManager
 {
     private class State
     {
@@ -42,7 +42,7 @@ public partial class TerrainGrid
         public int LevelCount { get { return levelHeights.Length; } }
 
 
-        // cell is (x, level, z); see TerrainGrid
+        // cell is (x, level, z); see TerrainManager
         public bool Contains(Vector3Int cell)
         {
             if (cell.y < 0 || cell.y >= levelHeights.Length) return false;
@@ -63,7 +63,7 @@ public partial class TerrainGrid
         }
 
 
-        // only reachable from inside TerrainGrid
+        // only reachable from inside TerrainManager
         public void SetTile(Vector3Int cell, TerrainTile tile)
         {
             if (!Contains(cell)) return;

@@ -16,7 +16,7 @@ public static class TerrainBaker
 
     public static void Bake(TerrainBakeSettings settings)
     {
-        List<TerrainGrid.Level> levels = TerrainGrid.DiscoverLevels(settings.transform);
+        List<TerrainManager.Level> levels = TerrainManager.DiscoverLevels(settings.transform);
         if (levels.Count == 0)
         {
             Debug.LogError("No tilemaps with tiles in them were found under the bake settings object", settings);
@@ -74,7 +74,7 @@ public static class TerrainBaker
         // one stamp for both maps: they share the map's occupancy and sprites, and it is what a load
         // compares against the scene's tilemaps to catch a map that was edited, or whose tiles were
         // re-sliced or reassigned, without re-baking
-        uint visualHash = TerrainGrid.VisualHash(levels);
+        uint visualHash = TerrainManager.VisualHash(levels);
 
         TerrainQuadMap topQuadMap = LoadOrCreateQuadMap(
             QuadMapPath(settings, sceneName, TOPS_SUFFIX),
@@ -228,7 +228,7 @@ public static class TerrainBaker
 
         // also point the grid at it, so the link shows in the inspector instead of only working
         // through Awake's GetComponent fallback
-        TerrainGrid grid = settings.GetComponent<TerrainGrid>();
+        TerrainManager grid = settings.GetComponent<TerrainManager>();
         if (grid == null) return;
 
         Undo.RecordObject(grid, "Bake Terrain");

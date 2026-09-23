@@ -10,10 +10,15 @@ using UnityEngine.Tilemaps;
 //
 // A terrain cell is a Vector3Int of (x, level, z), matching world axis order, where level is an
 // index into the level table rather than a height.
-public partial class TerrainGrid : MonoBehaviour
+public partial class TerrainManager : MonoBehaviour
 {
+    private static TerrainManager instance;
+    public static TerrainManager Instance { get { return instance; } }
+
+
     private const float LEVEL_THRESHOLD = 0.001f;  // tolerance within which to match a level's y position
     private const float HEIGHT_STEPS = 1000.0f;    // reciprocal of LEVEL_THRESHOLD, see SnapHeight
+
 
     public struct Level
     {
@@ -24,6 +29,8 @@ public partial class TerrainGrid : MonoBehaviour
 
     [SerializeField] private TerrainTileRegistry registry;
     [SerializeField] private TerrainVisuals visuals;
+    [SerializeField] private Transform tilemapRoot;
+
 
     private List<Level> levels;
     private State state;
@@ -32,14 +39,24 @@ public partial class TerrainGrid : MonoBehaviour
 
     private void Awake()
     {
+        if (instance != this && instance != null)
+        {
+            Debug.LogWarning("TerrainManager: Found more than one TerrainManager in the scene - destroying newest!!");
+            Destroy(gameObject);
+            return;
+        }
+
         state = BuildStateFromTilemaps();
 
         if (registry == null)
         {
-            Debug.LogError("TerrainGrid: no TerrainTileRegistry assigned, so remaps can never be loaded or saved", this);
+            Debug.LogError("TerrainManager: no TerrainTileRegistry assigned, so remaps can never be loaded or saved", this);
         }
 
-        if (visuals == null) visuals = GetComponent<TerrainVisuals>();
+        if (visuals == null)
+        {
+            Debug.LogError("TerrainManager: no TerrainVisuals assigned, so remaps can't be done", this);
+        }
 
         if (visuals != null)
         {
@@ -47,12 +64,17 @@ public partial class TerrainGrid : MonoBehaviour
             visuals.Validate(VisualHash(Levels));
         }
 
+        if (tilemapRoot == null)
+        {
+            Debug.LogError("TerrainManager: no tilemapRoot assigned, so tilemaps can't be found", this);
+        }
+
         // SaveDataManager is in the persistent scene so its Awake has already deserialised by now
         saveData = SaveDataManager.Instance != null ? SaveDataManager.Instance.SaveData : null;
 
         if (saveData == null)
         {
-            Debug.LogWarning("TerrainGrid: no SaveDataManager in the scene, so remaps will not be saved", this);
+            Debug.LogWarning("TerrainManager: no SaveDataManager in the scene, so remaps will not be saved", this);
             saveData = new SaveData();
         }
 
@@ -74,7 +96,7 @@ public partial class TerrainGrid : MonoBehaviour
     {
         get
         {
-            if (levels == null) levels = DiscoverLevels(transform);
+            if (levels == null) levels = DiscoverLevels(tilemapRoot);
             return levels;
         }
     }
@@ -256,7 +278,7 @@ public partial class TerrainGrid : MonoBehaviour
                 // Only TerrainTile's can be saved !!
                 if (!(tile is TerrainTile terrainTile))
                 {
-                    Debug.LogError($"TerrainGrid: '{tile.name}' in '{tilemap.name}' is not a TerrainTile, so it can never be saved", tile);
+                    Debug.LogError($"TerrainManager: '{tile.name}' in '{tilemap.name}' is not a TerrainTile, so it can never be saved", tile);
                     continue;
                 }
 
@@ -352,7 +374,7 @@ public partial class TerrainGrid : MonoBehaviour
         // rather than that the player is doing something new
         if (state.GetTile(cell) == null)
         {
-            Debug.LogError($"TerrainGrid: cell {cell} is not occupied, so it cannot be remapped", this);
+            Debug.LogError($"TerrainManager: cell {cell} is not occupied, so it cannot be remapped", this);
             return false;
         }
 
@@ -446,7 +468,7 @@ public partial class TerrainGrid : MonoBehaviour
         if (terrain.originX != state.originX || terrain.originZ != state.originZ ||
             terrain.width != state.width || terrain.depth != state.depth)
         {
-            Debug.LogWarning($"TerrainGrid: the authored map is now {state.width}x{state.depth} at " +
+            Debug.LogWarning($"TerrainManager: the authored map is now {state.width}x{state.depth} at " +
                 $"({state.originX}, {state.originZ}) but this save was written against " +
                 $"{terrain.width}x{terrain.depth} at ({terrain.originX}, {terrain.originZ}) - " +
                 $"remaps that fall outside it will be skipped", this);
@@ -455,7 +477,7 @@ public partial class TerrainGrid : MonoBehaviour
         int savedLevels = terrain.levelHeights != null ? terrain.levelHeights.Length : 0;
         if (savedLevels != state.levelHeights.Length)
         {
-            Debug.LogWarning($"TerrainGrid: this save was written against {savedLevels} levels and " +
+            Debug.LogWarning($"TerrainManager: this save was written against {savedLevels} levels and " +
                 $"the map now has {state.levelHeights.Length}", this);
         }
     }
@@ -475,7 +497,7 @@ public partial class TerrainGrid : MonoBehaviour
         {
             if (!TryGetLevelAtMillimetres(remap.levelY, out int level))
             {
-                Debug.LogWarning($"TerrainGrid: save names a level at {remap.levelY}mm which no longer " +
+                Debug.LogWarning($"TerrainManager: save names a level at {remap.levelY}mm which no longer " +
                     $"exists - skipping cell ({remap.x}, {remap.z})", this);
                 skipped++;
                 continue;
@@ -485,7 +507,7 @@ public partial class TerrainGrid : MonoBehaviour
 
             if (state.GetTile(cell) == null)
             {
-                Debug.LogWarning($"TerrainGrid: save remaps cell {cell}, which the authored map does " +
+                Debug.LogWarning($"TerrainManager: save remaps cell {cell}, which the authored map does " +
                     $"not occupy - skipping", this);
                 skipped++;
                 continue;
@@ -493,7 +515,7 @@ public partial class TerrainGrid : MonoBehaviour
 
             if (!registry.TryGetTileById(remap.tileId, out TerrainTile tile))
             {
-                Debug.LogWarning($"TerrainGrid: save names tile id '{remap.tileId}' which is not in " +
+                Debug.LogWarning($"TerrainManager: save names tile id '{remap.tileId}' which is not in " +
                     $"the registry - skipping cell {cell}", this);
                 skipped++;
                 continue;
@@ -506,7 +528,7 @@ public partial class TerrainGrid : MonoBehaviour
 
         if (skipped > 0)
         {
-            Debug.LogWarning($"TerrainGrid: applied {applied} remaps, skipped {skipped}", this);
+            Debug.LogWarning($"TerrainManager: applied {applied} remaps, skipped {skipped}", this);
         }
     }
 

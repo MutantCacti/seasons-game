@@ -31,7 +31,7 @@ public class TerrainVisuals : MonoBehaviour
     }
 
 
-    // Called by TerrainGrid once it has built its state, because that is the only thing that
+    // Called by TerrainManager once it has built its state, because that is the only thing that
     // knows whether the scene's tilemaps still match what was baked
     public void Validate(uint currentVisualHash)
     {
@@ -99,7 +99,7 @@ public class TerrainVisuals : MonoBehaviour
     }
 
 
-    // Lazy. it does not matter whether this runs before or after TerrainGrid's Awake
+    // Lazy. it does not matter whether this runs before or after TerrainManager's Awake
     private void EnsureInitialised()
     {
         if (initialised) return;
