@@ -10,12 +10,16 @@ public class GameItemRegistry : ScriptableObject
 {
     [SerializeField] private List<GameItem> items = new List<GameItem>();
 
+    // the editor orders the items by walking this registry's puzzle tree
+    [SerializeField] private PuzzleRegistry puzzleRegistry;
+
 
     [System.NonSerialized] private Dictionary<string, GameItem> itemById;
 
 
     public IReadOnlyList<GameItem> Items { get { return items; } }
     public int Count { get { return items != null ? items.Count : 0; } }
+    public PuzzleRegistry PuzzleRegistry { get { return puzzleRegistry; } }
 
 
     // MARK: lookup

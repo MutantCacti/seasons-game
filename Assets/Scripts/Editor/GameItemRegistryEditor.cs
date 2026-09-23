@@ -43,25 +43,29 @@ public class GameItemRegistryEditor : Editor
     {
         List<GameItem> found = FindAllItems();
 
-        // deterministic order
-        found.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+        int compendiumCount;
+        int unreachedCount;
+        int reachedCount;
+
+        List<GameItem> ordered = OrderItems(registry, found, out compendiumCount, out unreachedCount, out reachedCount);
 
         Undo.RecordObject(registry, "Gather Game Items");
 
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("items");
 
-        list.arraySize = found.Count;
-        for (int i = 0; i < found.Count; i++)
+        list.arraySize = ordered.Count;
+        for (int i = 0; i < ordered.Count; i++)
         {
-            list.GetArrayElementAtIndex(i).objectReferenceValue = found[i];
+            list.GetArrayElementAtIndex(i).objectReferenceValue = ordered[i];
         }
 
         serialized.ApplyModifiedProperties();
 
         registry.Rebuild();
 
-        Debug.Log($"GameItemRegistry: gathered {found.Count} game items", registry);
+        Debug.Log($"GameItemRegistry: gathered {ordered.Count} items ({compendiumCount} compendium, " +
+            $"{unreachedCount} unreached, {reachedCount} from puzzle tree)", registry);
     }
 
 
@@ -163,6 +167,124 @@ public class GameItemRegistryEditor : Editor
         {
             Debug.LogError($"GameItemRegistry: {problems} problem(s) found", registry);
         }
+    }
+
+
+    // MARK: ordering
+
+
+    // Orders the gathered items into the order the player meets them: the compendium first, then
+    // items no puzzle reaches (A->Z), then the puzzle tree's ingredients depth by depth (A->Z
+    // within each depth). Falls back to a plain A->Z sort when the puzzle registry is missing.
+    private static List<GameItem> OrderItems(GameItemRegistry registry, List<GameItem> found,
+        out int compendiumCount, out int unreachedCount, out int reachedCount)
+    {
+        compendiumCount = 0;
+        unreachedCount = 0;
+        reachedCount = 0;
+
+        PuzzleRegistry puzzleRegistry = registry.PuzzleRegistry;
+
+        if (puzzleRegistry == null)
+        {
+            Debug.LogWarning("GameItemRegistry: puzzleRegistry is null, so items are gathered in plain A->Z order", registry);
+
+            found.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+            return found;
+        }
+
+        PuzzleTreeWalker.Result walk = PuzzleTreeWalker.Walk(puzzleRegistry.StartingPuzzles);
+
+        // step 3 first: collect every item the puzzle tree reaches, in meet order. An item that
+        // several depths reach keeps the place of its first appearance.
+        List<GameItem> reached = new List<GameItem>();
+        HashSet<GameItem> reachedSet = new HashSet<GameItem>();
+
+        for (int depth = 0; depth < walk.Levels.Count; depth++)
+        {
+            List<Puzzle> level = walk.Levels[depth];
+
+            List<GameItem> ingredients = new List<GameItem>();
+
+            for (int i = 0; i < level.Count; i++)
+            {
+                IReadOnlyList<Ingredient> puzzleIngredients = level[i].Ingredients;
+                if (puzzleIngredients == null) continue;
+
+                for (int j = 0; j < puzzleIngredients.Count; j++)
+                {
+                    GameItem item = puzzleIngredients[j].item;
+                    if (item == null) continue;
+
+                    ingredients.Add(item);
+                }
+            }
+
+            ingredients.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+
+            for (int i = 0; i < ingredients.Count; i++)
+            {
+                if (reachedSet.Add(ingredients[i])) reached.Add(ingredients[i]);
+            }
+        }
+
+        // step 1: the compendium leads, matched by id rather than name
+        GameItem compendium = null;
+
+        for (int i = 0; i < found.Count; i++)
+        {
+            if (found[i].Id == "compendium")
+            {
+                compendium = found[i];
+                break;
+            }
+        }
+
+        if (compendium == null)
+        {
+            Debug.LogWarning("GameItemRegistry: no item with id 'compendium', so nothing is forced first", registry);
+        }
+
+        // step 2: items no puzzle reaches, A->Z
+        List<GameItem> unreached = new List<GameItem>();
+
+        for (int i = 0; i < found.Count; i++)
+        {
+            GameItem item = found[i];
+            if (item == compendium) continue;
+            if (reachedSet.Contains(item)) continue;
+
+            unreached.Add(item);
+        }
+
+        unreached.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+
+        // assemble: compendium, then unreached, then reached in meet order
+        List<GameItem> ordered = new List<GameItem>(found.Count);
+        HashSet<GameItem> placed = new HashSet<GameItem>();
+        HashSet<GameItem> registered = new HashSet<GameItem>(found);
+
+        if (compendium != null && placed.Add(compendium)) ordered.Add(compendium);
+
+        for (int i = 0; i < unreached.Count; i++)
+        {
+            if (placed.Add(unreached[i])) ordered.Add(unreached[i]);
+        }
+
+        for (int i = 0; i < reached.Count; i++)
+        {
+            GameItem item = reached[i];
+            if (!registered.Contains(item)) continue;   // reached from the tree but not gathered here
+            if (!placed.Add(item)) continue;            // already placed, e.g. the compendium itself
+
+            ordered.Add(item);
+        }
+
+        compendiumCount = compendium != null ? 1 : 0;
+        unreachedCount = unreached.Count;
+        reachedCount = ordered.Count - compendiumCount - unreachedCount;
+
+        return ordered;
     }
 
 

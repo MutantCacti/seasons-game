@@ -43,18 +43,17 @@ public class PuzzleRegistryEditor : Editor
     {
         List<Puzzle> found = FindAllPuzzles();
 
-        // deterministic order
-        found.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+        List<Puzzle> ordered = OrderPuzzles(registry, found);
 
         Undo.RecordObject(registry, "Gather Puzzles");
 
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("puzzles");
 
-        list.arraySize = found.Count;
-        for (int i = 0; i < found.Count; i++)
+        list.arraySize = ordered.Count;
+        for (int i = 0; i < ordered.Count; i++)
         {
-            list.GetArrayElementAtIndex(i).objectReferenceValue = found[i];
+            list.GetArrayElementAtIndex(i).objectReferenceValue = ordered[i];
         }
 
         // startingPuzzles deliberately untouched: gathering must not silently change what a new world
@@ -63,7 +62,7 @@ public class PuzzleRegistryEditor : Editor
 
         registry.Rebuild();
 
-        Debug.Log($"PuzzleRegistry: gathered {found.Count} puzzles", registry);
+        Debug.Log($"PuzzleRegistry: gathered {ordered.Count} puzzles", registry);
     }
 
 
@@ -129,7 +128,7 @@ public class PuzzleRegistryEditor : Editor
             problems++;
         }
 
-        problems += ValidateReachability(registry, starting, byId);
+        problems += ValidateReachability(registry, byId);
 
         if (problems == 0)
         {
@@ -140,6 +139,60 @@ public class PuzzleRegistryEditor : Editor
         {
             Debug.LogError($"PuzzleRegistry: {problems} problem(s) found", registry);
         }
+    }
+
+
+    // MARK: ordering
+
+
+    // Orders the gathered puzzles into the order the player meets them: the starting puzzles, then
+    // what they unlock, and so on, each depth A->Z. Puzzles the walk never reaches sort last A->Z
+    // with a warning naming each one.
+    private static List<Puzzle> OrderPuzzles(PuzzleRegistry registry, List<Puzzle> found)
+    {
+        PuzzleTreeWalker.Result walk = PuzzleTreeWalker.Walk(registry.StartingPuzzles);
+
+        // flatten the levels into one meet-ordered list
+        List<Puzzle> reached = new List<Puzzle>();
+
+        for (int depth = 0; depth < walk.Levels.Count; depth++)
+        {
+            reached.AddRange(walk.Levels[depth]);
+        }
+
+        // puzzles in the project that no starting puzzle reaches go last
+        List<Puzzle> unreached = new List<Puzzle>();
+
+        for (int i = 0; i < found.Count; i++)
+        {
+            if (walk.Reached.Contains(found[i])) continue;
+
+            unreached.Add(found[i]);
+        }
+
+        unreached.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+
+        foreach (Puzzle puzzle in unreached)
+        {
+            Debug.LogWarning($"PuzzleRegistry: '{puzzle.name}' is not reachable from any starting puzzle, so it sorts last", puzzle);
+        }
+
+        // assemble: reached first in meet order, then unreached A->Z. The walk follows unlocks that
+        // point outside the registry, so only registered puzzles are written.
+        List<Puzzle> ordered = new List<Puzzle>(found.Count);
+        HashSet<Puzzle> registered = new HashSet<Puzzle>(found);
+
+        for (int i = 0; i < reached.Count; i++)
+        {
+            if (registered.Contains(reached[i])) ordered.Add(reached[i]);
+        }
+
+        for (int i = 0; i < unreached.Count; i++)
+        {
+            ordered.Add(unreached[i]);
+        }
+
+        return ordered;
     }
 
 
@@ -323,44 +376,17 @@ public class PuzzleRegistryEditor : Editor
 
 
     // Every registered puzzle has to be reachable from a starting puzzle, or nothing can ever unlock it
-    private static int ValidateReachability(PuzzleRegistry registry, SerializedProperty starting, Dictionary<string, Puzzle> byId)
+    private static int ValidateReachability(PuzzleRegistry registry, Dictionary<string, Puzzle> byId)
     {
         int problems = 0;
 
-        HashSet<Puzzle> reachable = new HashSet<Puzzle>();
-        Queue<Puzzle> pending = new Queue<Puzzle>();
-
-        for (int i = 0; i < starting.arraySize; i++)
-        {
-            Puzzle puzzle = starting.GetArrayElementAtIndex(i).objectReferenceValue as Puzzle;
-            if (puzzle == null) continue;
-
-            if (reachable.Add(puzzle)) pending.Enqueue(puzzle);
-        }
-
-        // Walk the unlock graph from the starting puzzles. Unlocks that point outside the registry are
-        // reported as errors by ValidateUnlocks; they are still followed here so a half-finished
-        // registry does not also report every child as unreachable.
-        while (pending.Count > 0)
-        {
-            Puzzle puzzle = pending.Dequeue();
-
-            IReadOnlyList<Puzzle> unlocks = puzzle.Unlocks;
-            if (unlocks == null) continue;
-
-            for (int i = 0; i < unlocks.Count; i++)
-            {
-                Puzzle next = unlocks[i];
-                if (next == null) continue;
-                if (!reachable.Add(next)) continue;
-
-                pending.Enqueue(next);
-            }
-        }
+        // Unlocks that point outside the registry are reported by ValidateUnlocks; the walk still
+        // follows them here so a half-finished registry does not also report every child as unreachable.
+        PuzzleTreeWalker.Result walk = PuzzleTreeWalker.Walk(registry.StartingPuzzles);
 
         foreach (KeyValuePair<string, Puzzle> pair in byId)
         {
-            if (reachable.Contains(pair.Value)) continue;
+            if (walk.Reached.Contains(pair.Value)) continue;
 
             Debug.LogError($"PuzzleRegistry: '{pair.Value.name}' can never be unlocked - no starting " +
                 $"puzzle reaches it", pair.Value);
