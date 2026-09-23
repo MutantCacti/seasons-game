@@ -12,6 +12,10 @@ public class BookAnimator : MonoBehaviour
     public static BookAnimator Instance { get { return instance; } }
 
 
+    // Raised when a read starts, whether from a click or from Open
+    public event Action Opened;
+
+
     [Serializable]
     private struct BookPart
     {
@@ -260,6 +264,9 @@ public class BookAnimator : MonoBehaviour
     // owns the way back. For the moment the click is the only thing calling this.
     public void SetRead(bool reading)
     {
+        // only the closed -> reading edge counts, so repeating an open does not raise it again
+        bool starting = reading && !readTarget;
+
         readTarget = reading;
 
         KillTween(ref readTween);
@@ -273,6 +280,8 @@ public class BookAnimator : MonoBehaviour
         // arrive early while the flight and the lay-back still take the whole read. Shaping read
         // itself would shorten the whole read instead.
         fanTween = reading ? OpenFan() : CloseFan();
+
+        if (starting) Opened?.Invoke();
     }
 
 

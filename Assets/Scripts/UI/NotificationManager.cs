@@ -74,6 +74,9 @@ public class NotificationManager : MonoBehaviour
     private Camera viewCamera;
     private Transform listener;
 
+    // the book whose Opened this is subscribed to; it is an entity, so it may arrive after this does
+    private BookAnimator subscribedBook;
+
     private readonly Vector3[] corners = new Vector3[4];
     private Rect usableArea;
     private Rect inventoryRect;
@@ -140,6 +143,7 @@ public class NotificationManager : MonoBehaviour
         }
 
         ResolveCamera();
+        TrackBook();
 
         if (PuzzleManager.Instance == null)
         {
@@ -157,6 +161,9 @@ public class NotificationManager : MonoBehaviour
     {
         if (PuzzleManager.Instance != null) PuzzleManager.Instance.OnPuzzlesLoaded -= RestorePings;
 
+        if (subscribedBook != null) subscribedBook.Opened -= OnBookOpened;
+        subscribedBook = null;
+
         if (suppressTween != null) suppressTween.Kill();
 
         if (instance == this) instance = null;
@@ -168,6 +175,7 @@ public class NotificationManager : MonoBehaviour
     private void LateUpdate()
     {
         ResolveCamera();
+        TrackBook();
         UpdateSuppressed();
         RefreshLayout();
 
@@ -308,6 +316,50 @@ public class NotificationManager : MonoBehaviour
                 Debug.LogError($"NotificationManager: no handler for notification type {type}", this);
                 break;
         }
+    }
+
+
+    // However the book was opened, the player is now looking at it, so every soft lock waiting to
+    // point them there is done. The fail handler is not run: the book is already opening.
+    //
+    // A fail ping click reaches here too, through its handler's Open(). By then that ping's entry is
+    // gone and the ping is exiting, so only the others are consumed.
+    private void OnBookOpened()
+    {
+        bool removed = false;
+
+        for (int i = saved.pending.Count - 1; i >= 0; i--)
+        {
+            NotificationSave entry = saved.pending[i];
+            if (entry == null || entry.type != NotificationType.FailPuzzle) continue;
+
+            saved.pending.RemoveAt(i);
+            removed = true;
+        }
+
+        if (removed) Save();
+
+        for (int i = 0; i < pings.Count; i++)
+        {
+            NotificationPing ping = pings[i];
+            if (ping == null || ping.IsExiting) continue;
+
+            if (ping.Type == NotificationType.FailPuzzle) ping.Exit();
+        }
+    }
+
+
+    private void TrackBook()
+    {
+        BookAnimator book = BookAnimator.Instance;
+
+        if (book == subscribedBook) return;
+
+        if (subscribedBook != null) subscribedBook.Opened -= OnBookOpened;
+
+        subscribedBook = book;
+
+        if (subscribedBook != null) subscribedBook.Opened += OnBookOpened;
     }
 
 
