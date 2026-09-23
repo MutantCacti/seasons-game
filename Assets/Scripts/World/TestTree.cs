@@ -13,9 +13,8 @@ public class TestTree : MonoBehaviour
 
 
     // A saved tree is instantiated inside EntityManager's Awake, which can happen before
-    // PlacementController and TerrainManager have their own Awake, so the subscription waits until
-    // here where both are up. The sweep at the end is what catches the tree's own placement: the drop
-    // that spawned it raised ItemPlaced before this Start ran.
+    // PlacementController, TerrainManager and PuzzleManager have their own Awake, so both
+    // subscriptions wait until here where they are all up.
     public void Start()
     {
         if (waterTile == null)
@@ -35,9 +34,17 @@ public class TestTree : MonoBehaviour
 
         PlacementController.Instance.ItemPlaced += TryCompletePuzzle;
 
-        // a tree placed next to water that was already there, or a saved tree loaded next to it, never
-        // gets an ItemPlaced of its own
-        SweepCheckPuzzle();
+        if (PuzzleManager.Instance == null)
+        {
+            Debug.LogError("TestTree: no PuzzleManager in the scene, so this tree can never hand in " +
+                "the puzzle it is watching", this);
+            return;
+        }
+
+        // Sticky: this fires now if loading has already finished, which covers the tree's own
+        // placement (the drop that spawned it raised ItemPlaced before this Start ran), and later if
+        // it has not, which covers a tree loaded from the save.
+        PuzzleManager.Instance.OnPuzzlesLoaded += SweepCheckPuzzle;
     }
 
 
@@ -46,6 +53,11 @@ public class TestTree : MonoBehaviour
         if (PlacementController.Instance != null)
         {
             PlacementController.Instance.ItemPlaced -= TryCompletePuzzle;
+        }
+
+        if (PuzzleManager.Instance != null)
+        {
+            PuzzleManager.Instance.OnPuzzlesLoaded -= SweepCheckPuzzle;
         }
     }
 

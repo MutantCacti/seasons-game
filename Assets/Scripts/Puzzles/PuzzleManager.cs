@@ -28,6 +28,31 @@ public class PuzzleManager : MonoBehaviour
     public event Action<Puzzle> OnPuzzleSoftLocked;
 
 
+    // Raised once puzzle state has been restored, which is the one safe moment for a world script to
+    // ask IsActive/IsCompleted: before this, a restored puzzle reads as inactive.
+    //
+    // Sticky on purpose: a world script that subscribes later - a tree placed after loading finished,
+    // say - is answered immediately instead of waiting for an event that has already been and gone.
+    public event Action OnPuzzlesLoaded
+    {
+        add
+        {
+            puzzlesLoaded += value;
+
+            if (isLoaded && value != null) value();
+        }
+        remove
+        {
+            puzzlesLoaded -= value;
+        }
+    }
+
+
+    private event Action puzzlesLoaded;
+
+    private bool isLoaded;
+
+
     private readonly HashSet<Puzzle> unlocked = new HashSet<Puzzle>();
     private readonly HashSet<Puzzle> completed = new HashSet<Puzzle>();
 
@@ -54,6 +79,7 @@ public class PuzzleManager : MonoBehaviour
     public bool CompletionEnabled { get { return completionEnabled; } }
     public PuzzleRegistry Registry { get { return registry; } }
     public int ActiveCount { get { return unlocked.Count - completed.Count; } }
+    public bool IsLoaded { get { return isLoaded; } }
 
 
     private void Awake()
@@ -389,19 +415,26 @@ public class PuzzleManager : MonoBehaviour
 
     private void LoadFromSave()
     {
-        if (registry == null) return;
+        if (registry == null)
+        {
+            // already reported in Awake, but it is still an end to loading
+            MarkLoaded();
+            return;
+        }
 
         SaveDataManager manager = SaveDataManager.Instance;
 
         if (manager == null || manager.SaveData == null)
         {
             Debug.LogError("PuzzleManager: no SaveDataManager in the scene, so puzzle progress cannot be loaded or saved", this);
+            MarkLoaded();
             return;
         }
 
         if (manager.SaveData.world == null)
         {
             Debug.LogError("PuzzleManager: the save has no world, so puzzle progress cannot be loaded or saved", this);
+            MarkLoaded();
             return;
         }
 
@@ -425,6 +458,22 @@ public class PuzzleManager : MonoBehaviour
         // Judge what was restored once the world has settled, so a puzzle that was already stuck when
         // the game was closed is flagged without needing another consumption to trigger it
         ScheduleSoftLockCheck();
+
+        MarkLoaded();
+    }
+
+
+    // Every exit from LoadFromSave goes through here, so a subscriber can never be left waiting for a
+    // load that gave up
+    private void MarkLoaded()
+    {
+        isLoaded = true;
+
+        // captured so a handler that subscribes or unsubscribes from inside the callback cannot
+        // change the list of handlers this invocation is calling
+        Action handlers = puzzlesLoaded;
+
+        handlers?.Invoke();
     }
 
 
