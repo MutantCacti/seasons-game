@@ -6,6 +6,12 @@ using UnityEngine;
 
 public class BookAnimator : MonoBehaviour
 {
+    // There is one book. It is a saved entity, so a duplicate is only warned about and never destroyed:
+    // destroying it would take it out of the world. Read IsReading off this.
+    private static BookAnimator instance;
+    public static BookAnimator Instance { get { return instance; } }
+
+
     [Serializable]
     private struct BookPart
     {
@@ -134,6 +140,7 @@ public class BookAnimator : MonoBehaviour
     private Vector3 readOffset;     // the book node's offset inside that pivot, for aiming its base
     private float readScale = 1.0f; // the pose multiplier that brings the widest part to readOpenAngle
     private float read;             // 0 closed, 1 fully out and laid back; drives the flight and the tip
+    private bool readTarget;        // where the last SetRead was heading; read itself is still > 0 while closing
     private float fan;              // 0 folded, 1 the pages at readOpenAngle; reaches 1 early
     private Tween readTween;
     private Tween fanTween;
@@ -156,6 +163,15 @@ public class BookAnimator : MonoBehaviour
 
     private void Awake()
     {
+        if (instance != null && instance != this)
+        {
+            Debug.LogWarning("BookAnimator: found more than one book - BookAnimator.Instance keeps the first", this);
+        }
+        else
+        {
+            instance = this;
+        }
+
         if (viewCamera == null) viewCamera = Camera.main;
 
         // captured once, so restarting the bob after a read settles the book at the same height
@@ -193,6 +209,8 @@ public class BookAnimator : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (instance == this) instance = null;
+
         KillTween(ref openTween);
         KillTween(ref bobTween);
         KillTween(ref readTween);
@@ -236,6 +254,8 @@ public class BookAnimator : MonoBehaviour
     // owns the way back. For the moment the click is the only thing calling this.
     public void SetRead(bool reading)
     {
+        readTarget = reading;
+
         KillTween(ref readTween);
         KillTween(ref fanTween);
 
@@ -247,6 +267,18 @@ public class BookAnimator : MonoBehaviour
         // arrive early while the flight and the lay-back still take the whole read. Shaping read
         // itself would shorten the whole read instead.
         fanTween = reading ? OpenFan() : CloseFan();
+    }
+
+
+    // Opens the book from code, exactly as clicking it does. Guarded on where the read is heading rather
+    // than on IsReading, which stays true for the whole close, so an open during the close still opens.
+    public void Open()
+    {
+        if (readTarget) return;
+
+        SetRead(true);
+
+        if (CompendiumUIManager.Instance != null) CompendiumUIManager.Instance.OnOpenCloseCompendium(true);
     }
 
 
