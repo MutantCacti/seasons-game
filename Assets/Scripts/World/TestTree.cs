@@ -101,8 +101,9 @@ public class TestTree : MonoBehaviour
         Debug.Log("Well done! You completed my puzzle!");
 
         // looked up now rather than cached in Start: EntityManager only adds the component after
-        // Instantiate returns, so this is the first point it is guaranteed to exist
-        EntityId entityId = GetComponent<EntityId>();
+        // Instantiate returns, so this is the first point it is guaranteed to exist. It lives on the
+        // entity root, which is an ancestor of this object rather than this object itself.
+        EntityId entityId = GetComponentInParent<EntityId>();
 
         if (entityId == null)
         {
