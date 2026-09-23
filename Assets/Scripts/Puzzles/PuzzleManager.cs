@@ -439,17 +439,7 @@ public class PuzzleManager : MonoBehaviour
             return;
         }
 
-        int seeded = 0;
-
-        for (int i = 0; i < starting.Count; i++)
-        {
-            if (Unlock(starting[i])) seeded++;
-        }
-
-        if (seeded == 0) return;
-
-        WriteThrough();
-        Save();
+        UnlockBatch(starting);
     }
 
 
