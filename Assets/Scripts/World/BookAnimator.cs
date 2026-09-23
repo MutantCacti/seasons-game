@@ -87,8 +87,17 @@ public class BookAnimator : MonoBehaviour
 
     // Degrees the widest part opens to when read, which scales onto every other part
     [SerializeField] private float readOpenAngle = 90.0f;
+
+    // The read still takes this long, but the pages reach 90 degrees at readFlatAt of the way
+    // through and hold there for the rest, so a menu drawn on them arrives on a settled book
     [SerializeField] private float readDuration = 0.6f;
+    [SerializeField] [Range(0.05f, 1.0f)] private float readFlatAt = 0.4f;
     [SerializeField] private Ease readEase = Ease.InOutQuad;
+
+    // How much bigger than the view the hover volume is while the book is out. Blown up like this a
+    // click anywhere the menu does not own lands on the book and closes it, and the menu still wins
+    // the pointer because its own raycasts are checked before physics.
+    [SerializeField] private float readColliderMargin = 1.1f;
 
 
     private const float SPINE_BASE_YAW = -90.0f;
@@ -124,10 +133,25 @@ public class BookAnimator : MonoBehaviour
     private Transform readPivot;    // runtime pivot, so the flight does not fight the bob or the yaw
     private Vector3 readOffset;     // the book node's offset inside that pivot, for aiming its base
     private float readScale = 1.0f; // the pose multiplier that brings the widest part to readOpenAngle
-    private float read;
+    private float read;             // 0 closed, 1 fully out and laid back; drives the flight and the tip
+    private float fan;              // 0 folded, 1 the pages at readOpenAngle; reaches 1 early
     private Tween readTween;
+    private Tween fanTween;
     private bool looseSheetsShown = true;
     private bool ambientRunning = true;
+
+    // The hover volume's authored shape and pose, so covering the view can be undone. The box is
+    // resized directly when it is one; anything else is scaled.
+    private BoxCollider hoverBox;
+    private Vector3 hoverBoxSize;
+    private Vector3 hoverBoxCenter;
+    private Vector3 hoverBaseSize;
+    private Vector3 hoverLocalPosition;
+    private Quaternion hoverLocalRotation;
+    private Vector3 hoverLocalScale;
+    private bool hoverIsTrigger;
+    private bool hoverPoseCaptured;
+    private bool hoverCovering;
 
 
     private void Awake()
@@ -139,6 +163,7 @@ public class BookAnimator : MonoBehaviour
 
         BuildStates();
         BuildReadPivot();
+        CaptureHoverPose();
         StartBob();
         ApplyAll();
     }
@@ -171,6 +196,7 @@ public class BookAnimator : MonoBehaviour
         KillTween(ref openTween);
         KillTween(ref bobTween);
         KillTween(ref readTween);
+        KillTween(ref fanTween);
 
         for (int i = 0; i < states.Count; i++)
         {
@@ -195,6 +221,7 @@ public class BookAnimator : MonoBehaviour
     private void LateUpdate()
     {
         UpdateRead();
+        UpdateReadCollider();
         UpdateAmbient();
         UpdateLooseSheets();
         UpdateYaw();
@@ -210,14 +237,54 @@ public class BookAnimator : MonoBehaviour
     public void SetRead(bool reading)
     {
         KillTween(ref readTween);
+        KillTween(ref fanTween);
 
         // scaled, so a pause freezes the book where it stands instead of animating it behind the menu
         readTween = DOTween.To(() => read, value => read = value, reading ? 1.0f : 0.0f, readDuration)
             .SetEase(readEase);
+
+        // Only the fan is pulled forward: it is what decides when the pages are flat, so the menu can
+        // arrive early while the flight and the lay-back still take the whole read. Shaping read
+        // itself would shorten the whole read instead.
+        fanTween = reading ? OpenFan() : CloseFan();
+    }
+
+
+    // Pages rise to flat over the first readFlatAt of the read and then hold there
+    private Tween OpenFan()
+    {
+        float flatAt = readDuration * Mathf.Clamp(readFlatAt, 0.05f, 1.0f);
+
+        return DOTween.To(() => fan, value => fan = value, 1.0f, flatAt).SetEase(Ease.OutQuad);
+    }
+
+
+    // The same thing backwards: the pages hold flat for the first (1 - readFlatAt) of the way out and
+    // only then fold, so they stay at 90 degrees for as long as the menu is still on them
+    private Tween CloseFan()
+    {
+        float foldAt = Mathf.Clamp(readFlatAt, 0.05f, 1.0f);
+        float foldDuration = readDuration * foldAt;
+        float hold = readDuration - foldDuration;
+
+        Sequence closing = DOTween.Sequence();
+        closing.AppendInterval(hold);
+        closing.Append(DOTween.To(() => fan, value => fan = value, 0.0f, foldDuration).SetEase(Ease.InQuad));
+
+        return closing;
     }
 
 
     public bool IsReading { get { return read > 0.0f; } }
+
+
+    // 0 closed, 1 fully out and laid back; the whole read takes readDuration
+    public float ReadAmount { get { return read; } }
+
+
+    // 0 folded, 1 with the pages at readOpenAngle. A menu sitting on the pages waits for this rather
+    // than for ReadAmount, because only the fan decides whether the pages are flat.
+    public float PagesFlat { get { return fan; } }
 
 
     private void OnLeftClickDown(bool pressed)
@@ -226,8 +293,11 @@ public class BookAnimator : MonoBehaviour
         if (!pressed || Time.timeScale <= 0.0f) return;
         if (!IsHovered()) return;
 
-        SetRead(!IsReading);
-        CompendiumUIManager.Instance.OnOpenCloseCompendium(!IsReading);
+        bool reading = !IsReading;
+
+        SetRead(reading);
+
+        if (CompendiumUIManager.Instance != null) CompendiumUIManager.Instance.OnOpenCloseCompendium(reading);
     }
 
 
@@ -252,6 +322,111 @@ public class BookAnimator : MonoBehaviour
         Vector3 local = readPivot.parent.InverseTransformPoint(point) - readOffset;
 
         readPivot.localPosition = Vector3.Lerp(Vector3.zero, local, read);
+    }
+
+
+    private void CaptureHoverPose()
+    {
+        if (hoverTarget == null) return;
+
+        Transform volume = hoverTarget.transform;
+
+        hoverLocalPosition = volume.localPosition;
+        hoverLocalRotation = volume.localRotation;
+        hoverLocalScale = volume.localScale;
+        hoverBaseSize = hoverTarget.bounds.size;
+        hoverIsTrigger = hoverTarget.isTrigger;
+
+        hoverBox = hoverTarget as BoxCollider;
+        if (hoverBox != null)
+        {
+            hoverBoxSize = hoverBox.size;
+            hoverBoxCenter = hoverBox.center;
+        }
+
+        hoverPoseCaptured = true;
+    }
+
+
+    // While the book is out at the camera the hover volume is stretched over the whole view, so a
+    // click anywhere the menu does not own lands on the book and closes it. It is put back the moment
+    // the book is home, so the closed book still only answers to a click on itself.
+    private void UpdateReadCollider()
+    {
+        if (!hoverPoseCaptured) return;
+
+        if (read <= 0.0f)
+        {
+            if (hoverCovering) RestoreHoverPose();
+            return;
+        }
+
+        if (viewCamera == null) return;
+
+        hoverCovering = true;
+
+        // a plane in front of the camera, far enough out that the book itself is not clipped by it
+        float distance = Mathf.Max(readDistance, viewCamera.nearClipPlane + 0.05f);
+        Vector3 point = viewCamera.transform.position + viewCamera.transform.forward * distance;
+
+        // the half extents of the view at that plane, so every corner ray is inside the volume
+        float halfHeight = viewCamera.orthographic
+            ? viewCamera.orthographicSize
+            : distance * Mathf.Tan(viewCamera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+        float halfWidth = halfHeight * viewCamera.aspect;
+
+        float depth = Mathf.Max(distance * 0.5f, 0.1f);
+
+        // never smaller than the view itself, whatever the field is set to
+        float margin = Mathf.Max(readColliderMargin, 1.0f);
+
+        Transform volume = hoverTarget.transform;
+        volume.SetPositionAndRotation(point, viewCamera.transform.rotation);
+
+        // a click catcher only: as a trigger it can never shove the world around while it is huge
+        hoverTarget.isTrigger = true;
+
+        Vector3 cover = new Vector3(
+            2.0f * halfWidth * margin,
+            2.0f * halfHeight * margin,
+            depth);
+
+        if (hoverBox != null)
+        {
+            // the volume now faces the camera, so its own axes line up with the view
+            Vector3 scale = volume.lossyScale;
+            hoverBox.center = Vector3.zero;
+            hoverBox.size = new Vector3(
+                cover.x / Mathf.Max(Mathf.Abs(scale.x), 0.0001f),
+                cover.y / Mathf.Max(Mathf.Abs(scale.y), 0.0001f),
+                cover.z / Mathf.Max(Mathf.Abs(scale.z), 0.0001f));
+            return;
+        }
+
+        // not a box: scale the authored footprint up to the same cover
+        volume.localScale = new Vector3(
+            hoverLocalScale.x * cover.x / Mathf.Max(hoverBaseSize.x, 0.0001f),
+            hoverLocalScale.y * cover.y / Mathf.Max(hoverBaseSize.y, 0.0001f),
+            hoverLocalScale.z * cover.z / Mathf.Max(hoverBaseSize.z, 0.0001f));
+    }
+
+
+    private void RestoreHoverPose()
+    {
+        hoverCovering = false;
+
+        Transform volume = hoverTarget.transform;
+        volume.localPosition = hoverLocalPosition;
+        volume.localRotation = hoverLocalRotation;
+        volume.localScale = hoverLocalScale;
+
+        hoverTarget.isTrigger = hoverIsTrigger;
+
+        if (hoverBox != null)
+        {
+            hoverBox.size = hoverBoxSize;
+            hoverBox.center = hoverBoxCenter;
+        }
     }
 
 
@@ -353,7 +528,7 @@ public class BookAnimator : MonoBehaviour
 
     private float PoseScale()
     {
-        return Mathf.Lerp(1.0f, readScale, read);
+        return Mathf.Lerp(1.0f, readScale, fan);
     }
 
 
