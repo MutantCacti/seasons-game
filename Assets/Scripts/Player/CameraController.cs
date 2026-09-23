@@ -43,6 +43,14 @@ public class CameraController : MonoBehaviour
     private float shakeDuration;
     private float shakeElapsed = float.PositiveInfinity;
 
+    // pan-to-target state; followed every frame so a moving target stays centred
+    private const float PAN_ARRIVE_SQR = 0.0025f;
+    private const float MIN_FORWARD_Y = 0.0001f;
+    private Transform panTarget;
+
+
+    public bool IsPanningToTarget { get { return panTarget != null; } }
+
 
     public void Start()
     {
@@ -162,6 +170,9 @@ public class CameraController : MonoBehaviour
     {
         if (!leftClickDown || !dragStartedOnWorld) return;
 
+        // the player grabbing the map always wins over a pan they asked for earlier
+        StopPanningToTarget();
+
         // delta is negative so that the camera moves the opposite direction of the mouse
         // otherwise dragging down would move the camera down, visually moving the map upwards
         this.TranslateCamera(-delta, movementSpeed);
@@ -170,6 +181,8 @@ public class CameraController : MonoBehaviour
 
     public void OnScrollWheel(float delta)
     {
+        StopPanningToTarget();
+
         Vector3 forward = transform.forward;
         forward.Normalize();
 
@@ -189,6 +202,8 @@ public class CameraController : MonoBehaviour
     {
         direction = newDirection;
         holdingWasd = direction != Vector2.zero;
+
+        if (holdingWasd) StopPanningToTarget();
     }
 
 
@@ -204,8 +219,55 @@ public class CameraController : MonoBehaviour
         // that snappiness is relative to, keeping lerp framerate independent
         float frameSnappiness = 1.0f - Mathf.Pow(1.0f - snappiness, Time.deltaTime * REFERENCE_FRAMERATE);
 
+        TickPanToTarget();
+
         currentPosition = Vector3.Lerp(currentPosition, targetPosition, frameSnappiness);
         transform.position = currentPosition + TickShake();
+    }
+
+
+    // MARK: pan to target
+
+
+    // Glides the view centre onto target and keeps it there while it moves, at the current height so
+    // the zoom is untouched. Ends on arrival, or as soon as the player drags, scrolls or uses WASD.
+    public void PanToTransform(Transform target)
+    {
+        panTarget = target;
+    }
+
+
+    public void StopPanningToTarget()
+    {
+        panTarget = null;
+    }
+
+
+    private void TickPanToTarget()
+    {
+        // Unity-null covers a target destroyed mid pan
+        if (panTarget == null)
+        {
+            panTarget = null;
+            return;
+        }
+
+        Vector3 viewForward = transform.forward;
+
+        // a camera looking level would never bring the ray down onto the target
+        if (viewForward.y > -MIN_FORWARD_Y)
+        {
+            panTarget = null;
+            return;
+        }
+
+        // step back along the view ray from the target until we are at the current height
+        Vector3 point = panTarget.position;
+        float distance = (point.y - targetPosition.y) / viewForward.y;
+
+        targetPosition = point - viewForward * distance;
+
+        if ((currentPosition - targetPosition).sqrMagnitude < PAN_ARRIVE_SQR) panTarget = null;
     }
 
 
