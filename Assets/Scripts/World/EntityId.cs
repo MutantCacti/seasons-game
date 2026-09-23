@@ -64,7 +64,11 @@ public class EntityId : MonoBehaviour
 
     private void OnDestroy()
     {
-        Destroyed?.Invoke(this);
+        // taken first so a handler that unsubscribes itself cannot change what gets called
+        Action<EntityId> handlers = Destroyed;
+
         Destroyed = null;
+
+        handlers?.Invoke(this);
     }
 }

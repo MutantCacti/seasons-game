@@ -76,7 +76,7 @@ public partial class TerrainManager : MonoBehaviour
         // The whole world is cached, not just its terrain section: SaveData.world is what the save
         // managers hold, and it is only ever swapped out by a new game or a checkpoint restore.
         SaveDataManager saveManager = SaveDataManager.Instance;
-        world = saveManager != null ? saveManager.SaveData.world : null;
+        world = saveManager != null && saveManager.SaveData != null ? saveManager.SaveData.world : null;
 
         if (world == null)
         {

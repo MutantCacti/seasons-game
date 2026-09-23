@@ -4,7 +4,7 @@ using UnityEngine;
 
 
 
-// world scripts call Complete(puzzle) when they decide the condition has been met
+// world scripts call Complete(puzzle, source) when they decide the condition has been met
 // This manager is the only thing allowed to say no
 
 public class PuzzleManager : MonoBehaviour
@@ -239,8 +239,8 @@ public class PuzzleManager : MonoBehaviour
         IReadOnlyList<Puzzle> unlocks = completedPuzzle.Unlocks;
         if (unlocks == null || unlocks.Count == 0) return;
 
-        // Collected before unlocking: Unlock can add to the unlocked set, and reading a set while
-        // writing to it is exactly the kind of thing that only breaks on a busy afternoon.
+        // Collected into a list first so the batch has a single obvious input and this loop cannot be
+        // affected by the unlocking that follows it.
         List<Puzzle> candidates = new List<Puzzle>();
 
         for (int i = 0; i < unlocks.Count; i++)
