@@ -428,10 +428,21 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     private void TryResolve()
     {
-        if (string.IsNullOrEmpty(targetGuid)) return;
-        if (EntityManager.Instance == null) return;
+        EntityId found = null;
 
-        if (!EntityManager.Instance.TryGetEntity(targetGuid, out EntityId found)) return;
+        if (!string.IsNullOrEmpty(targetGuid) && EntityManager.Instance != null)
+        {
+            EntityManager.Instance.TryGetEntity(targetGuid, out found);
+        }
+
+        // There is only ever one compendium, and a soft lock is always about the book, so a fail ping
+        // that has lost its target points at the book rather than parking
+        if (found == null && type == NotificationType.FailPuzzle && BookAnimator.Instance != null)
+        {
+            found = BookAnimator.Instance.GetComponentInParent<EntityId>();
+        }
+
+        if (found == null) return;
 
         target = found;
         target.Destroyed += OnTargetDestroyed;
@@ -439,7 +450,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     }
 
 
-    // falls back to parked; the retry in Tick finds nothing for a destroyed guid, which is fine
+    // falls back to parked, or for a fail ping to the book, when the retry in Tick next runs
     private void OnTargetDestroyed(EntityId destroyed)
     {
         Unbind();
