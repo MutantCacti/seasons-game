@@ -9,9 +9,6 @@ public class SaveDataManager : MonoBehaviour
     public static SaveDataManager Instance { get { return instance; } }
 
 
-    [SerializeField] private string fileName = "Save.json";
-
-
     private SaveData saveData;
     public SaveData SaveData { get { return saveData; } }
 
@@ -19,7 +16,8 @@ public class SaveDataManager : MonoBehaviour
     public bool IsConstructingNewWorld { get; private set; }
 
 
-    private string FullPath { get { return Path.Combine(Application.persistentDataPath, fileName); } }
+    // SavePaths owns the name, so SaveHelper's Clear Save can never point at a different file
+    private string FullPath { get { return SavePaths.FullPath; } }
 
 
     private void Awake()
