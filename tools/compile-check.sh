@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# MARK: ! AI disclaimer
+# All code in this file was written by DeepSeek-V41-Flash
+#
 # compile-check.sh — type-check the Seasons C# without opening Unity.
 #
 # Usage:

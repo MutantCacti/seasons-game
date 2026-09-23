@@ -2,6 +2,10 @@ using System.IO;
 using UnityEngine;
 
 
+// MARK: ! AI disclaimer
+// All code in this file was written by DeepSeek-V4-Pro
+
+
 // The one place the save file's name and path are decided. Every worktree is a separate Unity project
 // but they all share one persistentDataPath, so in the Editor the file is named after the project
 // folder and the checkpoints, notifications, compendium and registry branches can run side by side.
