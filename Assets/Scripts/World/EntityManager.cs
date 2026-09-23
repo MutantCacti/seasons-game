@@ -203,10 +203,15 @@ public class EntityManager : MonoBehaviour
         if (worldFixtures == null)
         {
             Debug.LogError("EntityManager: no WorldFixtures assigned, so a new world starts with no entities", this);
+            manager.AcknowledgeNewWorld();
             return;
         }
 
-        if (terrainManager == null) return;
+        if (terrainManager == null)
+        {
+            manager.AcknowledgeNewWorld();
+            return;
+        }
 
         int seeded = 0;
 
