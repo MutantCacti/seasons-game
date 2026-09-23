@@ -314,6 +314,12 @@ public partial class TerrainManager : MonoBehaviour
     }
 
 
+    public int CountTile(TerrainTile tile)
+    {
+        return state != null ? state.CountTile(tile) : 0;
+    }
+
+
     // MARK: placement targeting
 
 

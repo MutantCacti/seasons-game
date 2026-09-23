@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 
@@ -20,6 +21,7 @@ public partial class TerrainManager
         // this is called a jagged array and is apparently much faster than using a
         // 3D array for caching reasons. The 2nd dimsension flattens the XZ plane
         private readonly TerrainTile[][] tileByCell;  // [level][z * width + x]
+        private readonly Dictionary<TerrainTile, int> tileCounts = new Dictionary<TerrainTile, int>();
 
 
         public State(int originX, int originZ, int width, int depth, float[] levelHeights)
@@ -68,7 +70,44 @@ public partial class TerrainManager
         {
             if (!Contains(cell)) return;
 
-            tileByCell[cell.y][(cell.z - originZ) * width + (cell.x - originX)] = tile;
+            int flat = (cell.z - originZ) * width + (cell.x - originX);
+            TerrainTile old = tileByCell[cell.y][flat];
+
+            if (old == tile) return;
+
+            Decrement(old);
+            Increment(tile);
+
+            tileByCell[cell.y][flat] = tile;
+        }
+
+
+        // How many cells currently hold this tile. Kept up to date by SetTile, so it
+        // covers both the initial bake and every later remap without a rescan.
+        public int CountTile(TerrainTile tile)
+        {
+            if (tile == null) return 0;
+
+            return tileCounts.TryGetValue(tile, out int count) ? count : 0;
+        }
+
+
+        private void Increment(TerrainTile tile)
+        {
+            if (tile == null) return;
+
+            tileCounts.TryGetValue(tile, out int count);
+            tileCounts[tile] = count + 1;
+        }
+
+
+        private void Decrement(TerrainTile tile)
+        {
+            if (tile == null) return;
+            if (!tileCounts.TryGetValue(tile, out int count)) return;
+
+            if (count <= 1) tileCounts.Remove(tile);
+            else tileCounts[tile] = count - 1;
         }
     }
 }

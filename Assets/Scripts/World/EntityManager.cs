@@ -308,6 +308,20 @@ public class EntityManager : MonoBehaviour
     }
 
 
+    // true when at least one live entity of this item exists in the world
+    public bool HasEntityOf(GameItem item)
+    {
+        if (item == null) return false;
+
+        for (int i = 0; i < live.Count; i++)
+        {
+            if (live[i].item == item) return true;
+        }
+
+        return false;
+    }
+
+
     // Fills results with the GameItems standing on a cell, so that a change to the ground under them
     // can be tested against their own placement rules. Takes the caller's list because this runs once
     // a frame while a placement drag is live.
