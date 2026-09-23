@@ -13,8 +13,9 @@ public class TestTree : MonoBehaviour
 
 
     // A saved tree is instantiated inside EntityManager's Awake, which can happen before
-    // PlacementController and TerrainManager have their own Awake. Subscribing here instead means
-    // both are up by the time anything is read.
+    // PlacementController and TerrainManager have their own Awake, so the subscription waits until
+    // here where both are up. The sweep at the end is what catches the tree's own placement: the drop
+    // that spawned it raised ItemPlaced before this Start ran.
     public void Start()
     {
         if (waterTile == null)
@@ -33,6 +34,10 @@ public class TestTree : MonoBehaviour
         cellPosition = TerrainManager.Instance.WorldToCell(transform.position);
 
         PlacementController.Instance.ItemPlaced += TryCompletePuzzle;
+
+        // a tree placed next to water that was already there, or a saved tree loaded next to it, never
+        // gets an ItemPlaced of its own
+        SweepCheckPuzzle();
     }
 
 

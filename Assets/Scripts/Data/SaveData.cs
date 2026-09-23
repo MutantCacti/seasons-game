@@ -14,8 +14,8 @@ public class SaveData
     public long lastSaveTime;       // milliseconds since unix epoch
     public long playTimeElapsed;    // milliseconds
 
-    // Each one is a return point: the puzzle that was completed to reach it, and the world as it was.
-    // Currently always empty; the checkpoints branch fills it.
+    // Each one is a return point: the puzzle that was newly unlocked to reach it, and the world as it
+    // was at that moment. Currently always empty; the checkpoints branch fills it.
     public List<Checkpoint> checkpoints;
 
     public WorldState world;
@@ -49,7 +49,8 @@ public class SaveData
 }
 
 
-// A world the player can be returned to, named after the puzzle whose completion created it
+// A world the player can be returned to. One is taken when its puzzle is unlocked, so puzzleId names
+// that newly unlocked puzzle rather than the completion that led to it.
 [System.Serializable]
 public class Checkpoint
 {

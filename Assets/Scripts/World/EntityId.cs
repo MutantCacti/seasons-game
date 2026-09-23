@@ -54,14 +54,6 @@ public class EntityId : MonoBehaviour
     }
 
 
-    // EntityManager calls this so a destroyed entity cannot keep answering lookups through a stale
-    // callback. Safe to call more than once.
-    public void Unbind()
-    {
-        Destroyed = null;
-    }
-
-
     private void OnDestroy()
     {
         // taken first so a handler that unsubscribes itself cannot change what gets called
