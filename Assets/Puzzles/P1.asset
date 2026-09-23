@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b9cb12d39d04b7aab503483786a6892, type: 3}
+  m_Name: P1
+  m_EditorClassIdentifier: Assembly-CSharp::Puzzle
+  id: p1
+  description: 'Plant the Spring Tree beside a water source
+
+'
+  ingredients:
+  - item: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
+    count: 1
+  - item: {fileID: 11400000, guid: 8a411905243b1919b9f03600a40296ce, type: 2}
+    count: 1
+  unlocks:
+  - {fileID: 11400000, guid: b9b83a21279a4dd2b23fcb4ef994a5c6, type: 2}
