@@ -485,7 +485,19 @@ public class CompendiumUIManager : MonoBehaviour
     {
         if (leaf == null || leaf.pivot == null || leaves == null) return;
 
-        leaf.pivot.SetSiblingIndex(leaves.Length - 1);
+        // The leaf pivots share their parent with the tab, turn and close buttons, so "front"
+        // can't be a fixed index like leaves.Length - 1. Move to the highest sibling index any
+        // leaf currently holds instead, so the turn always draws over its neighbours.
+        int front = -1;
+        for (int i = 0; i < leaves.Length; i++)
+        {
+            if (leaves[i] == null || leaves[i].pivot == null) continue;
+
+            int sibling = leaves[i].pivot.GetSiblingIndex();
+            if (sibling > front) front = sibling;
+        }
+
+        leaf.pivot.SetSiblingIndex(front);
     }
 
 
