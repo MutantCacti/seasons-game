@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldFixtures
   fixtures:
   - item: {fileID: 11400000, guid: 7a2a903dc6c1d4e029e4c1ba97e0cba8, type: 2}
-    column: {x: -2, y: -4}
+    column: {x: 0, y: 0}
