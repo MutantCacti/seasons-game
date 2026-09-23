@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -15,6 +16,11 @@ public class SaveDataManager : MonoBehaviour
 
     // True while this session has created a world that is not finished populating
     public bool IsConstructingNewWorld { get; private set; }
+
+
+    // Raised once a newly created world has finished populating, so systems that held work back until
+    // construction ended can flush it
+    public event Action NewWorldConstructed;
 
 
     // SavePaths owns the name, so SaveHelper's Clear Save can never point at a different file
@@ -57,6 +63,8 @@ public class SaveDataManager : MonoBehaviour
     public void AcknowledgeNewWorld()
     {
         IsConstructingNewWorld = false;
+
+        NewWorldConstructed?.Invoke();
     }
 
 
