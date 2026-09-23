@@ -34,7 +34,13 @@ public class EntitySaveData
             int byX = a.x.CompareTo(b.x);
             if (byX != 0) return byX;
 
-            return string.CompareOrdinal(a.itemId, b.itemId);
+            int byItem = string.CompareOrdinal(a.itemId, b.itemId);
+            if (byItem != 0) return byItem;
+
+            // two entities can only tie this far if they are the same item in the same cell, which
+            // placement itself prevents - the guid just keeps the file order from depending on
+            // whatever order they happened to be spawned in
+            return string.CompareOrdinal(a.guid, b.guid);
         });
     }
 }
@@ -47,4 +53,5 @@ public struct EntitySave
     public int x;           // absolute terrain cell x
     public int z;           // absolute terrain cell z
     public int levelY;      // level world y in millimetres
+    public string guid;     // this instance's EntityId, so a puzzle can name the entity that completed it
 }

@@ -165,7 +165,10 @@ public class PuzzleManager : MonoBehaviour
     // single entry point, every world script should use this to submit puzzle completion
     // returns false when the manager refused, meaning puzzles are disabled, this puzzle
     // is null or not unlocked or has already been completed
-    public bool Complete(Puzzle puzzle)
+    //
+    // source names the entity that met the condition. It may be null, in which case nothing is
+    // recorded and the completion counts for nothing but the save's completed list.
+    public bool Complete(Puzzle puzzle, EntityId source)
     {
         if (!completionEnabled) return false;
 
@@ -187,14 +190,7 @@ public class PuzzleManager : MonoBehaviour
         softLocked.Remove(puzzle);
         pendingSoftLockChecks.Remove(puzzle);
 
-        // all this must happen before the event is invoked
-        if (puzzle.Unlocks != null)
-        {
-            for (int i = 0; i < puzzle.Unlocks.Count; i++)
-            {
-                Unlock(puzzle.Unlocks[i]);
-            }
-        }
+        GrantUnlocks(puzzle);
 
         WriteThrough();
         Save();
@@ -202,6 +198,51 @@ public class PuzzleManager : MonoBehaviour
         OnPuzzleComplete?.Invoke(puzzle);
 
         return true;
+    }
+
+
+    // Unlocks everything the given puzzle unlocks. Does nothing unless that puzzle is actually
+    // completed, so get it wrong the other way round and world scripts will simply be told no.
+    public void GrantUnlocks(Puzzle completedPuzzle)
+    {
+        if (completedPuzzle == null) return;
+        if (!completed.Contains(completedPuzzle)) return;
+
+        IReadOnlyList<Puzzle> unlocks = completedPuzzle.Unlocks;
+        if (unlocks == null || unlocks.Count == 0) return;
+
+        // Collected before unlocking: Unlock can add to the unlocked set, and reading a set while
+        // writing to it is exactly the kind of thing that only breaks on a busy afternoon.
+        List<Puzzle> candidates = new List<Puzzle>();
+
+        for (int i = 0; i < unlocks.Count; i++)
+        {
+            candidates.Add(unlocks[i]);
+        }
+
+        UnlockBatch(candidates);
+    }
+
+
+    // The one place puzzles become unlocked. Write-through and save happen once for the whole batch,
+    // and only when something in it was actually new.
+    private void UnlockBatch(IReadOnlyList<Puzzle> puzzles)
+    {
+        if (puzzles == null) return;
+
+        List<Puzzle> newlyUnlocked = new List<Puzzle>();
+
+        for (int i = 0; i < puzzles.Count; i++)
+        {
+            // Unlock only returns true for a puzzle that was not unlocked before, so this list is
+            // exactly the puzzles this batch added
+            if (Unlock(puzzles[i])) newlyUnlocked.Add(puzzles[i]);
+        }
+
+        if (newlyUnlocked.Count == 0) return;
+
+        WriteThrough();
+        Save();
     }
 
 

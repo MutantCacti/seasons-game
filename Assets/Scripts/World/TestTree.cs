@@ -12,13 +12,24 @@ public class TestTree : MonoBehaviour
     private Vector3Int cellPosition;
 
 
-    public void Awake()
+    // A saved tree is instantiated inside EntityManager's Awake, which can happen before
+    // PlacementController and TerrainManager have their own Awake. Subscribing here instead means
+    // both are up by the time anything is read.
+    public void Start()
     {
         if (waterTile == null)
         {
             Debug.LogError("TestTree: set waterTile on the Spring Tree prefab !!");
         }
 
+        if (TerrainManager.Instance == null || PlacementController.Instance == null)
+        {
+            Debug.LogError("TestTree: no TerrainManager or PlacementController in the scene, so this " +
+                "tree can never notice the water it needs", this);
+            return;
+        }
+
+        // this tree never moves, so the cell is resolved once
         cellPosition = TerrainManager.Instance.WorldToCell(transform.position);
 
         PlacementController.Instance.ItemPlaced += TryCompletePuzzle;
@@ -44,6 +55,8 @@ public class TestTree : MonoBehaviour
 
     private void SweepCheckPuzzle()
     {
+        if (myPuzzle == null) return;
+
         if (!PuzzleManager.Instance.IsActive(myPuzzle)) return;
 
         for (int x = -1; x < 2; x++)
@@ -69,6 +82,17 @@ public class TestTree : MonoBehaviour
     private void CompletePuzzle()
     {
         Debug.Log("Well done! You completed my puzzle!");
-        PuzzleManager.Instance.Complete(myPuzzle);
+
+        // looked up now rather than cached in Start: EntityManager only adds the component after
+        // Instantiate returns, so this is the first point it is guaranteed to exist
+        EntityId entityId = GetComponent<EntityId>();
+
+        if (entityId == null)
+        {
+            Debug.LogWarning("TestTree: no EntityId on this tree, so the save cannot record which " +
+                "entity completed the puzzle", this);
+        }
+
+        PuzzleManager.Instance.Complete(myPuzzle, entityId);
     }
 }

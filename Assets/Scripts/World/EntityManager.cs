@@ -22,6 +22,7 @@ public class EntityManager : MonoBehaviour
     private struct LiveEntity
     {
         public GameObject gameObject;
+        public EntityId entityId;
         public GameItem item;
         public Vector3Int cell;
     }
@@ -118,31 +119,73 @@ public class EntityManager : MonoBehaviour
         // spawn in a stable order so the hierarchy does not reshuffle between sessions
         saved.Sort();
 
-        foreach (EntitySave entry in saved.entities)
+        // by index, because a entry whose guid had to be replaced is written back into the list
+        for (int i = 0; i < saved.entities.Count; i++)
         {
-            if (string.IsNullOrEmpty(entry.itemId) || !registry.TryGetItemById(entry.itemId, out GameItem item))
-            {
-                Debug.LogError($"EntityManager: the save holds entity '{entry.itemId}', but no GameItem in the registry has that id - dropping it", this);
-                continue;
-            }
+            EntitySave entry = saved.entities[i];
 
-            if (item.Prefab == null)
-            {
-                Debug.LogError($"EntityManager: '{item.name}' is saved as an entity but has no prefab, so there is nothing to instantiate", this);
-                continue;
-            }
-
-            // levels are keyed by height rather than index, so a save survives an elevation being
-            // inserted into the terrain, which would shift every index above it
-            if (!terrainManager.TryGetLevelAtMillimetres(entry.levelY, out int level))
-            {
-                Debug.LogError($"EntityManager: the save holds '{entry.itemId}' at {entry.levelY}mm, " +
-                    $"which is not a level in this terrain - dropping it", this);
-                continue;
-            }
-
-            CreateInstance(item, new Vector3Int(entry.x, level, entry.z));
+            if (LoadEntity(entry, out EntitySave repaired)) saved.entities[i] = repaired;
         }
+    }
+
+
+    // Instantiates one saved entity and restores its identity. Returns true when the entry had to be
+    // changed in the list, which is only ever a repaired guid.
+    private bool LoadEntity(EntitySave entry, out EntitySave repaired)
+    {
+        repaired = entry;
+
+        if (string.IsNullOrEmpty(entry.itemId) || !registry.TryGetItemById(entry.itemId, out GameItem item))
+        {
+            Debug.LogError($"EntityManager: the save holds entity '{entry.itemId}', but no GameItem in the registry has that id - dropping it", this);
+            return false;
+        }
+
+        if (item.Prefab == null)
+        {
+            Debug.LogError($"EntityManager: '{item.name}' is saved as an entity but has no prefab, so there is nothing to instantiate", this);
+            return false;
+        }
+
+        // levels are keyed by height rather than index, so a save survives an elevation being
+        // inserted into the terrain, which would shift every index above it
+        if (!terrainManager.TryGetLevelAtMillimetres(entry.levelY, out int level))
+        {
+            Debug.LogError($"EntityManager: the save holds '{entry.itemId}' at {entry.levelY}mm, " +
+                $"which is not a level in this terrain - dropping it", this);
+            return false;
+        }
+
+        EntityId entityId = CreateInstance(item, new Vector3Int(entry.x, level, entry.z));
+
+        // An empty guid has to be replaced, and so does one that an entity loaded earlier already
+        // claimed. The earlier entity keeps it, so anything that refers to the guid still resolves.
+        if (string.IsNullOrEmpty(entry.guid) || IsGuidLive(entry.guid))
+        {
+            string replacement = System.Guid.NewGuid().ToString("N");
+
+            Debug.LogWarning($"EntityManager: saved entity '{entry.itemId}' at ({entry.x}, {entry.z}) has " +
+                $"the missing or already used guid '{entry.guid}', so it was given '{replacement}' instead", this);
+
+            repaired.guid = replacement;
+            entityId.Assign(replacement);
+            return true;
+        }
+
+        entityId.Assign(entry.guid);
+        return false;
+    }
+
+
+    private bool IsGuidLive(string guid)
+    {
+        for (int i = 0; i < live.Count; i++)
+        {
+            if (live[i].entityId == null) continue;
+            if (live[i].entityId.HasGuid && live[i].entityId.Guid == guid) return true;
+        }
+
+        return false;
     }
 
 
@@ -226,7 +269,7 @@ public class EntityManager : MonoBehaviour
         // logs and gives up if the item is not in the registry
         if (registry == null || !registry.TryGetIdByItem(item, out string id)) return null;
 
-        GameObject instance = CreateInstance(item, cell);
+        EntityId entityId = CreateInstance(item, cell);
 
         if (world != null && world.entities != null)
         {
@@ -235,11 +278,14 @@ public class EntityManager : MonoBehaviour
                 itemId = id,
                 x = cell.x,
                 z = cell.z,
-                levelY = TerrainManager.ToLevelMillimetres(terrainManager.GetLevelHeight(cell.y))
+                levelY = TerrainManager.ToLevelMillimetres(terrainManager.GetLevelHeight(cell.y)),
+
+                // reading the guid here is what gives a freshly spawned entity its identity
+                guid = entityId.Guid
             });
         }
 
-        return instance;
+        return entityId.gameObject;
     }
 
 
@@ -274,17 +320,66 @@ public class EntityManager : MonoBehaviour
     }
 
 
+    // Resolves a guid back to the entity that owns it. False when nothing in the world has that guid,
+    // which is also what a guid belonging to an entity that has since been destroyed returns.
+    public bool TryGetEntity(string guid, out EntityId entity)
+    {
+        entity = null;
+
+        if (string.IsNullOrEmpty(guid)) return false;
+
+        for (int i = 0; i < live.Count; i++)
+        {
+            EntityId candidate = live[i].entityId;
+            if (candidate == null) continue;
+            if (!candidate.HasGuid) continue;
+            if (candidate.Guid != guid) continue;
+
+            entity = candidate;
+            return true;
+        }
+
+        return false;
+    }
+
+
     // MARK: internals
 
 
-    private GameObject CreateInstance(GameItem item, Vector3Int cell)
+    private EntityId CreateInstance(GameItem item, Vector3Int cell)
     {
         GameObject instance = Instantiate(item.Prefab, terrainManager.CellToWorld(cell), item.Prefab.transform.rotation, entityParent);
         instance.name = item.Prefab.name;
 
-        live.Add(new LiveEntity { gameObject = instance, item = item, cell = cell });
+        // a prefab script may already require one, so only add when it is missing
+        EntityId entityId = instance.GetComponent<EntityId>();
 
-        return instance;
+        if (entityId == null) entityId = instance.AddComponent<EntityId>();
+
+        entityId.Destroyed += OnEntityDestroyed;
+
+        live.Add(new LiveEntity { gameObject = instance, entityId = entityId, item = item, cell = cell });
+
+        return entityId;
+    }
+
+
+    // Keeps the live list free of destroyed entities: it is walked every frame by placement, and a
+    // destroyed GameObject left in it would keep matching a cell
+    private void OnEntityDestroyed(EntityId entityId)
+    {
+        if (entityId != null) entityId.Destroyed -= OnEntityDestroyed;
+
+        // teardown order is not guaranteed, so the manager may already be gone
+        if (instance != this) return;
+
+        for (int i = 0; i < live.Count; i++)
+        {
+            if (live[i].entityId != entityId) continue;
+
+            live.RemoveAt(i);
+            return;
+        }
     }
 
 
