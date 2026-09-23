@@ -13,8 +13,6 @@ public class CompendiumUIManager : MonoBehaviour
     public static CompendiumUIManager Instance { get { return instance; } }
 
 
-    public const int ENTRIES_PER_PAGE = 3;
-
     private const float FLAT_THRESHOLD = 0.995f;
 
 
@@ -22,9 +20,8 @@ public class CompendiumUIManager : MonoBehaviour
     public class Page
     {
         public RectTransform root;
-        public CompendiumEntry[] entries;
 
-        [NonSerialized] public int pageIndex = -1;
+        [NonSerialized] public GameObject[] pages;
     }
 
 
@@ -49,6 +46,9 @@ public class CompendiumUIManager : MonoBehaviour
     [Header("Leaves (exactly three)")]
     [SerializeField] private Leaf[] leaves;
 
+    [Header("Tabs")]
+    [SerializeField] private CompendiumTabManager[] tabs;
+
     [Header("Buttons")]
     [SerializeField] private Button turnPrevious;
     [SerializeField] private Button turnNext;
@@ -69,9 +69,11 @@ public class CompendiumUIManager : MonoBehaviour
 
     private int spread;
     private int spreadCount;
+    private int currentTabIndex;
     private bool built;
     private bool turning;
     private Coroutine openRoutine;
+    private readonly List<Action> tabChangedHandlers = new List<Action>();
 
 
     private void Awake()
@@ -96,6 +98,34 @@ public class CompendiumUIManager : MonoBehaviour
             Debug.LogError($"CompendiumUIManager: three leaves are needed, found {(leaves == null ? 0 : leaves.Length)}", this);
         }
 
+        if (tabs == null || tabs.Length == 0)
+        {
+            Debug.LogError("CompendiumUIManager: no tabs assigned, so the book has no pages to show", this);
+        }
+        else
+        {
+            tabChangedHandlers.Clear();
+
+            for (int i = 0; i < tabs.Length; i++)
+            {
+                CompendiumTabManager tab = tabs[i];
+
+                if (tab == null)
+                {
+                    tabChangedHandlers.Add(null);
+                    continue;
+                }
+
+                if (tab.TabButton != null) tab.TabButton.onClick.AddListener(() => ShowTab(tab, 0));
+
+                Action handler = () => OnTabChanged(tab);
+                tab.Changed += handler;
+                tabChangedHandlers.Add(handler);
+            }
+
+            ApplyTabSiblingOrder();
+        }
+
         if (turnPrevious != null) turnPrevious.onClick.AddListener(TurnBack);
         if (turnNext != null) turnNext.onClick.AddListener(TurnForward);
         if (close != null) close.onClick.AddListener(RequestClose);
@@ -109,6 +139,24 @@ public class CompendiumUIManager : MonoBehaviour
         if (turnPrevious != null) turnPrevious.onClick.RemoveListener(TurnBack);
         if (turnNext != null) turnNext.onClick.RemoveListener(TurnForward);
         if (close != null) close.onClick.RemoveListener(RequestClose);
+
+        if (tabs != null)
+        {
+            for (int i = 0; i < tabs.Length; i++)
+            {
+                CompendiumTabManager tab = tabs[i];
+                if (tab == null) continue;
+
+                if (tab.TabButton != null) tab.TabButton.onClick.RemoveAllListeners();
+
+                if (i < tabChangedHandlers.Count && tabChangedHandlers[i] != null)
+                {
+                    tab.Changed -= tabChangedHandlers[i];
+                }
+            }
+        }
+
+        tabChangedHandlers.Clear();
 
         KillTurns();
     }
@@ -129,7 +177,7 @@ public class CompendiumUIManager : MonoBehaviour
         if (uiRoot == null) return;
 
         EnsureCamera();
-        ResetLeaves();
+        LayoutSpread(0);
 
         uiRoot.SetActive(true);
 
@@ -227,15 +275,9 @@ public class CompendiumUIManager : MonoBehaviour
     // MARK: pages
 
 
-    private int ItemCount
+    private CompendiumTabManager CurrentTab
     {
-        get { return CompendiumManager.Instance != null ? CompendiumManager.Instance.Count : 0; }
-    }
-
-
-    private int PageCount
-    {
-        get { return (ItemCount + ENTRIES_PER_PAGE - 1) / ENTRIES_PER_PAGE; }
+        get { return tabs != null && currentTabIndex >= 0 && currentTabIndex < tabs.Length ? tabs[currentTabIndex] : null; }
     }
 
 
@@ -243,37 +285,28 @@ public class CompendiumUIManager : MonoBehaviour
     {
         get
         {
-            int pages = PageCount;
+            CompendiumTabManager tab = CurrentTab;
+            int pages = tab != null ? tab.PageCount : 0;
             return (pages + 1) / 2;
         }
     }
 
 
-    private void ResetLeaves()
+    private void LayoutSpread(int target)
     {
         if (leaves == null || leaves.Length < 3) return;
 
-        spread = 0;
+        KillTurns();
         turning = false;
         built = true;
-
-        KillTurns();
 
         left = leaves[0];
         right = leaves[1];
         parked = leaves[2];
 
         SetAngle(left, 180.0f);
-        AssignPage(left.front, -1);
-        AssignPage(left.back, 0);
-
         SetAngle(right, 0.0f);
-        AssignPage(right.front, 1);
-        AssignPage(right.back, 2);
-
         SetAngle(parked, 0.0f);
-        AssignPage(parked.front, 3);
-        AssignPage(parked.back, 4);
 
         ShowLeaf(left, false);
         ShowLeaf(right, true);
@@ -283,8 +316,23 @@ public class CompendiumUIManager : MonoBehaviour
         Promote(right);
         Park(parked);
 
+        spread = target;
         spreadCount = SpreadCount;
+        AssignSpreadPages(target);
         UpdateTurnButtons();
+    }
+
+
+    private void AssignSpreadPages(int spread)
+    {
+        if (left == null || right == null || parked == null) return;
+
+        AssignPage(left.front, spread * 2 - 1);
+        AssignPage(left.back, spread * 2);
+        AssignPage(right.front, spread * 2 + 1);
+        AssignPage(right.back, spread * 2 + 2);
+        AssignPage(parked.front, spread * 2 + 3);
+        AssignPage(parked.back, spread * 2 + 4);
     }
 
 
@@ -480,27 +528,65 @@ public class CompendiumUIManager : MonoBehaviour
     {
         if (page == null || page.root == null) return;
 
-        page.pageIndex = pageIndex;
+        CompendiumTabManager tab = CurrentTab;
+        if (tab == null) return;
 
-        CompendiumManager manager = CompendiumManager.Instance;
-        int count = manager != null ? manager.Count : 0;
-        int first = pageIndex * ENTRIES_PER_PAGE;
+        EnsurePagesBuilt(page);
 
-        bool hasContent = pageIndex >= 0 && first < count;
-
-        if (page.entries == null) return;
-
-        for (int i = 0; i < page.entries.Length; i++)
+        for (int i = 0; i < page.pages.Length; i++)
         {
-            CompendiumEntry entry = page.entries[i];
-            if (entry == null) continue;
-
-            GameItem item = null;
-            if (hasContent && manager != null) manager.TryGetItem(first + i, out item);
-
-            entry.SetItem(item);
-            entry.gameObject.SetActive(item != null);
+            if (page.pages[i] != null) page.pages[i].SetActive(i == currentTabIndex);
         }
+
+        GameObject active = currentTabIndex >= 0 && currentTabIndex < page.pages.Length ? page.pages[currentTabIndex] : null;
+        if (active != null) tab.BindPage(active, pageIndex);
+    }
+
+
+    private void EnsurePagesBuilt(Page page)
+    {
+        int tabCount = tabs != null ? tabs.Length : 0;
+
+        if (page.pages != null && page.pages.Length == tabCount) return;
+
+        page.pages = new GameObject[tabCount];
+
+        for (int i = 0; i < page.pages.Length; i++)
+        {
+            CompendiumTabManager tab = tabs[i];
+
+            if (tab == null || tab.PagePrefab == null)
+            {
+                page.pages[i] = null;
+                continue;
+            }
+
+            GameObject instance = Instantiate(tab.PagePrefab, page.root, false);
+            StretchToFill(instance);
+            page.pages[i] = instance;
+        }
+    }
+
+
+    private void StretchToFill(GameObject go)
+    {
+        RectTransform rect = go != null ? go.transform as RectTransform : null;
+
+        if (rect == null)
+        {
+            Debug.LogError("CompendiumUIManager: a tab's PagePrefab root is not a RectTransform, so it cannot fill a face", this);
+            return;
+        }
+
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        rect.localRotation = Quaternion.identity;
+        rect.localScale = Vector3.one;
+
+        Vector3 position = rect.localPosition;
+        rect.localPosition = new Vector3(position.x, position.y, 0.0f);
     }
 
 
@@ -514,6 +600,92 @@ public class CompendiumUIManager : MonoBehaviour
     {
         if (turnPrevious != null) turnPrevious.gameObject.SetActive(atSpread - 1 >= 0);
         if (turnNext != null) turnNext.gameObject.SetActive(atSpread + 1 < spreadCount);
+    }
+
+
+    // MARK: tabs
+
+
+    private int IndexOfTab(CompendiumTabManager tab)
+    {
+        if (tabs == null || tab == null) return -1;
+
+        for (int i = 0; i < tabs.Length; i++)
+        {
+            if (tabs[i] == tab) return i;
+        }
+
+        return -1;
+    }
+
+
+    private void OnTabChanged(CompendiumTabManager tab)
+    {
+        if (tab != CurrentTab) return;
+
+        AssignSpreadPages(spread);
+    }
+
+
+    public void ShowTab(CompendiumTabManager tab, int pageIndex)
+    {
+        int index = IndexOfTab(tab);
+
+        if (index < 0)
+        {
+            Debug.LogWarning("CompendiumUIManager: ShowTab was passed a tab that is not in tabs", this);
+            return;
+        }
+
+        if (index != currentTabIndex)
+        {
+            if (CurrentTab != null) CurrentTab.OnHidden();
+
+            currentTabIndex = index;
+
+            if (CurrentTab != null) CurrentTab.OnShown();
+        }
+
+        ApplyTabSiblingOrder();
+        JumpToSpread(pageIndex);
+    }
+
+
+    private void JumpToSpread(int pageIndex)
+    {
+        KillTurns();
+        turning = false;
+
+        int count = SpreadCount;
+        int target = count > 0 ? Mathf.Clamp(pageIndex / 2, 0, count - 1) : 0;
+
+        LayoutSpread(target);
+    }
+
+
+    private void ApplyTabSiblingOrder()
+    {
+        if (tabs == null) return;
+
+        // unselected buttons are ordered in reverse array order, so the top of the array
+        // draws in front; the selected button is then moved to the very front of everything
+        int sibling = 0;
+
+        for (int i = tabs.Length - 1; i >= 0; i--)
+        {
+            CompendiumTabManager tab = tabs[i];
+            if (tab == null || tab.TabButton == null) continue;
+            if (i == currentTabIndex) continue;
+
+            tab.TabButton.transform.SetSiblingIndex(sibling);
+            sibling++;
+        }
+
+        CompendiumTabManager selected = CurrentTab;
+        if (selected != null && selected.TabButton != null)
+        {
+            selected.TabButton.transform.SetAsLastSibling();
+        }
     }
 
 

@@ -18,8 +18,8 @@ public class CompendiumEntry : MonoBehaviour
             return;
         }
 
-        if (item.Icon != null) SetImage(item.Icon);
-
+        SetImage(item.Icon);
+        SetIconMaterial(null);
         SetNameText(item.Name);
         SetDescriptionText(item.Description);
     }
@@ -27,6 +27,8 @@ public class CompendiumEntry : MonoBehaviour
 
     public void Clear()
     {
+        SetImage(null);
+        SetIconMaterial(null);
         SetNameText(string.Empty);
         SetDescriptionText(string.Empty);
     }
@@ -37,6 +39,18 @@ public class CompendiumEntry : MonoBehaviour
         if (entryImage == null) return;
 
         entryImage.sprite = sprite;
+
+        // a null sprite would otherwise draw a solid white rectangle
+        entryImage.enabled = sprite != null;
+    }
+
+
+    public void SetIconMaterial(Material material)
+    {
+        if (entryImage == null) return;
+
+        // null restores the default UI material
+        entryImage.material = material;
     }
 
     public void SetNameText(string name)
