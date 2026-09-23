@@ -133,7 +133,7 @@ public class EntityManager : MonoBehaviour
     {
         SaveDataManager manager = SaveDataManager.Instance;
 
-        if (manager == null || !manager.IsNewWorld) return;
+        if (manager == null || !manager.IsConstructingNewWorld) return;
 
         if (worldFixtures == null)
         {
@@ -167,9 +167,11 @@ public class EntityManager : MonoBehaviour
             if (Spawn(fixture.item, new Vector3Int(fixture.column.x, level, fixture.column.y)) != null) seeded++;
         }
 
+        manager.AcknowledgeNewWorld();
+
         if (seeded == 0) return;
 
-        // write the new world straight away, which is also what takes IsNewWorld down
+        // write the new world straight away
         manager.Save();
     }
 

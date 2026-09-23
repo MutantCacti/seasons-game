@@ -15,9 +15,8 @@ public class SaveDataManager : MonoBehaviour
     private SaveData saveData;
     public SaveData SaveData { get { return saveData; } }
 
-    // True while a world has been created but never written to disk. The world initialisation seeds the
-    // authored fixtures while this is up, so they are only ever created once.
-    public bool IsNewWorld { get; private set; }
+    // True while this session has created a world that is not finished populating
+    public bool IsConstructingNewWorld { get; private set; }
 
 
     private string FullPath { get { return Path.Combine(Application.persistentDataPath, fileName); } }
@@ -48,8 +47,17 @@ public class SaveDataManager : MonoBehaviour
         saveData.lastSaveTime = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         saveData.PrepareForWrite();
 
-        // the world is on disk now, so it is no longer waiting for its fixtures to be seeded
-        if (WriteToDisk(saveData)) IsNewWorld = false;
+        WriteToDisk(saveData);
+    }
+
+
+    // NB: currently only the EntityManager needs to track this
+    // if another system needs to populate a new world later,
+    // this function will need to track each one and only clear
+    // IsConstructingNewWorld when they all have acknowledged
+    public void AcknowledgeNewWorld()
+    {
+        IsConstructingNewWorld = false;
     }
 
 
@@ -61,12 +69,10 @@ public class SaveDataManager : MonoBehaviour
     }
 
 
-    // The one place a world is created: no save on disk, a save that will not deserialise, a save from a
-    // newer build, or an explicit reset. IsNewWorld stays up until the world is first written back, so
-    // the fixtures are seeded exactly once however the world came to be.
+    // the only place to make a new save
     private SaveData CreateNewSave()
     {
-        IsNewWorld = true;
+        IsConstructingNewWorld = true;
 
         return new SaveData();
     }
