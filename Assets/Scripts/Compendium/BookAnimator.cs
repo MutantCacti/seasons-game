@@ -276,6 +276,12 @@ public class BookAnimator : MonoBehaviour
     {
         if (readTarget) return;
 
+        // The covers open on hover, not on read, and a click can only land on a hovered book. Coming from
+        // code there was no hover, so do what a hover-enter would; once the read is back to 0,
+        // UpdateHover sees the real hover state differ from this and closes them as usual.
+        wasHovered = true;
+        TweenTo(1.0f);
+
         SetRead(true);
 
         if (CompendiumUIManager.Instance != null) CompendiumUIManager.Instance.OnOpenCloseCompendium(true);
