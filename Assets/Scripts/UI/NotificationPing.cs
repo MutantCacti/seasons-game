@@ -35,6 +35,9 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     private const float HOVER_HYSTERESIS = 12.0f;
     private const float RESOLVE_INTERVAL = 0.5f;
 
+    // how far into hover a fail ping has to be before hovering it counts as hovering the book
+    private const float BOOK_HOVER_BLEND = 0.95f;
+
 
     private NotificationManager manager;
     private NotificationType type;
@@ -63,6 +66,9 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     private Vector2 smoothedEdge;
     private float smoothedRoll;
+
+    private bool pointerOver;
+    private BookAnimator hoveredBook;   // the book this ping is currently hovering on the player's behalf
 
 
     public NotificationType Type { get { return type; } }
@@ -119,8 +125,16 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     }
 
 
+    private void OnDisable()
+    {
+        ReleaseBook();
+    }
+
+
     private void OnDestroy()
     {
+        ReleaseBook();
+
         if (button != null) button.onClick.RemoveListener(OnClick);
 
         Unbind();
@@ -149,13 +163,53 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        pointerOver = true;
         TweenPointerScale(pointerGrow);
+        UpdateBookHover();
     }
 
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        pointerOver = false;
         TweenPointerScale(1.0f);
+        UpdateBookHover();
+    }
+
+
+    // MARK: book hover
+
+
+    // A fail ping hovering over the book stands in for the pointer, which the book cannot see through
+    // UI: pointing at the ping opens the covers just as pointing at the book would
+    private void UpdateBookHover()
+    {
+        bool want = pointerOver
+            && !exiting
+            && type == NotificationType.FailPuzzle
+            && hoverBlend >= BOOK_HOVER_BLEND
+            && manager != null && !manager.IsSuppressed;
+
+        BookAnimator book = want ? BookAnimator.Instance : null;
+
+        if (book == hoveredBook) return;
+
+        ReleaseBook();
+
+        if (book == null) return;
+
+        hoveredBook = book;
+        hoveredBook.SetExternalHover(this, true);
+    }
+
+
+    // Unconditional: a source left behind is a book that never closes
+    private void ReleaseBook()
+    {
+        if (hoveredBook != null) hoveredBook.SetExternalHover(this, false);
+        if (BookAnimator.Instance != null) BookAnimator.Instance.SetExternalHover(this, false);
+
+        hoveredBook = null;
     }
 
 
@@ -176,6 +230,8 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     {
         if (exiting) return;
         exiting = true;
+
+        ReleaseBook();
 
         if (button != null) button.interactable = false;
 
@@ -304,6 +360,9 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
         float depth = Mathf.Lerp(manager.EdgeDistance, hoverDepth, hoverBlend);
 
         Place(viewCamera, point, depth, pixels, roll);
+
+        // leaving hover, suppression and so on all arrive here rather than as pointer events
+        UpdateBookHover();
     }
 
 

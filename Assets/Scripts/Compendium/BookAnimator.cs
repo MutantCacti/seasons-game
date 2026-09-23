@@ -131,6 +131,12 @@ public class BookAnimator : MonoBehaviour
     private PartState lastFlipped;
     private float nextFlipTime;
     private bool wasHovered;
+
+    // Anything else that counts as the pointer being on the book, e.g. UI in front of it, which
+    // IsHovered ignores on purpose. A set, so several sources cannot fight over one flag.
+    private readonly HashSet<object> externalHover = new HashSet<object>();
+    private static readonly Predicate<object> IsDeadSource = IsDestroyedObject;
+
     private bool warnedAboutParts;
     private bool warnedAboutHoverTarget;
     private bool warnedAboutYawTarget;
@@ -515,7 +521,10 @@ public class BookAnimator : MonoBehaviour
         // while the book is out at the camera the click owns the pose, so the hover lets it be
         if (read > 0.0f) return;
 
-        bool hovered = IsHovered();
+        // a source destroyed without letting go would hold the book open forever
+        if (externalHover.Count > 0) externalHover.RemoveWhere(IsDeadSource);
+
+        bool hovered = IsHovered() || externalHover.Count > 0;
 
         if (hovered == wasHovered) return;
 
@@ -972,6 +981,25 @@ public class BookAnimator : MonoBehaviour
 
 
     // MARK: hover
+
+
+    // Lets something other than the pointer hover the book. Every source that sets it must clear it.
+    public void SetExternalHover(object source, bool hovering)
+    {
+        if (source == null) return;
+
+        if (hovering) externalHover.Add(source);
+        else externalHover.Remove(source);
+    }
+
+
+    private static bool IsDestroyedObject(object source)
+    {
+        // Unity-null: the C# object is still here but the engine object behind it is gone
+        UnityEngine.Object unityObject = source as UnityEngine.Object;
+
+        return source == null || (unityObject is not null && unityObject == null);
+    }
 
 
     private bool IsHovered()
