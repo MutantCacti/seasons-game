@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 // Owns the pending notifications (a section of the world save) and the pings that show them.
@@ -34,9 +35,12 @@ public class NotificationManager : MonoBehaviour
     [SerializeField] private Color failTint = new Color(0.824f, 0.341f, 0.247f);       // #D2573F, warm brick red
 
 
+    // one pair per type, all optional; the complete pair keeps what the old shared pair was set to
     [Header("Sound")]
-    [SerializeField] private SoundObject spawnSound;
-    [SerializeField] private SoundObject openSound;
+    [FormerlySerializedAs("spawnSound")] [SerializeField] private SoundObject completeSpawnSound;
+    [FormerlySerializedAs("openSound")] [SerializeField] private SoundObject completeOpenSound;
+    [SerializeField] private SoundObject failSpawnSound;
+    [SerializeField] private SoundObject failOpenSound;
 
 
     [Header("Layout")]
@@ -214,7 +218,7 @@ public class NotificationManager : MonoBehaviour
         saved.pending.Add(entry);
         Save();
 
-        if (restored) SpawnPing(entry, 0.0f, true);
+        if (restored) SpawnPing(entry, 0.0f, SpawnSoundFor(type));
     }
 
 
@@ -253,7 +257,7 @@ public class NotificationManager : MonoBehaviour
             Save();
         }
 
-        PlaySound(openSound, ping);
+        PlaySound(OpenSoundFor(ping.Type), ping);
 
         ping.Exit();
 
@@ -344,10 +348,21 @@ public class NotificationManager : MonoBehaviour
 
         if (dropped) Save();
 
+        // One sound for the whole batch, not a chord of them. It plays with the first ping to grow, but
+        // is picked by the most urgent type in the batch, so a waiting soft lock is never announced
+        // with the cheerful sound.
+        SoundObject batchSound = null;
+
+        if (saved.pending.Count > 0)
+        {
+            batchSound = SpawnSoundFor(ContainsType(NotificationType.FailPuzzle)
+                ? NotificationType.FailPuzzle
+                : NotificationType.CompletePuzzle);
+        }
+
         for (int i = 0; i < saved.pending.Count; i++)
         {
-            // one sound for the whole batch, not a chord of them
-            SpawnPing(saved.pending[i], i * spawnStagger, i == 0);
+            SpawnPing(saved.pending[i], i * spawnStagger, i == 0 ? batchSound : null);
         }
     }
 
@@ -386,7 +401,8 @@ public class NotificationManager : MonoBehaviour
     }
 
 
-    private void SpawnPing(NotificationSave entry, float delay, bool withSound)
+    // sound is played as the ping starts to grow; null for silent
+    private void SpawnPing(NotificationSave entry, float delay, SoundObject sound)
     {
         if (pingPrefab == null || pingCanvas == null)
         {
@@ -406,7 +422,7 @@ public class NotificationManager : MonoBehaviour
         bool complete = entry.type == NotificationType.CompletePuzzle;
 
         ping.Init(this, entry.type, entry.targetEntityGuid, entry.puzzleId,
-            complete ? completeIcon : failIcon, complete ? completeTint : failTint, delay, withSound);
+            complete ? completeIcon : failIcon, complete ? completeTint : failTint, delay, sound);
 
         pings.Add(ping);
     }
@@ -432,15 +448,32 @@ public class NotificationManager : MonoBehaviour
     }
 
 
-    public void PlaySpawnSound(NotificationPing ping)
+    private SoundObject SpawnSoundFor(NotificationType type)
     {
-        PlaySound(spawnSound, ping);
+        return type == NotificationType.FailPuzzle ? failSpawnSound : completeSpawnSound;
+    }
+
+
+    private SoundObject OpenSoundFor(NotificationType type)
+    {
+        return type == NotificationType.FailPuzzle ? failOpenSound : completeOpenSound;
+    }
+
+
+    private bool ContainsType(NotificationType type)
+    {
+        for (int i = 0; i < saved.pending.Count; i++)
+        {
+            if (saved.pending[i] != null && saved.pending[i].type == type) return true;
+        }
+
+        return false;
     }
 
 
     // positional at the target while it is on screen, at the listener otherwise so an edge ping is not
     // quietened by being far away
-    private void PlaySound(SoundObject sound, NotificationPing ping)
+    public void PlaySound(SoundObject sound, NotificationPing ping)
     {
         if (sound == null || AudioManager.Instance == null) return;
 

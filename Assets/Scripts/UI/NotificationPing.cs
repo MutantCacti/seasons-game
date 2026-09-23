@@ -75,7 +75,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
 
     public void Init(NotificationManager owner, NotificationType notificationType, string entityGuid, string id,
-        Sprite iconSprite, Color tint, float delay, bool withSound)
+        Sprite iconSprite, Color tint, float delay, SoundObject spawnSound)
     {
         manager = owner;
         type = notificationType;
@@ -110,7 +110,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
         Sequence grow = DOTween.Sequence();
         if (delay > 0.0f) grow.AppendInterval(delay);
-        if (withSound) grow.AppendCallback(() => manager.PlaySpawnSound(this));
+        if (spawnSound != null) grow.AppendCallback(() => manager.PlaySound(spawnSound, this));
         grow.Append(DOTween.To(() => presence, value => presence = value, growOvershoot, growDuration).SetEase(Ease.OutQuad));
         grow.Append(DOTween.To(() => presence, value => presence = value, 1.0f, growSettleDuration).SetEase(Ease.InQuad));
         grow.SetLink(gameObject);
