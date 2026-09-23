@@ -330,12 +330,18 @@ public class PuzzleManager : MonoBehaviour
             return;
         }
 
-        PuzzleSaveData saved = manager.SaveData.puzzles;
+        if (manager.SaveData.world == null)
+        {
+            Debug.LogError("PuzzleManager: the save has no world, so puzzle progress cannot be loaded or saved", this);
+            return;
+        }
+
+        PuzzleSaveData saved = manager.SaveData.world.puzzles;
 
         if (saved == null)
         {
             saved = new PuzzleSaveData();
-            manager.SaveData.puzzles = saved;
+            manager.SaveData.world.puzzles = saved;
         }
 
         completionEnabled = false;
@@ -432,15 +438,15 @@ public class PuzzleManager : MonoBehaviour
     private void WriteThrough()
     {
         SaveDataManager manager = SaveDataManager.Instance;
-        if (manager == null || manager.SaveData == null) return;
+        if (manager == null || manager.SaveData == null || manager.SaveData.world == null) return;
         if (registry == null) return;
 
-        PuzzleSaveData saved = manager.SaveData.puzzles;
+        PuzzleSaveData saved = manager.SaveData.world.puzzles;
 
         if (saved == null)
         {
             saved = new PuzzleSaveData();
-            manager.SaveData.puzzles = saved;
+            manager.SaveData.world.puzzles = saved;
         }
 
         saved.unlocked.Clear();

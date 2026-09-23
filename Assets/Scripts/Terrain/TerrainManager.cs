@@ -35,7 +35,7 @@ public partial class TerrainManager : MonoBehaviour
 
     private List<Level> levels;
     private State state;
-    private SaveData saveData;
+    private WorldState world;
 
 
     private void Awake()
@@ -72,19 +72,24 @@ public partial class TerrainManager : MonoBehaviour
             Debug.LogError("TerrainManager: no tilemapRoot assigned, so tilemaps can't be found", this);
         }
 
-        // SaveDataManager is in the persistent scene so its Awake has already deserialised by now
-        saveData = SaveDataManager.Instance != null ? SaveDataManager.Instance.SaveData : null;
+        // SaveDataManager is in the persistent scene so its Awake has already deserialised by now.
+        // The whole world is cached, not just its terrain section: SaveData.world is what the save
+        // managers hold, and it is only ever swapped out by a new game or a checkpoint restore.
+        SaveDataManager saveManager = SaveDataManager.Instance;
+        world = saveManager != null ? saveManager.SaveData.world : null;
 
-        if (saveData == null)
+        if (world == null)
         {
             Debug.LogWarning("TerrainManager: no SaveDataManager in the scene, so remaps will not be saved", this);
-            saveData = new SaveData();
+            world = new WorldState();
         }
 
-        WarnIfMapChanged(saveData.terrain);
-        ApplyRemaps(saveData.terrain);
+        world.EnsureSections();
 
-        saveData.terrain.Stamp(state.originX, state.originZ, state.width, state.depth, state.levelHeights);
+        WarnIfMapChanged(world.terrain);
+        ApplyRemaps(world.terrain);
+
+        world.terrain.Stamp(state.originX, state.originZ, state.width, state.depth, state.levelHeights);
     }
 
 
@@ -382,7 +387,7 @@ public partial class TerrainManager : MonoBehaviour
         if (!registry.TryGetIdByTile(tile, out string tileId)) return false;
 
         state.SetTile(cell, tile);
-        saveData.terrain.SetRemap(cell.x, cell.z, ToLevelMillimetres(state.levelHeights[cell.y]), tileId);
+        world.terrain.SetRemap(cell.x, cell.z, ToLevelMillimetres(state.levelHeights[cell.y]), tileId);
         SetCellVisual(cell, tile);
 
         return true;

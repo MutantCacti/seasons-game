@@ -195,13 +195,17 @@ public class InventoryManager : MonoBehaviour {
     // Write through the SaveDataManager's live loaded save rather than directly to disk
     private void WriteThrough(GameItem item, int quantity) {
         SaveDataManager manager = SaveDataManager.Instance;
-        if (manager == null || manager.SaveData == null || manager.SaveData.inventory == null) return;
+        if (manager == null || manager.SaveData == null || manager.SaveData.world == null) return;
+
+        SerializableDictionary<string, int> saved = manager.SaveData.world.inventory;
+
+        if (saved == null) return;
 
         // log and give up if the item is not in the registry
         if (registry == null || !registry.TryGetIdByItem(item, out string id)) return;
 
-        if (quantity == 0) manager.SaveData.inventory.Remove(id);
-        else manager.SaveData.inventory[id] = quantity;
+        if (quantity == 0) saved.Remove(id);
+        else saved[id] = quantity;
     }
 
 
@@ -215,7 +219,12 @@ public class InventoryManager : MonoBehaviour {
             return;
         }
 
-        SerializableDictionary<string, int> saved = manager.SaveData.inventory;
+        if (manager.SaveData.world == null) {
+            Debug.LogError("InventoryManager: the save has no world, so the inventory starts empty", this);
+            return;
+        }
+
+        SerializableDictionary<string, int> saved = manager.SaveData.world.inventory;
         if (saved == null || saved.Count == 0) return;
 
         if (registry == null) {

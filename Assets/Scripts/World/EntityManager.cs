@@ -30,6 +30,10 @@ public class EntityManager : MonoBehaviour
     private readonly List<LiveEntity> live = new List<LiveEntity>();
     private bool loaded;
 
+    // Cached for the same reason TerrainManager caches it: SaveData.world is the one object every
+    // manager writes into, and only a new game or a checkpoint restore ever swaps it out
+    private WorldState world;
+
 
     private void Awake()
     {
@@ -56,7 +60,27 @@ public class EntityManager : MonoBehaviour
 
         if (entityParent == null) entityParent = MakeContainer();
 
+        ResolveWorld();
+
         EnsureLoaded();
+    }
+
+
+    // The save managers own the live world; this only falls back to a throwaway one so that a scene
+    // without a SaveDataManager still runs, at the cost of its entities never reaching disk
+    private void ResolveWorld()
+    {
+        SaveDataManager manager = SaveDataManager.Instance;
+        world = manager != null && manager.SaveData != null ? manager.SaveData.world : null;
+
+        if (world == null)
+        {
+            Debug.LogWarning("EntityManager: no SaveDataManager in the scene, so spawned entities " +
+                "will not be saved", this);
+            world = new WorldState();
+        }
+
+        world.EnsureSections();
     }
 
 
@@ -86,11 +110,9 @@ public class EntityManager : MonoBehaviour
     private void LoadFromSave()
     {
         if (terrainManager == null || registry == null) return;
+        if (world == null) return;
 
-        SaveDataManager manager = SaveDataManager.Instance;
-        if (manager == null || manager.SaveData == null) return;
-
-        EntitySaveData saved = manager.SaveData.entities;
+        EntitySaveData saved = world.entities;
         if (saved == null || saved.entities.Count == 0) return;
 
         // spawn in a stable order so the hierarchy does not reshuffle between sessions
@@ -206,11 +228,9 @@ public class EntityManager : MonoBehaviour
 
         GameObject instance = CreateInstance(item, cell);
 
-        SaveDataManager manager = SaveDataManager.Instance;
-
-        if (manager != null && manager.SaveData != null && manager.SaveData.entities != null)
+        if (world != null && world.entities != null)
         {
-            manager.SaveData.entities.Add(new EntitySave
+            world.entities.Add(new EntitySave
             {
                 itemId = id,
                 x = cell.x,

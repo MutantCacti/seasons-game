@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -94,18 +95,26 @@ public class SaveDataManager : MonoBehaviour
                 return CreateNewSave();
             }
 
-            if (loaded.saveVersion > SaveData.CURRENT_VERSION)
+            // any other version is not this one: there is no migration, so it is a new game
+            if (loaded.saveVersion != SaveData.CURRENT_VERSION)
             {
-                Debug.LogError($"SaveDataManager: save is version {loaded.saveVersion} but we are in version {SaveData.CURRENT_VERSION} - treating it as a new game");
+                Debug.Log($"SaveDataManager: save is version {loaded.saveVersion} but we are in version " +
+                    $"{SaveData.CURRENT_VERSION} - starting a new game");
                 return CreateNewSave();
             }
 
-            Debug.Log($"SaveDataManager: Loaded save from {FullPath}");
+            if (loaded.world == null)
+            {
+                Debug.LogWarning($"SaveDataManager: version {SaveData.CURRENT_VERSION} save at '{FullPath}' " +
+                    $"has no world - starting it empty");
+                loaded.world = new WorldState();
+            }
 
-            if (loaded.terrain == null) loaded.terrain = new TerrainSaveData();
-            if (loaded.entities == null) loaded.entities = new EntitySaveData();
-            if (loaded.inventory == null) loaded.inventory = new SerializableDictionary<string, int>();
-            if (loaded.puzzles == null) loaded.puzzles = new PuzzleSaveData();
+            loaded.world.EnsureSections();
+
+            if (loaded.checkpoints == null) loaded.checkpoints = new List<Checkpoint>();
+
+            Debug.Log($"SaveDataManager: Loaded save from {FullPath}");
 
             return loaded;
         }
