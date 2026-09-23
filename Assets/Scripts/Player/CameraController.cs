@@ -17,9 +17,6 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float dragRayDistance = 1000.0f;
 
     [Header("Audio listener")]
-    // The listener rides the centre of the view so that 3D falloff is measured from near whatever the
-    // player is looking at, rather than from a camera ~23 units above the terrain. This distance also
-    // reads as the full volume radius, so a sound wants its minDistance set to about the same value.
     [SerializeField] private Transform audioListener;
     [SerializeField] private float listenerDistance = 5.0f;
 
@@ -85,22 +82,6 @@ public class CameraController : MonoBehaviour
 
         // DEBUG: play the intro song
         AudioManager.Instance.PlayMusic(testSO);
-
-        InputManager.Instance.onRightClickDown += DebugAddInventory;
-        DebugAddInventory(false);
-    }
-
-
-    private void DebugAddInventory(bool down)
-    {
-        if (!down)
-        {
-            // DEBUG: Add water to inventory
-            InventoryManager.Instance.Add(testGameItem, 2);
-
-            // DEBUG: Add tree to inventory
-            InventoryManager.Instance.Add(treeGameItem, 1);
-        }
     }
 
 
@@ -118,7 +99,6 @@ public class CameraController : MonoBehaviour
         InputManager.Instance.onMouseDelta -= OnMouseMove;
         InputManager.Instance.onScrollWheel -= OnScrollWheel;
         InputManager.Instance.onMovement -= OnMovement;
-        InputManager.Instance.onRightClickDown -= DebugAddInventory; // DEBUG
     }
 
 
@@ -133,10 +113,6 @@ public class CameraController : MonoBehaviour
     }
 
 
-    // Called when uGUI claims a press this camera had already begun panning for. The press test above
-    // runs from the input callback, which happens before the EventSystem routes the press, so on a fast
-    // drag the two can disagree. Putting targetPosition back undoes whatever the pan applied, and the
-    // smoothing eases the camera home rather than snapping it.
     public void CancelPan()
     {
         if (!dragStartedOnWorld) return;
