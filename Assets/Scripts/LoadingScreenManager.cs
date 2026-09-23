@@ -10,6 +10,8 @@ public class LoadingScreenManager : MonoBehaviour {
     private static LoadingScreenManager instance;
     public static LoadingScreenManager Instance { get { return instance; } }
 
+    public bool IsLoading { get { return isLoading; } }
+
     [SerializeField] private GameObject loadingScreenCanvasGO;
     [SerializeField] private GameObject loadingScreenGO;
 
