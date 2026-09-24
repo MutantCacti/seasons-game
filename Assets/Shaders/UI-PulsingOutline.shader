@@ -1,15 +1,18 @@
 // A UI shader that draws a rectangular outline just inside an Image's rect, with its
 // pixel width pulsing in and out over time. Based on UI/Default so masks keep working.
 // Distance to the edge is measured from the Graphic's rect-local vertex position, so it
-// holds regardless of sprite or slicing.
+// holds regardless of sprite or slicing. A soft glow halo falls inward from the core band
+// so the highlight reads as breathing light rather than a painted border.
 Shader "UI/PulsingOutline"
 {
     Properties
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
-        _OutlineColor ("Outline Color", Color) = (0.91, 0.72, 0.29, 1)
-        _MaxWidth ("Max Width", Float) = 4
-        _PulseSpeed ("Pulse Speed", Float) = 3
+        _OutlineColor ("Outline Color", Color) = (1, 0.76, 0.23, 1)
+        _MaxWidth ("Max Width", Float) = 6
+        _PulseSpeed ("Pulse Speed", Float) = 5
+        _GlowWidth ("Glow Width", Float) = 14
+        _GlowIntensity ("Glow Intensity", Float) = 0.8
         _Rect ("Rect", Vector) = (0, 0, 580, 740)
 
         _StencilComp ("Stencil Comparison", Float) = 8
@@ -84,6 +87,8 @@ Shader "UI/PulsingOutline"
             fixed4 _OutlineColor;
             float _MaxWidth;
             float _PulseSpeed;
+            float _GlowWidth;
+            float _GlowIntensity;
             float4 _Rect;
             float4 _ClipRect;
 
@@ -108,13 +113,27 @@ Shader "UI/PulsingOutline"
                 float yMax = _Rect.y + _Rect.w;
                 float dist = min(min(p.x - _Rect.x, xMax - p.x), min(p.y - _Rect.y, yMax - p.y));
 
-                float width = _MaxWidth * (0.5 + 0.5 * sin(_Time.y * _PulseSpeed));
+                float pulse = 0.5 + 0.5 * sin(_Time.y * _PulseSpeed);
+                float width = _MaxWidth * pulse;
                 width = max(width, 0.0);
 
-                float alpha = saturate((width - dist) / max(fwidth(dist), 1e-4));
+                float aa = fwidth(dist);
+                float core = saturate((width - dist) / max(aa, 1e-4));
 
-                fixed4 color = _OutlineColor * IN.color;
-                color.a *= alpha;
+                float glowDist = max(dist - width, 0.0);
+                float glow = _GlowIntensity * exp(-glowDist / _GlowWidth);
+                glow *= 0.6 + 0.4 * pulse;
+                glow = saturate(glow);
+
+                float alpha = max(core, glow);
+
+                // The core brightens toward the rect edge, so it reads as light, not paint.
+                float corePos = 1.0 - saturate(dist / max(width, 1e-4));
+                float3 coreCol = lerp(_OutlineColor.rgb, float3(1.0, 1.0, 1.0), corePos * 0.6);
+
+                float3 col = lerp(_OutlineColor.rgb, coreCol, core / max(alpha, 1e-4));
+
+                fixed4 color = fixed4(col * IN.color.rgb, alpha * IN.color.a);
 
                 #ifdef UNITY_UI_CLIP_RECT
                 color.a *= UnityGet2DClipping(IN.worldPosition.xy, _ClipRect);

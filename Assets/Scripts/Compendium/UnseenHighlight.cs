@@ -6,13 +6,15 @@ using UnityEngine.UI;
 
 // Pulses an outline around a compendium entry while it has unseen changes, and clears itself
 // on hover. One material instance per highlight because each entry's outline needs its own
-// _RectSize, so its pixel width is measured in that outline's own rect space.
+// _Rect, so its edge distance is measured in that outline's own rect space.
 public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
 {
     [SerializeField] private Image outline;
     [SerializeField] private Shader outlineShader;
-    [SerializeField] private float maxWidth = 4.0f;
-    [SerializeField] private float pulseSpeed = 3.0f;
+    [SerializeField] private float maxWidth = 6.0f;
+    [SerializeField] private float pulseSpeed = 5.0f;
+    [SerializeField] private float glowWidth = 14.0f;
+    [SerializeField] private float glowIntensity = 0.8f;
 
     private Material material;
     private Action onSeen;
@@ -78,6 +80,8 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
         material = new Material(outlineShader);
         material.SetFloat("_MaxWidth", maxWidth);
         material.SetFloat("_PulseSpeed", pulseSpeed);
+        material.SetFloat("_GlowWidth", glowWidth);
+        material.SetFloat("_GlowIntensity", glowIntensity);
 
         outline.material = material;
     }
