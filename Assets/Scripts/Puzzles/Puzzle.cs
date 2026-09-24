@@ -19,6 +19,7 @@ public class Puzzle : ScriptableObject
 {
     [SerializeField] private string id;
     [SerializeField] [TextArea] private string description;
+    [SerializeField] private Sprite icon;
 
     // Unlocking this puzzle puts these in the inventory
     [SerializeField] private List<Ingredient> ingredients = new List<Ingredient>();
@@ -30,6 +31,7 @@ public class Puzzle : ScriptableObject
     public string Id => id;
     public string Name => name;   // Object.name, the name in the inspector
     public string Description => description;
+    public Sprite Icon => icon;
     public IReadOnlyList<Ingredient> Ingredients => ingredients;
     public IReadOnlyList<Puzzle> Unlocks => unlocks;
 
