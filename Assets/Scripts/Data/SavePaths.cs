@@ -14,11 +14,17 @@ using UnityEngine;
 public static class SavePaths
 {
     private const string BUILD_FILE_NAME = "Save.json";
+    private const string BUILD_OPTIONS_FILE_NAME = "Options.json";
 
 
     // Full path of the live save file. Both SaveDataManager and Tools > SaveHelper > Clear Save use this,
     // so they can never disagree about which file is the save.
     public static string FullPath { get { return Path.Combine(Application.persistentDataPath, FileName); } }
+
+
+    // Full path of the options file. Kept separate from the save so Clear Save and Clear Options
+    // can never touch each other's data.
+    public static string OptionsFullPath { get { return Path.Combine(Application.persistentDataPath, OptionsFileName); } }
 
 
     public static string FileName
@@ -30,6 +36,21 @@ public static class SavePaths
             return $"Save-{ProjectName}.json";
 #else
             return BUILD_FILE_NAME;
+#endif
+        }
+    }
+
+
+    // Same naming rule as the save: per-worktree in the Editor (all worktrees share one
+    // persistentDataPath), plain name in a build.
+    public static string OptionsFileName
+    {
+        get
+        {
+#if UNITY_EDITOR
+            return $"Options-{ProjectName}.json";
+#else
+            return BUILD_OPTIONS_FILE_NAME;
 #endif
         }
     }
