@@ -288,7 +288,7 @@ public class NotificationManager : MonoBehaviour
                     return;
                 }
 
-                if (!puzzles.Registry.TryGetPuzzleById(puzzleId, out Puzzle puzzle))
+                if (!puzzles.Registry.TryGetById(puzzleId, out Puzzle puzzle))
                 {
                     Debug.LogError($"NotificationManager: no puzzle has id '{puzzleId}', so opening its completion " +
                         $"unlocked nothing", this);
@@ -428,7 +428,7 @@ public class NotificationManager : MonoBehaviour
         // nothing to check against, so keep it rather than lose the player's progress
         if (puzzles == null || puzzles.Registry == null) return false;
 
-        if (!puzzles.Registry.TryGetPuzzleById(entry.puzzleId, out Puzzle puzzle))
+        if (!puzzles.Registry.TryGetById(entry.puzzleId, out Puzzle puzzle))
         {
             Debug.LogError($"NotificationManager: the save holds a {entry.type} notification for '{entry.puzzleId}', " +
                 $"but no puzzle has that id - dropping it", this);
@@ -757,7 +757,7 @@ public class NotificationManager : MonoBehaviour
             return false;
         }
 
-        if (!puzzles.Registry.TryGetIdByPuzzle(puzzle, out puzzleId))
+        if (!puzzles.Registry.TryGetIdByEntry(puzzle, out puzzleId))
         {
             Debug.LogError($"NotificationManager: '{puzzle.name}' has no id in the registry, so its notification was dropped", puzzle);
             return false;

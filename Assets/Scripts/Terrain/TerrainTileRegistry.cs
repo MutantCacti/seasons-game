@@ -6,7 +6,7 @@ using UnityEngine;
     fileName="TerrainTileRegistry",
     menuName="Terrain/Terrain Tile Registry"
 )]
-public class TerrainTileRegistry : ScriptableObject
+public class TerrainTileRegistry : ScriptableObject, Registry<TerrainTile>
 {
     [SerializeField] private List<TerrainTile> tiles = new List<TerrainTile>();
 
@@ -14,14 +14,14 @@ public class TerrainTileRegistry : ScriptableObject
     [System.NonSerialized] private Dictionary<string, TerrainTile> tileById;
 
 
-    public IReadOnlyList<TerrainTile> Tiles { get { return tiles; } }
+    public IReadOnlyList<TerrainTile> Entries { get { return tiles; } }
     public int Count { get { return tiles != null ? tiles.Count : 0; } }
 
 
     // MARK: lookup
 
 
-    public bool TryGetTileById(string id, out TerrainTile tile)
+    public bool TryGetById(string id, out TerrainTile tile)
     {
         tile = null;
         if (string.IsNullOrEmpty(id)) return false;
@@ -32,7 +32,7 @@ public class TerrainTileRegistry : ScriptableObject
     }
 
 
-    public bool TryGetIdByTile(TerrainTile tile, out string id)
+    public bool TryGetIdByEntry(TerrainTile tile, out string id)
     {
         id = null;
         if (tile == null) return false;

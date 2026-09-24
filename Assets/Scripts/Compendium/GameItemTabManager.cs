@@ -77,7 +77,7 @@ public class GameItemTabManager : CompendiumTabManager
         if (registry == null) return false;
         if (index < 0 || index >= registry.Count) return false;
 
-        item = registry.Items[index];
+        item = registry.Entries[index];
 
         return item != null;
     }
@@ -208,7 +208,7 @@ public class GameItemTabManager : CompendiumTabManager
     // transition as unseen. Absent items drop out of unseen so a later re-discovery pulses again.
     private void RecomputePresence()
     {
-        IReadOnlyList<GameItem> items = registry != null ? registry.Items : null;
+        IReadOnlyList<GameItem> items = registry != null ? registry.Entries : null;
         if (items == null) return;
 
         bool changed = false;
@@ -252,7 +252,7 @@ public class GameItemTabManager : CompendiumTabManager
     {
         present.Clear();
 
-        IReadOnlyList<GameItem> items = registry != null ? registry.Items : null;
+        IReadOnlyList<GameItem> items = registry != null ? registry.Entries : null;
         if (items == null) return;
 
         for (int i = 0; i < items.Count; i++)
@@ -277,7 +277,7 @@ public class GameItemTabManager : CompendiumTabManager
         {
             string id = savedUnseen[i].id;
 
-            if (!registry.TryGetItemById(id, out GameItem item))
+            if (!registry.TryGetById(id, out GameItem item))
             {
                 Debug.LogWarning($"GameItemTabManager: the save holds unseen item '{id}', but no item in " +
                     $"'{registry.name}' has that id - dropping it", this);

@@ -6,7 +6,7 @@ using UnityEngine;
     fileName="GameItemRegistry",
     menuName="Items/Game Item Registry"
 )]
-public class GameItemRegistry : ScriptableObject
+public class GameItemRegistry : ScriptableObject, Registry<GameItem>
 {
     [SerializeField] private List<GameItem> items = new List<GameItem>();
 
@@ -17,7 +17,7 @@ public class GameItemRegistry : ScriptableObject
     [System.NonSerialized] private Dictionary<string, GameItem> itemById;
 
 
-    public IReadOnlyList<GameItem> Items { get { return items; } }
+    public IReadOnlyList<GameItem> Entries { get { return items; } }
     public int Count { get { return items != null ? items.Count : 0; } }
     public PuzzleRegistry PuzzleRegistry { get { return puzzleRegistry; } }
 
@@ -25,7 +25,7 @@ public class GameItemRegistry : ScriptableObject
     // MARK: lookup
 
 
-    public bool TryGetItemById(string id, out GameItem item)
+    public bool TryGetById(string id, out GameItem item)
     {
         item = null;
         if (string.IsNullOrEmpty(id)) return false;
@@ -36,7 +36,7 @@ public class GameItemRegistry : ScriptableObject
     }
 
 
-    public bool TryGetIdByItem(GameItem item, out string id)
+    public bool TryGetIdByEntry(GameItem item, out string id)
     {
         id = null;
         if (item == null) return false;

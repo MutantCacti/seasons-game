@@ -390,7 +390,7 @@ public partial class TerrainManager : MonoBehaviour
             return false;
         }
 
-        if (!registry.TryGetIdByTile(tile, out string tileId)) return false;
+        if (!registry.TryGetIdByEntry(tile, out string tileId)) return false;
 
         state.SetTile(cell, tile);
         world.terrain.SetRemap(cell.x, cell.z, ToLevelMillimetres(state.levelHeights[cell.y]), tileId);
@@ -525,7 +525,7 @@ public partial class TerrainManager : MonoBehaviour
                 continue;
             }
 
-            if (!registry.TryGetTileById(remap.tileId, out TerrainTile tile))
+            if (!registry.TryGetById(remap.tileId, out TerrainTile tile))
             {
                 Debug.LogWarning($"TerrainManager: save names tile id '{remap.tileId}' which is not in " +
                     $"the registry - skipping cell {cell}", this);

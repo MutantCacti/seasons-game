@@ -544,7 +544,7 @@ public class PuzzleManager : MonoBehaviour
     {
         for (int i = 0; i < saved.unlocked.Count; i++)
         {
-            if (!registry.TryGetPuzzleById(saved.unlocked[i], out Puzzle puzzle))
+            if (!registry.TryGetById(saved.unlocked[i], out Puzzle puzzle))
             {
                 Debug.LogError($"PuzzleManager: the save holds unlocked puzzle '{saved.unlocked[i]}', but " +
                     $"no puzzle in '{registry.name}' has that id - dropping it", this);
@@ -557,7 +557,7 @@ public class PuzzleManager : MonoBehaviour
 
         for (int i = 0; i < saved.completed.Count; i++)
         {
-            if (!registry.TryGetPuzzleById(saved.completed[i], out Puzzle puzzle))
+            if (!registry.TryGetById(saved.completed[i], out Puzzle puzzle))
             {
                 Debug.LogError($"PuzzleManager: the save holds completed puzzle '{saved.completed[i]}', but " +
                     $"no puzzle in '{registry.name}' has that id - dropping it", this);
@@ -580,7 +580,7 @@ public class PuzzleManager : MonoBehaviour
             PuzzleLedgerSave savedLedger = saved.ledgers[i];
             if (savedLedger == null) continue;
 
-            if (!registry.TryGetPuzzleById(savedLedger.puzzleId, out Puzzle puzzle)) continue;
+            if (!registry.TryGetById(savedLedger.puzzleId, out Puzzle puzzle)) continue;
 
             if (!unlocked.Contains(puzzle) || completed.Contains(puzzle)) continue;
 
@@ -601,7 +601,7 @@ public class PuzzleManager : MonoBehaviour
             PuzzleCompletionSave entry = saved.completedBy[i];
             if (entry == null) continue;
 
-            if (!registry.TryGetPuzzleById(entry.puzzleId, out Puzzle puzzle))
+            if (!registry.TryGetById(entry.puzzleId, out Puzzle puzzle))
             {
                 Debug.LogError($"PuzzleManager: the save says '{entry.puzzleId}' was completed by entity " +
                     $"'{entry.entityGuid}', but no puzzle in '{registry.name}' has that id - dropping it", this);
@@ -652,14 +652,14 @@ public class PuzzleManager : MonoBehaviour
 
         foreach (Puzzle puzzle in unlocked)
         {
-            if (!registry.TryGetIdByPuzzle(puzzle, out string id)) continue;
+            if (!registry.TryGetIdByEntry(puzzle, out string id)) continue;
 
             saved.unlocked.Add(id);
         }
 
         foreach (Puzzle puzzle in completed)
         {
-            if (!registry.TryGetIdByPuzzle(puzzle, out string id)) continue;
+            if (!registry.TryGetIdByEntry(puzzle, out string id)) continue;
 
             saved.completed.Add(id);
         }
@@ -672,7 +672,7 @@ public class PuzzleManager : MonoBehaviour
             if (attribution.Key == null) continue;
             if (string.IsNullOrEmpty(attribution.Value)) continue;
 
-            if (!registry.TryGetIdByPuzzle(attribution.Key, out string attributedId))
+            if (!registry.TryGetIdByEntry(attribution.Key, out string attributedId))
             {
                 Debug.LogError($"PuzzleManager: '{attribution.Key.name}' was completed by entity " +
                     $"'{attribution.Value}', but it has no id in '{registry.name}', so the attribution " +
@@ -700,7 +700,7 @@ public class PuzzleManager : MonoBehaviour
         {
             // a completed puzzle is never tested again, so it keeps no ledger
             if (completed.Contains(puzzle)) continue;
-            if (!registry.TryGetIdByPuzzle(puzzle, out string puzzleId)) continue;
+            if (!registry.TryGetIdByEntry(puzzle, out string puzzleId)) continue;
 
             PuzzleLedgerSave entry = new PuzzleLedgerSave();
             entry.puzzleId = puzzleId;

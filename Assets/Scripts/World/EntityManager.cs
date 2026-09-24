@@ -135,7 +135,7 @@ public class EntityManager : MonoBehaviour
     {
         repaired = entry;
 
-        if (string.IsNullOrEmpty(entry.itemId) || !registry.TryGetItemById(entry.itemId, out GameItem item))
+        if (string.IsNullOrEmpty(entry.itemId) || !registry.TryGetById(entry.itemId, out GameItem item))
         {
             Debug.LogError($"EntityManager: the save holds entity '{entry.itemId}', but no GameItem in the registry has that id - dropping it", this);
             return false;
@@ -272,7 +272,7 @@ public class EntityManager : MonoBehaviour
         }
 
         // logs and gives up if the item is not in the registry
-        if (registry == null || !registry.TryGetIdByItem(item, out string id)) return null;
+        if (registry == null || !registry.TryGetIdByEntry(item, out string id)) return null;
 
         EntityId entityId = CreateInstance(item, cell);
 

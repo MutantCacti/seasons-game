@@ -202,7 +202,7 @@ public class InventoryManager : MonoBehaviour {
         if (saved == null) return;
 
         // log and give up if the item is not in the registry
-        if (registry == null || !registry.TryGetIdByItem(item, out string id)) return;
+        if (registry == null || !registry.TryGetIdByEntry(item, out string id)) return;
 
         if (quantity == 0) saved.Remove(id);
         else saved[id] = quantity;
@@ -236,7 +236,7 @@ public class InventoryManager : MonoBehaviour {
         foreach (KeyValuePair<string, int> pair in saved) {
             if (pair.Value <= 0) continue;
 
-            if (!registry.TryGetItemById(pair.Key, out GameItem item)) {
+            if (!registry.TryGetById(pair.Key, out GameItem item)) {
                 Debug.LogError($"InventoryManager: the save holds '{pair.Key}', but no GameItem in '{registry.name}' has that id - dropping it", this);
                 continue;
             }
@@ -269,7 +269,7 @@ public class InventoryManager : MonoBehaviour {
 
 
     private int RegistryIndex(GameItem item) {
-        IReadOnlyList<GameItem> items = registry != null ? registry.Items : null;
+        IReadOnlyList<GameItem> items = registry != null ? registry.Entries : null;
         if (items == null) return int.MaxValue;
 
         for (int i = 0; i < items.Count; i++) {

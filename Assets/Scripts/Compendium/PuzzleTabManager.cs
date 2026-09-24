@@ -148,7 +148,7 @@ public class PuzzleTabManager : CompendiumTabManager
         if (registry == null) return false;
         if (index < 0 || index >= registry.Count) return false;
 
-        puzzle = registry.Puzzles[index];
+        puzzle = registry.Entries[index];
 
         return puzzle != null;
     }
@@ -469,7 +469,7 @@ public class PuzzleTabManager : CompendiumTabManager
             string id = savedUnseen[i].id;
             UnseenKind kind = (UnseenKind)savedUnseen[i].kind;
 
-            if (!registry.TryGetPuzzleById(id, out Puzzle puzzle))
+            if (!registry.TryGetById(id, out Puzzle puzzle))
             {
                 Debug.LogWarning($"PuzzleTabManager: the save holds unseen puzzle '{id}', but no puzzle in " +
                     $"'{registry.name}' has that id - dropping it", this);
