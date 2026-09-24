@@ -1,6 +1,7 @@
 using System.IO;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.Serialization;
 
 
 // Owns the global options: loads them at startup, applies them to the AudioMixer, and saves them
@@ -18,7 +19,7 @@ public class GlobalOptionsManager : MonoBehaviour
 
 
     [SerializeField] private AudioMixer audioMixer;
-    [SerializeField] private GlobalOptionsDatabase database;
+    [FormerlySerializedAs("database")] [SerializeField] private GlobalOptionsRegistry registry;
 
 
     private GlobalOptionsData data;
@@ -54,9 +55,9 @@ public class GlobalOptionsManager : MonoBehaviour
 
     private void Load()
     {
-        if (database == null)
+        if (registry == null)
         {
-            Debug.LogError("GlobalOptionsManager: no GlobalOptionsDatabase assigned, so no volume is applied or saved");
+            Debug.LogError("GlobalOptionsManager: no GlobalOptionsRegistry assigned, so no volume is applied or saved");
             data = new GlobalOptionsData();
             return;
         }
@@ -67,7 +68,7 @@ public class GlobalOptionsManager : MonoBehaviour
             {
                 Debug.Log($"GlobalOptionsManager: no options file at '{OptionsPath}', using defaults");
                 data = new GlobalOptionsData();
-                data.InitialiseDefaultValues(database);
+                data.InitialiseDefaultValues(registry);
                 return;
             }
 
@@ -77,19 +78,19 @@ public class GlobalOptionsManager : MonoBehaviour
             {
                 Debug.LogWarning($"GlobalOptionsManager: '{OptionsPath}' was empty or corrupt, using defaults");
                 data = new GlobalOptionsData();
-                data.InitialiseDefaultValues(database);
+                data.InitialiseDefaultValues(registry);
                 return;
             }
 
-            // backfill anything the database knows that the file does not, so a new option added
+            // backfill anything the registry knows that the file does not, so a new option added
             // later still gets a sensible value in an old file
-            foreach (GlobalOption option in database.AllGlobalOptions)
+            foreach (GlobalOption option in registry.Entries)
             {
-                if (option == null || string.IsNullOrEmpty(option.OptionID)) continue;
+                if (option == null || string.IsNullOrEmpty(option.Id)) continue;
 
-                if (!data.globalOptionValues.ContainsKey(option.OptionID))
+                if (!data.globalOptionValues.ContainsKey(option.Id))
                 {
-                    data.globalOptionValues[option.OptionID] = option.DefaultValue;
+                    data.globalOptionValues[option.Id] = option.DefaultValue;
                 }
             }
         }
@@ -97,7 +98,7 @@ public class GlobalOptionsManager : MonoBehaviour
         {
             Debug.LogError($"GlobalOptionsManager: failed to read '{OptionsPath}', using defaults ... {e.Message}");
             data = new GlobalOptionsData();
-            data.InitialiseDefaultValues(database);
+            data.InitialiseDefaultValues(registry);
         }
     }
 
@@ -110,14 +111,14 @@ public class GlobalOptionsManager : MonoBehaviour
             return;
         }
 
-        if (database == null || data == null) return;
+        if (registry == null || data == null) return;
 
-        // iterate the database, not the map, so ids that only exist in a stale file are ignored
-        foreach (GlobalOption option in database.AllGlobalOptions)
+        // iterate the registry, not the map, so ids that only exist in a stale file are ignored
+        foreach (GlobalOption option in registry.Entries)
         {
-            if (option == null || string.IsNullOrEmpty(option.OptionID)) continue;
+            if (option == null || string.IsNullOrEmpty(option.Id)) continue;
 
-            ApplyOne(option.OptionID, GetValue(option.OptionID));
+            ApplyOne(option.Id, GetValue(option.Id));
         }
     }
 
@@ -147,12 +148,9 @@ public class GlobalOptionsManager : MonoBehaviour
             return value;
         }
 
-        if (database != null)
+        if (registry != null && registry.TryGetById(optionID, out GlobalOption option))
         {
-            foreach (GlobalOption option in database.AllGlobalOptions)
-            {
-                if (option != null && option.OptionID == optionID) return option.DefaultValue;
-            }
+            return option.DefaultValue;
         }
 
         Debug.LogError($"GlobalOptionsManager: no option with id '{optionID}', returning 2");
