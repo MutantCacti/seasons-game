@@ -22,12 +22,13 @@ public class PuzzleTabManager : CompendiumTabManager
     }
 
 
-    // what last happened to a puzzle the player has not looked at yet; the latest one wins
+    // What last happened to a puzzle the player has not looked at yet; the latest one wins.
+    // Saved as its int, so these values are pinned: never reorder or renumber them.
     private enum UnseenKind
     {
-        Unlocked,
-        Completed,
-        Failed,
+        Unlocked = 0,
+        Completed = 1,
+        Failed = 2,
     }
 
 
@@ -51,8 +52,8 @@ public class PuzzleTabManager : CompendiumTabManager
     private int rowsPerPage = -1;
     private bool warnedAboutMissingStatusRow;
 
-    // runtime-only unseen tracking, never saved
-    private readonly Dictionary<Puzzle, UnseenKind> unseen = new Dictionary<Puzzle, UnseenKind>();
+    // unseen puzzles are saved through the base class, keyed by Puzzle.Id with an UnseenKind
+    private readonly List<UnseenSave> savedUnseen = new List<UnseenSave>();
     private bool baselineEmpty;
 
 
@@ -318,9 +319,9 @@ public class PuzzleTabManager : CompendiumTabManager
             return;
         }
 
-        if (state != PuzzleState.Hidden && unseen.TryGetValue(puzzle, out UnseenKind kind))
+        if (state != PuzzleState.Hidden && TryGetUnseen(puzzle.Id, out int kind))
         {
-            highlight.Show(ColourOf(kind), () => unseen.Remove(puzzle));
+            highlight.Show(ColourOf((UnseenKind)kind), () => ClearUnseen(puzzle.Id));
             return;
         }
 
@@ -335,7 +336,7 @@ public class PuzzleTabManager : CompendiumTabManager
     {
         highlight.Show(failTint, () =>
         {
-            unseen.Remove(puzzle);
+            ClearUnseen(puzzle.Id);
 
             if (highlight != null && PuzzleManager.Instance != null && PuzzleManager.Instance.IsSoftLocked(puzzle))
             {
@@ -387,13 +388,13 @@ public class PuzzleTabManager : CompendiumTabManager
 
     private void OnPuzzleUnlocked(Puzzle puzzle)
     {
-        MarkUnseen(puzzle, UnseenKind.Unlocked);
+        MarkPuzzleUnseen(puzzle, UnseenKind.Unlocked);
     }
 
 
     private void OnPuzzleComplete(Puzzle puzzle)
     {
-        MarkUnseen(puzzle, UnseenKind.Completed);
+        MarkPuzzleUnseen(puzzle, UnseenKind.Completed);
     }
 
 
@@ -401,28 +402,33 @@ public class PuzzleTabManager : CompendiumTabManager
     // so a reload brings its fail highlight back. That is intended.
     private void OnPuzzleSoftLocked(Puzzle puzzle)
     {
-        MarkUnseen(puzzle, UnseenKind.Failed);
+        MarkPuzzleUnseen(puzzle, UnseenKind.Failed);
     }
 
 
-    private void MarkUnseen(Puzzle puzzle, UnseenKind kind)
+    private void MarkPuzzleUnseen(Puzzle puzzle, UnseenKind kind)
     {
         if (puzzle == null) return;
 
-        unseen[puzzle] = kind;
+        MarkUnseen(puzzle.Id, (int)kind);
         RaiseChanged();
     }
 
 
     // A new world starts from an empty baseline, so every puzzle the player begins with is unseen.
-    // A loaded world starts with nothing unseen.
+    // A loaded world keeps what it saved, minus anything the restored puzzles now contradict.
     private void OnPuzzlesLoaded()
     {
-        if (!baselineEmpty) return;
-
         PuzzleManager manager = PuzzleManager.Instance;
         if (manager == null) return;
 
+        if (baselineEmpty) MarkStartingPuzzlesUnseen(manager);
+        else PruneSavedUnseen(manager);
+    }
+
+
+    private void MarkStartingPuzzlesUnseen(PuzzleManager manager)
+    {
         bool changed = false;
         int count = Count;
 
@@ -432,13 +438,63 @@ public class PuzzleTabManager : CompendiumTabManager
             if (!manager.IsUnlocked(puzzle)) continue;
 
             // an event this frame may already have marked it with something more recent
-            if (unseen.ContainsKey(puzzle)) continue;
+            if (TryGetUnseen(puzzle.Id, out int _)) continue;
 
-            unseen[puzzle] = UnseenKind.Unlocked;
+            MarkUnseen(puzzle.Id, (int)UnseenKind.Unlocked, false);
             changed = true;
         }
 
-        if (changed) RaiseChanged();
+        // one save for the whole baseline rather than one per puzzle
+        if (!changed) return;
+
+        SaveCompendium();
+        RaiseChanged();
+    }
+
+
+    // The save is global, so a checkpoint reset rolls the puzzles back but not this. Anything the
+    // restored state contradicts goes; a Failed on a still-active puzzle stays, because the soft lock
+    // re-announce half a second after load confirms it (or it is already stale and harmless).
+    private void PruneSavedUnseen(PuzzleManager manager)
+    {
+        PuzzleRegistry registry = manager.Registry;
+        if (registry == null) return;
+
+        CopyUnseen(savedUnseen);
+
+        bool pruned = false;
+
+        for (int i = 0; i < savedUnseen.Count; i++)
+        {
+            string id = savedUnseen[i].id;
+            UnseenKind kind = (UnseenKind)savedUnseen[i].kind;
+
+            if (!registry.TryGetPuzzleById(id, out Puzzle puzzle))
+            {
+                Debug.LogWarning($"PuzzleTabManager: the save holds unseen puzzle '{id}', but no puzzle in " +
+                    $"'{registry.name}' has that id - dropping it", this);
+
+                ClearUnseen(id, false);
+                pruned = true;
+                continue;
+            }
+
+            bool contradicted = !manager.IsUnlocked(puzzle)
+                || (kind == UnseenKind.Completed && !manager.IsCompleted(puzzle))
+                || (kind == UnseenKind.Failed && manager.IsCompleted(puzzle));
+
+            if (!contradicted) continue;
+
+            ClearUnseen(id, false);
+            pruned = true;
+        }
+
+        savedUnseen.Clear();
+
+        if (!pruned) return;
+
+        SaveCompendium();
+        RaiseChanged();
     }
 
 
