@@ -1054,12 +1054,10 @@ public class BookAnimator : MonoBehaviour
         Vector2 screenPosition = input.PointerPosition;
 
         // The UI owns a pointer that lands on it, so a menu in front of the book cannot open it through
-        if (UIRaycast.IsPointerOverUI(screenPosition)) return false;
-
-        Ray ray = viewCamera.ScreenPointToRay(screenPosition);
+        if (PointerRaycastManager.IsPointerOverUI(screenPosition)) return false;
 
         // triggers included, so the volume can be switched to a trigger without changing this
-        if (!Physics.Raycast(ray, out RaycastHit hit, hoverRayDistance, ~0, QueryTriggerInteraction.Collide)) return false;
+        if (!PointerRaycastManager.TryGetHit(screenPosition, ~0, hoverRayDistance, QueryTriggerInteraction.Collide, out RaycastHit hit)) return false;
 
         return hit.collider == hoverTarget;
     }

@@ -308,11 +308,13 @@ public class PlacementController : MonoBehaviour
         if (dragging == null || terrainManager == null || viewCamera == null) return false;
 
         // Releasing over the inventory panel will cancel the placement
-        if (UIRaycast.IsPointerOverUI(screenPosition)) return false;
+        if (PointerRaycastManager.IsPointerOverUI(screenPosition)) return false;
 
+        // the hit is cached by the manager, but the ray direction is still needed below
+        // to resolve which top cell a wall face belongs to
         Ray ray = viewCamera.ScreenPointToRay(screenPosition);
 
-        if (!Physics.Raycast(ray, out RaycastHit hit, dropRayDistance, terrainMask, QueryTriggerInteraction.Ignore)) return false;
+        if (!PointerRaycastManager.TryGetHit(screenPosition, terrainMask, dropRayDistance, QueryTriggerInteraction.Ignore, out RaycastHit hit)) return false;
 
         // Only the top of a column is ever a target
         // a wall face resolves to the tile that produced it

@@ -151,13 +151,11 @@ public class CameraController : MonoBehaviour
         Vector2 screenPosition = input.PointerPosition;
 
         // The UI owns a press that lands on it, whatever world geometry is behind it
-        if (UIRaycast.IsPointerOverUI(screenPosition)) return false;
-
-        Ray ray = viewCamera.ScreenPointToRay(screenPosition);
+        if (PointerRaycastManager.IsPointerOverUI(screenPosition)) return false;
 
         // stays unmasked so that we can hit nothing, because hitting nothing is a
         // valid drag target
-        if (!Physics.Raycast(ray, out RaycastHit hit, dragRayDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        if (!PointerRaycastManager.TryGetHit(screenPosition, Physics.DefaultRaycastLayers, dragRayDistance, QueryTriggerInteraction.Ignore, out RaycastHit hit))
         {
             return true;
         }
