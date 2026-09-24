@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3c2aa6ce254ac8da39f39db69b351c74, type: 3}
-  m_Name: Global Options Database
+  m_Name: Global Options Registry
   m_EditorClassIdentifier: Assembly-CSharp::GlobalOptionsDatabase
-  allGlobalOptions:
+  options:
   - {fileID: 11400000, guid: 1fbe0b133686d9a75a09ad31226cc650, type: 2}
   - {fileID: 11400000, guid: ac0373c2168b1c49dbcabf9673a197c8, type: 2}
   - {fileID: 11400000, guid: d888217a0a66e31a7aa827e1f8b416a0, type: 2}
