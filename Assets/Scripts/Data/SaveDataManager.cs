@@ -122,6 +122,9 @@ public class SaveDataManager : MonoBehaviour
 
             if (loaded.checkpoints == null) loaded.checkpoints = new List<Checkpoint>();
 
+            // additive to v4, so a save from before it simply has none yet
+            if (loaded.compendium == null) loaded.compendium = new CompendiumSaveData();
+
             Debug.Log($"SaveDataManager: Loaded save from {FullPath}");
 
             return loaded;

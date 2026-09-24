@@ -18,6 +18,9 @@ public class SaveData
     // was at that moment. Currently always empty; the checkpoints branch fills it.
     public List<Checkpoint> checkpoints;
 
+    // global on purpose: outside the world, so a checkpoint reset leaves the book as the player left it
+    public CompendiumSaveData compendium;
+
     public WorldState world;
 
 
@@ -28,6 +31,7 @@ public class SaveData
         lastSaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         playTimeElapsed = 0L;
         checkpoints = new List<Checkpoint>();
+        compendium = new CompendiumSaveData();
         world = new WorldState();
     }
 
@@ -35,6 +39,7 @@ public class SaveData
     public void PrepareForWrite()
     {
         if (world != null) world.Sort();
+        if (compendium != null) compendium.Sort();
 
         if (checkpoints != null)
         {
