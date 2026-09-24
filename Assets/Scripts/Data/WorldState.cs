@@ -11,6 +11,7 @@ public class WorldState
     public SerializableDictionary<string, int> inventory;
     public PuzzleSaveData puzzles;
     public NotificationSaveData notifications;
+    public AnimalSaveData animals;
 
 
     // default constructor
@@ -21,6 +22,7 @@ public class WorldState
         inventory = new SerializableDictionary<string, int>();
         puzzles = new PuzzleSaveData();
         notifications = new NotificationSaveData();
+        animals = new AnimalSaveData();
     }
 
 
@@ -32,6 +34,7 @@ public class WorldState
         if (inventory == null) inventory = new SerializableDictionary<string, int>();
         if (puzzles == null) puzzles = new PuzzleSaveData();
         if (notifications == null) notifications = new NotificationSaveData();
+        if (animals == null) animals = new AnimalSaveData();
     }
 
 
@@ -59,6 +62,7 @@ public class WorldState
         if (entities != null) entities.Sort();
         if (puzzles != null) puzzles.Sort();
         if (notifications != null) notifications.Sort();
+        if (animals != null) animals.Sort();
 
         // inventory is not sorted: JsonUtility writes it through the dictionary's own serialized
         // key/value lists, so its file order is whatever the dictionary enumerated
