@@ -18,9 +18,10 @@ public class GameItemTabManager : CompendiumTabManager
 
     private Material silhouetteMaterial;
 
-    // runtime-only presence tracking, never saved
+    // Presence is runtime-only and rebuilt from the world on every load. Unseen items are saved,
+    // through the base class, keyed by GameItem.Id with kind 0.
     private readonly HashSet<GameItem> present = new HashSet<GameItem>();
-    private readonly HashSet<GameItem> unseen = new HashSet<GameItem>();
+    private readonly List<UnseenSave> savedUnseen = new List<UnseenSave>();
     private bool baselineEmpty;
 
 
@@ -50,7 +51,7 @@ public class GameItemTabManager : CompendiumTabManager
         SubscribeToEvents();
 
         // A new world starts from an empty baseline, so everything the player begins with is
-        // unseen. A loaded world treats its first snapshot as already seen.
+        // unseen. A loaded world keeps what it saved as unseen, minus anything no longer present.
         if (baselineEmpty) RecomputePresence();
         else TakeBaselineSnapshot();
     }
@@ -124,7 +125,7 @@ public class GameItemTabManager : CompendiumTabManager
         {
             entry.SetItem(item);
 
-            if (unseen.Contains(item)) ShowHighlight(entry, item);
+            if (TryGetUnseen(item.Id, out int _)) ShowHighlight(entry, item);
             else HideHighlight(entry);
 
             return;
@@ -143,7 +144,7 @@ public class GameItemTabManager : CompendiumTabManager
         UnseenHighlight highlight = entry.GetComponent<UnseenHighlight>();
         if (highlight == null) return;
 
-        highlight.Show(discoveredColour, () => unseen.Remove(item));
+        highlight.Show(discoveredColour, () => ClearUnseen(item.Id));
     }
 
 
@@ -221,26 +222,35 @@ public class GameItemTabManager : CompendiumTabManager
             {
                 if (present.Add(item))
                 {
-                    unseen.Add(item);
+                    MarkUnseen(item.Id, 0, false);
                     changed = true;
                 }
             }
             else
             {
                 if (present.Remove(item)) changed = true;
-                if (unseen.Remove(item)) changed = true;
+
+                if (TryGetUnseen(item.Id, out int _))
+                {
+                    ClearUnseen(item.Id, false);
+                    changed = true;
+                }
             }
         }
 
-        if (changed) RaiseChanged();
+        // one save for the whole diff rather than one per item
+        if (!changed) return;
+
+        SaveCompendium();
+        RaiseChanged();
     }
 
 
-    // The first snapshot of a loaded world: everything currently present counts as seen.
+    // The first snapshot of a loaded world. What was saved as unseen stays unseen, except items
+    // that are no longer present, which drop out exactly as they would have at runtime.
     private void TakeBaselineSnapshot()
     {
         present.Clear();
-        unseen.Clear();
 
         IReadOnlyList<GameItem> items = registry != null ? registry.Items : null;
         if (items == null) return;
@@ -252,6 +262,40 @@ public class GameItemTabManager : CompendiumTabManager
 
             if (IsDiscovered(item)) present.Add(item);
         }
+
+        PruneSavedUnseen();
+    }
+
+
+    private void PruneSavedUnseen()
+    {
+        CopyUnseen(savedUnseen);
+
+        bool pruned = false;
+
+        for (int i = 0; i < savedUnseen.Count; i++)
+        {
+            string id = savedUnseen[i].id;
+
+            if (!registry.TryGetItemById(id, out GameItem item))
+            {
+                Debug.LogWarning($"GameItemTabManager: the save holds unseen item '{id}', but no item in " +
+                    $"'{registry.name}' has that id - dropping it", this);
+
+                ClearUnseen(id, false);
+                pruned = true;
+                continue;
+            }
+
+            if (present.Contains(item)) continue;
+
+            ClearUnseen(id, false);
+            pruned = true;
+        }
+
+        savedUnseen.Clear();
+
+        if (pruned) SaveCompendium();
     }
 
 
