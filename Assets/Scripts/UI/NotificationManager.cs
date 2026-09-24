@@ -200,6 +200,14 @@ public class NotificationManager : MonoBehaviour
     // soft locks are re-announced on every load, and the restored notification already covers them.
     public void Submit(NotificationType type, EntityId target, Puzzle puzzle)
     {
+        Submit(type, target != null ? target.Guid : null, puzzle);
+    }
+
+
+    // The same, by guid, for a target that may not be in the world yet: a completion replayed on load
+    // can arrive before its entity has registered, and the ping resolves the guid when it can
+    public void Submit(NotificationType type, string targetGuid, Puzzle puzzle)
+    {
         if (puzzle == null)
         {
             Debug.LogError($"NotificationManager: a {type} notification was submitted with no puzzle, so it was dropped", this);
@@ -210,10 +218,9 @@ public class NotificationManager : MonoBehaviour
 
         if (saved.IndexOf(type, puzzleId) >= 0) return;
 
-        string guid = "";
+        string guid = targetGuid ?? "";
 
-        if (target != null) guid = target.Guid;
-        else Debug.LogWarning($"NotificationManager: the {type} notification for '{puzzle.name}' has no target, " +
+        if (string.IsNullOrEmpty(guid)) Debug.LogWarning($"NotificationManager: the {type} notification for '{puzzle.name}' has no target, " +
             $"so its ping will wait above the inventory instead", this);
 
         NotificationSave entry = new NotificationSave
