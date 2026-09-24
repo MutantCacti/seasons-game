@@ -89,6 +89,16 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     }
 
 
+    // The entry's size is driven by a layout group, so on the first bind it can still be zero
+    // (the book binds before its canvas has laid out). Re-measure once the rect settles.
+    private void OnRectTransformDimensionsChange()
+    {
+        if (material == null || outline == null || !IsShowing) return;
+
+        SetRectSize();
+    }
+
+
     private void OnDestroy()
     {
         if (material != null) Destroy(material);
