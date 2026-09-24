@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dba2b1d00d7c7f22a3ef872b52e79fc, type: 3}
+  m_Name: AnimalRegistry
+  m_EditorClassIdentifier: Assembly-CSharp::AnimalRegistry
+  animals:
+  - {fileID: 11400000, guid: 35aca377dbe5c7b5fb0e1e5f3c104ad4, type: 2}
