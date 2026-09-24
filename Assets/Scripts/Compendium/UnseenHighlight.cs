@@ -12,7 +12,7 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     [SerializeField] private Image outline;
     [SerializeField] private Shader outlineShader;
     [SerializeField] private float maxWidth = 6.0f;
-    [SerializeField] private float pulseSpeed = 5.0f;
+    [SerializeField] private float pulseSpeed = 8.0f;
     [SerializeField] private float glowWidth = 14.0f;
     [SerializeField] private float glowIntensity = 0.8f;
 

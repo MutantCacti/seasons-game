@@ -14,7 +14,7 @@ public class GameItemTabManager : CompendiumTabManager
     [SerializeField] private GameItemRegistry registry;
     [SerializeField] private GameObject pagePrefab;
     [SerializeField] private Shader silhouetteShader;
-    [SerializeField] private Color discoveredColour = new Color(255f / 255f, 194f / 255f, 58f / 255f, 1.0f);  // #FFC23A
+    [SerializeField] private Color discoveredColour = new Color(237.0f / 255.0f, 196.0f / 255.0f, 59.0f / 255.0f, 1.0f);  // #EDC43B
 
     private Material silhouetteMaterial;
 

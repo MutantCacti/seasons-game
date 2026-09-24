@@ -10,9 +10,9 @@ Shader "UI/PulsingOutline"
     Properties
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
-        _OutlineColor ("Outline Color", Color) = (1, 0.76, 0.23, 1)
+        _OutlineColor ("Outline Color", Color) = (0.93, 0.77, 0.23, 1)
         _MaxWidth ("Max Width", Float) = 6
-        _PulseSpeed ("Pulse Speed", Float) = 5
+        _PulseSpeed ("Pulse Speed", Float) = 8
         _GlowWidth ("Glow Width", Float) = 14
         _GlowIntensity ("Glow Intensity", Float) = 0.8
         _RectSize ("Rect Size", Vector) = (580, 740, 0, 0)
