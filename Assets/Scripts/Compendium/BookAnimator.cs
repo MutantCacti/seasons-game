@@ -265,10 +265,18 @@ public class BookAnimator : MonoBehaviour
     // owns the way back. For the moment the click is the only thing calling this.
     public void SetRead(bool reading)
     {
+        // Asking for the way it is already going changes nothing. Restarting would replay the whole
+        // tween from here, and on a close that includes CloseFan's hold, so repeated clicks froze it.
+        if (reading == readTarget && readTween != null && readTween.IsActive()) return;
+
         // only the closed -> reading edge counts, so repeating an open does not raise it again
         bool starting = reading && !readTarget;
 
         readTarget = reading;
+
+        // the screen-sized click catcher only belongs to an open read, so a close hands the screen
+        // back this frame rather than when the book lands
+        if (!reading && hoverCovering) RestoreHoverPose();
 
         KillTween(ref readTween);
         KillTween(ref fanTween);
@@ -347,7 +355,9 @@ public class BookAnimator : MonoBehaviour
         if (!pressed || Time.timeScale <= 0.0f) return;
         if (!IsHovered()) return;
 
-        bool reading = !IsReading;
+        // toggled on where the read is heading, not on IsReading: that stays true for the whole
+        // close, so a click on the descending book would close it again instead of catching it
+        bool reading = !readTarget;
 
         SetRead(reading);
 
@@ -404,12 +414,12 @@ public class BookAnimator : MonoBehaviour
 
     // While the book is out at the camera the hover volume is stretched over the whole view, so a
     // click anywhere the menu does not own lands on the book and closes it. It is put back the moment
-    // the book is home, so the closed book still only answers to a click on itself.
+    // a close starts, so the descending book only answers to a click on itself.
     private void UpdateReadCollider()
     {
         if (!hoverPoseCaptured) return;
 
-        if (read <= 0.0f)
+        if (read <= 0.0f || !readTarget)
         {
             if (hoverCovering) RestoreHoverPose();
             return;
