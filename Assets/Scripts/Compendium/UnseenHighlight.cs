@@ -25,6 +25,9 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     {
         if (outline == null) Debug.LogError("UnseenHighlight: no outline Image, so unseen changes cannot pulse", this);
         if (outlineShader == null) Debug.LogError("UnseenHighlight: no outline shader, so the outline cannot be drawn", this);
+
+        // the prefab ships with the outline enabled; make sure it never flashes before the first bind
+        if (outline != null) outline.enabled = false;
     }
 
 
@@ -41,7 +44,7 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
         if (material != null)
         {
             material.SetColor("_OutlineColor", colour);
-            SetRectSize();
+            SetRect();
         }
 
         outline.enabled = true;
@@ -80,12 +83,12 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     }
 
 
-    private void SetRectSize()
+    private void SetRect()
     {
         if (material == null || outline == null) return;
 
         Rect rect = outline.rectTransform.rect;
-        material.SetVector("_RectSize", new Vector4(rect.width, rect.height, 0.0f, 0.0f));
+        material.SetVector("_Rect", new Vector4(rect.xMin, rect.yMin, rect.width, rect.height));
     }
 
 
@@ -95,7 +98,7 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     {
         if (material == null || outline == null || !IsShowing) return;
 
-        SetRectSize();
+        SetRect();
     }
 
 

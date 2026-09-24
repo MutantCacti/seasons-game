@@ -1,7 +1,7 @@
 // A UI shader that draws a rectangular outline just inside an Image's rect, with its
 // pixel width pulsing in and out over time. Based on UI/Default so masks keep working.
-// The Image has no sprite, so its UVs run 0..1 across the rect and the distance to the
-// nearest edge is recoverable from the UVs scaled by _RectSize.
+// Distance to the edge is measured from the Graphic's rect-local vertex position, so it
+// holds regardless of sprite or slicing.
 Shader "UI/PulsingOutline"
 {
     Properties
@@ -10,7 +10,7 @@ Shader "UI/PulsingOutline"
         _OutlineColor ("Outline Color", Color) = (0.91, 0.72, 0.29, 1)
         _MaxWidth ("Max Width", Float) = 4
         _PulseSpeed ("Pulse Speed", Float) = 3
-        _RectSize ("Rect Size", Vector) = (580, 740, 0, 0)
+        _Rect ("Rect", Vector) = (0, 0, 580, 740)
 
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
@@ -56,7 +56,7 @@ Shader "UI/PulsingOutline"
         CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #pragma target 2.0
+            #pragma target 3.0
 
             #include "UnityCG.cginc"
             #include "UnityUI.cginc"
@@ -84,7 +84,7 @@ Shader "UI/PulsingOutline"
             fixed4 _OutlineColor;
             float _MaxWidth;
             float _PulseSpeed;
-            float4 _RectSize;
+            float4 _Rect;
             float4 _ClipRect;
 
             v2f vert(appdata_t v)
@@ -103,17 +103,15 @@ Shader "UI/PulsingOutline"
 
             fixed4 frag(v2f IN) : SV_Target
             {
-                float2 edge = float2(
-                    min(IN.texcoord.x, 1.0 - IN.texcoord.x) * _RectSize.x,
-                    min(IN.texcoord.y, 1.0 - IN.texcoord.y) * _RectSize.y);
-                float dist = min(edge.x, edge.y);
+                float2 p = IN.worldPosition.xy;
+                float xMax = _Rect.x + _Rect.z;
+                float yMax = _Rect.y + _Rect.w;
+                float dist = min(min(p.x - _Rect.x, xMax - p.x), min(p.y - _Rect.y, yMax - p.y));
 
                 float width = _MaxWidth * (0.5 + 0.5 * sin(_Time.y * _PulseSpeed));
                 width = max(width, 0.0);
 
-                // solid band of (width - 1)px with a 1px soft inner edge; invisible at width 0
-                float alpha = saturate(width - dist);
-                alpha = smoothstep(0.0, 1.0, alpha);
+                float alpha = saturate((width - dist) / max(fwidth(dist), 1e-4));
 
                 fixed4 color = _OutlineColor * IN.color;
                 color.a *= alpha;
