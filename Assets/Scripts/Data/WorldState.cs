@@ -12,6 +12,7 @@ public class WorldState
     public PuzzleSaveData puzzles;
     public NotificationSaveData notifications;
     public AnimalSaveData animals;
+    public TimeSaveData time;
 
 
     // default constructor
@@ -23,6 +24,7 @@ public class WorldState
         puzzles = new PuzzleSaveData();
         notifications = new NotificationSaveData();
         animals = new AnimalSaveData();
+        time = new TimeSaveData();
     }
 
 
@@ -35,6 +37,7 @@ public class WorldState
         if (puzzles == null) puzzles = new PuzzleSaveData();
         if (notifications == null) notifications = new NotificationSaveData();
         if (animals == null) animals = new AnimalSaveData();
+        if (time == null) time = new TimeSaveData();
     }
 
 
