@@ -60,6 +60,15 @@ public class PuzzleManager : MonoBehaviour
     // every save of this section is rebuilt from here by WriteThrough.
     private readonly Dictionary<Puzzle, string> completedBy = new Dictionary<Puzzle, string>();
 
+    // puzzle -> guid of the entity that completed it early ("" when there was no source). a
+    // completion that arrives before its puzzle is unlocked, or mid-batch, waits here and is replayed
+    // through the normal completion path once the puzzle is unlocked and checkpointed
+    private readonly Dictionary<Puzzle, string> pending = new Dictionary<Puzzle, string>();
+
+    // true while UnlockBatch is unlocking, so a completion raised from an OnPuzzleUnlocked handler
+    // queues instead of landing before the batch's checkpoint is captured
+    private bool batching;
+
     // puzzles the manager has settled on being stuck, and therefore announced
     private readonly HashSet<Puzzle> softLocked = new HashSet<Puzzle>();
 
@@ -163,6 +172,13 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
+    // Completed early and waiting for the puzzle to unlock (or for the current unlock batch to finish)
+    public bool IsPending(Puzzle puzzle)
+    {
+        return puzzle != null && pending.ContainsKey(puzzle);
+    }
+
+
     // True once the manager has settled on the puzzle being stuck. Deliberately not the same as "the
     // ledger is exhausted": that goes true the instant the last ingredient is spent, which is usually
     // before the placement that spent it has finished being handled.
@@ -213,8 +229,9 @@ public class PuzzleManager : MonoBehaviour
 
 
     // single entry point, every world script should use this to submit puzzle completion
-    // returns false when the manager refused, meaning puzzles are disabled, this puzzle
-    // is null or not unlocked or has already been completed
+    // returns true only when the puzzle was completed right now. false when puzzles are disabled,
+    // the puzzle is null or already completed, or the completion was queued: a puzzle that is not
+    // unlocked yet (or is mid unlock batch) remembers it and completes as soon as it is unlocked
     //
     // source names the entity that met the condition. It may be null, in which case nothing is
     // recorded and the completion counts for nothing but the save's completed list.
@@ -224,29 +241,44 @@ public class PuzzleManager : MonoBehaviour
 
         if (puzzle == null) return false;
 
-        if (!unlocked.Contains(puzzle))
+        string guid = null;
+
+        // a completion with no source is legal, it simply records nothing about who did it
+        if (source != null)
         {
-            Debug.LogWarning($"PuzzleManager: '{puzzle.name}' is not active, so its completion was ignored", puzzle);
-            return false;
+            if (source.HasGuid) guid = source.Guid;
+            else Debug.LogError($"PuzzleManager: '{puzzle.name}' was completed by an entity with no guid, " +
+                $"so the save cannot record which entity did it", source);
         }
 
+        return CompleteInternal(puzzle, guid, source);
+    }
+
+
+    // guid is what completedBy records, source is only the ping's target. they are split so a pending
+    // completion can be flushed with its saved guid while its entity is not resolvable yet - on load
+    // the flush runs in PuzzleManager.Start, which can be before AnimalManager.Start has registered
+    // the animal that did it. the ping retries resolving the guid by itself.
+    private bool CompleteInternal(Puzzle puzzle, string guid, EntityId source)
+    {
         if (completed.Contains(puzzle)) return false;
+
+        if (batching || !unlocked.Contains(puzzle))
+        {
+            Enqueue(puzzle, guid);
+            return false;
+        }
 
         // all this must happen before the event is invoked
         completed.Add(puzzle);
         ledger.Forget(puzzle);
+        pending.Remove(puzzle);
 
         // no longer stuck, and no longer worth judging
         softLocked.Remove(puzzle);
         pendingSoftLockChecks.Remove(puzzle);
 
-        // a completion with no source is legal, it simply records nothing about who did it
-        if (source != null)
-        {
-            if (source.HasGuid) completedBy[puzzle] = source.Guid;
-            else Debug.LogError($"PuzzleManager: '{puzzle.name}' was completed by an entity with no guid, " +
-                $"so the save cannot record which entity did it", source);
-        }
+        if (!string.IsNullOrEmpty(guid)) completedBy[puzzle] = guid;
 
         // The next puzzles now unlock when the player opens the completion ping, not here. Without a
         // NotificationManager (a test scene, say) they unlock straight away so progress never stalls.
@@ -270,7 +302,10 @@ public class PuzzleManager : MonoBehaviour
         if (notifications != null)
         {
             notifications.Withdraw(NotificationType.FailPuzzle, puzzle);
-            notifications.Submit(NotificationType.CompletePuzzle, source, puzzle);
+
+            // a flushed completion may only have the saved guid, and the ping resolves that itself
+            if (source != null) notifications.Submit(NotificationType.CompletePuzzle, source, puzzle);
+            else notifications.Submit(NotificationType.CompletePuzzle, guid, puzzle);
         }
 
         Save();
@@ -312,14 +347,30 @@ public class PuzzleManager : MonoBehaviour
 
         List<Puzzle> newlyUnlocked = new List<Puzzle>();
 
-        for (int i = 0; i < puzzles.Count; i++)
+        // an OnPuzzleUnlocked handler that completes a puzzle now queues it, so the completion lands
+        // after this batch's checkpoint rather than inside it
+        bool wasBatching = batching;
+        batching = true;
+
+        try
         {
-            // Unlock only returns true for a puzzle that was not unlocked before, so this list is
-            // exactly the puzzles this batch added
-            if (Unlock(puzzles[i])) newlyUnlocked.Add(puzzles[i]);
+            for (int i = 0; i < puzzles.Count; i++)
+            {
+                // Unlock only returns true for a puzzle that was not unlocked before, so this list is
+                // exactly the puzzles this batch added
+                if (Unlock(puzzles[i])) newlyUnlocked.Add(puzzles[i]);
+            }
+        }
+        finally
+        {
+            batching = wasBatching;
         }
 
-        if (newlyUnlocked.Count == 0) return;
+        if (newlyUnlocked.Count == 0)
+        {
+            FlushPending();
+            return;
+        }
 
         WriteThrough();
 
@@ -334,6 +385,69 @@ public class PuzzleManager : MonoBehaviour
         }
 
         Save();
+
+        // after the capture on purpose: the checkpoint still holds these as pending, so resetting to
+        // it replays the completion instead of losing it
+        FlushPending();
+    }
+
+
+    // MARK: pending
+
+
+    // Remembers a completion that cannot happen yet. The first one wins, so the entity that got there
+    // first keeps the credit. Inside a batch nothing is written: UnlockBatch writes once for the whole
+    // batch, and a save from here would put a half-unlocked batch on disk.
+    private void Enqueue(Puzzle puzzle, string guid)
+    {
+        if (pending.ContainsKey(puzzle)) return;
+
+        pending.Add(puzzle, guid ?? "");
+
+        Debug.Log($"PuzzleManager: '{puzzle.name}' is not active yet, so its completion was queued " +
+            $"until it unlocks", puzzle);
+
+        if (batching) return;
+
+        WriteThrough();
+        Save();
+    }
+
+
+    // Replays every queued completion whose puzzle is now unlocked, through the normal completion
+    // path so it gets its ping, completedBy and events. Iterates a snapshot because each completion can
+    // unlock (and flush) more puzzles further down this call stack.
+    private void FlushPending()
+    {
+        if (!completionEnabled) return;
+        if (batching) return;
+        if (pending.Count == 0) return;
+
+        List<KeyValuePair<Puzzle, string>> ready = new List<KeyValuePair<Puzzle, string>>();
+
+        foreach (KeyValuePair<Puzzle, string> entry in pending)
+        {
+            if (entry.Key != null && unlocked.Contains(entry.Key)) ready.Add(entry);
+        }
+
+        for (int i = 0; i < ready.Count; i++)
+        {
+            Puzzle puzzle = ready[i].Key;
+            string guid = ready[i].Value;
+
+            // a nested flush may already have done this one
+            if (!pending.ContainsKey(puzzle)) continue;
+
+            EntityId source = null;
+
+            if (!string.IsNullOrEmpty(guid) && EntityManager.Instance != null)
+            {
+                EntityManager.Instance.TryGetEntity(guid, out source);
+            }
+
+            // no source is fine: the saved guid still goes to completedBy and the ping
+            CompleteInternal(puzzle, string.IsNullOrEmpty(guid) ? null : guid, source);
+        }
     }
 
 
@@ -418,6 +532,9 @@ public class PuzzleManager : MonoBehaviour
         {
             if (completed.Contains(puzzle)) continue;
 
+            // about to complete, so never stuck
+            if (pending.ContainsKey(puzzle)) continue;
+
             pendingSoftLockChecks.Add(puzzle);
         }
 
@@ -434,6 +551,7 @@ public class PuzzleManager : MonoBehaviour
         {
             // a puzzle completed during the grace period was never stuck
             if (!IsActive(puzzle)) continue;
+            if (IsPending(puzzle)) continue;
             if (!ledger.IsExhausted(puzzle)) continue;
             if (!softLocked.Add(puzzle)) continue;
 
@@ -497,11 +615,16 @@ public class PuzzleManager : MonoBehaviour
         completionEnabled = false;
 
         completedBy.Clear();
+        pending.Clear();
 
         if (saved.IsEmpty) SeedStartingPuzzles();
         else Restore(saved);
 
         completionEnabled = true;
+
+        // a completion queued for a puzzle that was already unlocked when the game closed (quit
+        // between the unlock's save and the flush) is replayed now
+        FlushPending();
 
         // Judge what was restored once the world has settled, so a puzzle that was already stuck when
         // the game was closed is flagged without needing another consumption to trigger it
@@ -588,6 +711,32 @@ public class PuzzleManager : MonoBehaviour
         }
 
         RestoreCompletedBy(saved);
+        RestorePending(saved);
+    }
+
+
+    // Read after the completed list, because a puzzle that is already completed has nothing to wait for
+    private void RestorePending(PuzzleSaveData saved)
+    {
+        if (saved.pending == null) return;
+
+        for (int i = 0; i < saved.pending.Count; i++)
+        {
+            PuzzleCompletionSave entry = saved.pending[i];
+            if (entry == null) continue;
+
+            if (!registry.TryGetById(entry.puzzleId, out Puzzle puzzle))
+            {
+                Debug.LogError($"PuzzleManager: the save holds a queued completion of '{entry.puzzleId}', but " +
+                    $"no puzzle in '{registry.name}' has that id - dropping it", this);
+                continue;
+            }
+
+            if (completed.Contains(puzzle)) continue;
+            if (pending.ContainsKey(puzzle)) continue;
+
+            pending.Add(puzzle, entry.entityGuid ?? "");
+        }
     }
 
 
@@ -650,6 +799,10 @@ public class PuzzleManager : MonoBehaviour
         saved.ledgers.Clear();
         saved.completedBy.Clear();
 
+        // a save from before pending existed arrives with it null
+        if (saved.pending == null) saved.pending = new List<PuzzleCompletionSave>();
+        saved.pending.Clear();
+
         foreach (Puzzle puzzle in unlocked)
         {
             if (!registry.TryGetIdByEntry(puzzle, out string id)) continue;
@@ -695,6 +848,20 @@ public class PuzzleManager : MonoBehaviour
         {
             saved.completedBy.Add(attributions[i]);
         }
+
+        foreach (KeyValuePair<Puzzle, string> queued in pending)
+        {
+            if (queued.Key == null) continue;
+            if (!registry.TryGetIdByEntry(queued.Key, out string queuedId)) continue;
+
+            saved.pending.Add(new PuzzleCompletionSave
+            {
+                puzzleId = queuedId,
+                entityGuid = queued.Value,
+            });
+        }
+
+        saved.pending.Sort(PuzzleSaveData.CompareCompletion);
 
         foreach (Puzzle puzzle in unlocked)
         {
