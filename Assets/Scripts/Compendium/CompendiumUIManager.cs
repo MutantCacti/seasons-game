@@ -76,6 +76,27 @@ public class CompendiumUIManager : MonoBehaviour
     private readonly List<Action> tabChangedHandlers = new List<Action>();
 
 
+    // Where the read is heading, not whether the book is still moving: every SetRead on the book is
+    // paired with an Open or Close here, so this mirrors its read target (IsReading stays true for the
+    // whole close, which is the wrong thing to toggle on)
+    public bool IsOpen { get; private set; }
+
+
+    public event Action OpenChanged;
+
+
+    public int TabCount { get { return tabs != null ? tabs.Length : 0; } }
+
+
+    // may be null, as a slot left empty in the inspector is
+    public CompendiumTabManager GetTab(int index)
+    {
+        if (tabs == null || index < 0 || index >= tabs.Length) return null;
+
+        return tabs[index];
+    }
+
+
     private void Awake()
     {
         if (instance != null && instance != this)
@@ -175,6 +196,8 @@ public class CompendiumUIManager : MonoBehaviour
 
     public void Open()
     {
+        SetOpen(true);
+
         if (uiRoot == null) return;
 
         EnsureCamera();
@@ -225,6 +248,8 @@ public class CompendiumUIManager : MonoBehaviour
 
     public void Close()
     {
+        SetOpen(false);
+
         if (uiRoot == null) return;
 
         StopOpenRoutine();
@@ -242,6 +267,16 @@ public class CompendiumUIManager : MonoBehaviour
         canvasGroup.DOFade(0.0f, fadeDuration)
             .SetEase(Ease.InQuad)
             .OnComplete(HideImmediate);
+    }
+
+
+    private void SetOpen(bool open)
+    {
+        if (IsOpen == open) return;
+
+        IsOpen = open;
+
+        if (OpenChanged != null) OpenChanged();
     }
 
 
