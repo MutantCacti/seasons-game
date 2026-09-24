@@ -27,8 +27,8 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     public bool IsShowing { get { return showing; } }
 
 
-    // The outline pulses on 0.5 + 0.5 * sin(Time.timeSinceLevelLoad * PulseSpeed), so anything
-    // that wants to pulse in step with it evaluates the same thing
+    // The outline pulses on 0.5 + 0.5 * sin(_Time.y * PulseSpeed), and URP sets _Time.y from Time.time
+    // in play mode (not timeSinceLevelLoad), so anything that wants to pulse in step evaluates that
     public float PulseSpeed { get { return pulseSpeed; } }
 
 

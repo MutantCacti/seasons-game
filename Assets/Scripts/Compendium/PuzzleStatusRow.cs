@@ -204,10 +204,11 @@ public class PuzzleStatusRow : MonoBehaviour
     }
 
 
-    // 0..1, peaking exactly when the outline shader's width does
+    // 0..1, peaking exactly when the outline shader's width does. Time.time because that is what URP
+    // feeds _Time.y; timeSinceLevelLoad drifts out of phase after every checkpoint reload
     private float PulseAmount()
     {
-        return 0.5f + 0.5f * Mathf.Sin(Time.timeSinceLevelLoad * PulseSpeed);
+        return 0.5f + 0.5f * Mathf.Sin(Time.time * PulseSpeed);
     }
 
 
