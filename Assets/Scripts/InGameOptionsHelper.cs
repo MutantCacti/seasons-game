@@ -23,6 +23,13 @@ public class InGameOptionsHelper : MonoBehaviour {
 
 
     public void OnPause() {
+        // Escape is the pause key, and it is also the modal's cancel. The modal owns Escape while
+        // it is open, so a pause can never open the options menu behind it or strand it frozen.
+        if (ConfirmationModal.Instance != null && ConfirmationModal.Instance.IsOpen) {
+            ConfirmationModal.Instance.Cancel();
+            return;
+        }
+
         OnOptions(); //temporary functionality
 
         if (optionsMenu.activeSelf) {

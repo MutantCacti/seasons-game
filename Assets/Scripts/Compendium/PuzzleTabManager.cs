@@ -553,8 +553,29 @@ public class PuzzleTabManager : CompendiumTabManager
     }
 
 
-    // The scene reloads on success, so there is nothing else to tidy up here
+    // Asks before resetting. A missing modal logs and falls back to the old straight-through reset,
+    // so a broken or missing prefab can never take the reset button away entirely.
     private void ResetPuzzle(Puzzle puzzle)
+    {
+        ConfirmationModal modal = ConfirmationModal.Instance;
+
+        if (modal == null)
+        {
+            Debug.LogWarning("PuzzleTabManager: no ConfirmationModal, so the reset is not confirmed", this);
+            ConfirmReset(puzzle);
+            return;
+        }
+
+        modal.Show(
+            $"Return to when {puzzle.Name} began? Progress since then will be lost.",
+            "Confirm",
+            "Cancel",
+            () => ConfirmReset(puzzle));
+    }
+
+
+    // The scene reloads on success, so there is nothing else to tidy up here
+    private void ConfirmReset(Puzzle puzzle)
     {
         if (CheckpointManager.Instance != null && CheckpointManager.Instance.ResetTo(puzzle)) return;
 
