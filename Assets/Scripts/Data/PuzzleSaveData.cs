@@ -47,6 +47,10 @@ public class PuzzleSaveData
     // one row per completed puzzle that named the entity that completed it
     public List<PuzzleCompletionSave> completedBy = new List<PuzzleCompletionSave>();
 
+    // completions that arrived before their puzzle was unlocked. they flush through the normal
+    // completion path once it is, so a spawn that beats its puzzle still counts
+    public List<PuzzleCompletionSave> pending = new List<PuzzleCompletionSave>();
+
 
     public bool IsEmpty { get { return unlocked == null || unlocked.Count == 0; } }
 
@@ -58,7 +62,9 @@ public class PuzzleSaveData
         if (completed != null) completed.Sort(string.CompareOrdinal);
 
         SortLedgers();
-        SortCompletedBy();
+
+        if (completedBy != null) completedBy.Sort(CompareCompletion);
+        if (pending != null) pending.Sort(CompareCompletion);
     }
 
 
@@ -78,17 +84,13 @@ public class PuzzleSaveData
     }
 
 
-    private void SortCompletedBy()
+    // by puzzle, then by guid, so the order never depends on the dictionary it was rebuilt from
+    public static int CompareCompletion(PuzzleCompletionSave a, PuzzleCompletionSave b)
     {
-        if (completedBy == null) return;
+        int byPuzzle = string.CompareOrdinal(SafePuzzleId(a), SafePuzzleId(b));
+        if (byPuzzle != 0) return byPuzzle;
 
-        completedBy.Sort((a, b) =>
-        {
-            int byPuzzle = string.CompareOrdinal(SafePuzzleId(a), SafePuzzleId(b));
-            if (byPuzzle != 0) return byPuzzle;
-
-            return string.CompareOrdinal(SafeEntityGuid(a), SafeEntityGuid(b));
-        });
+        return string.CompareOrdinal(SafeEntityGuid(a), SafeEntityGuid(b));
     }
 
 
