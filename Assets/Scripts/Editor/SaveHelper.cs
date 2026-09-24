@@ -46,4 +46,39 @@ public static class SaveHelper
             Debug.LogError($"SaveHelper: failed to delete '{path}' ... {e.Message}");
         }
     }
+
+
+    [MenuItem("Tools/SaveHelper/Clear Options")]
+    public static void ClearOptions()
+    {
+        // separate file from the save, so clearing one never touches the other
+        string path = SavePaths.OptionsFullPath;
+
+        if (!File.Exists(path))
+        {
+            Debug.Log($"SaveHelper: nothing to clear, no options file at '{path}'");
+            return;
+        }
+
+        // Batch mode has nobody to answer a dialog, and a prompt there would hang the run
+        if (!Application.isBatchMode &&
+            !EditorUtility.DisplayDialog(
+                "Clear Options",
+                $"Delete the options file?\n\n{path}",
+                "Delete",
+                "Cancel"))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(path);
+            Debug.Log($"SaveHelper: deleted options file at '{path}'");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"SaveHelper: failed to delete '{path}' ... {e.Message}");
+        }
+    }
 }
