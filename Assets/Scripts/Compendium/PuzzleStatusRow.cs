@@ -1,5 +1,4 @@
 using System;
-using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,17 +14,19 @@ public class PuzzleStatusRow : MonoBehaviour
 
     [Header("Fail pulse")]
     [SerializeField] private float pulseScale = 1.15f;
-    [SerializeField] private float pulseDuration = 0.5f;
     [SerializeField] private float pulseBrighten = 0.5f;
+
+    // only used when the entry has no UnseenHighlight to take the speed from
+    [SerializeField] private float fallbackPulseSpeed = 8.0f;
 
     private Action onClick;
     private Color baseTint = Color.white;
-    private Tween scaleTween;
-    private Tween colourTween;
+    private UnseenHighlight highlight;
+    private bool highlightLookedUp;
 
-    // The wanted state, kept apart from the tweens: the book binds its pages while its canvas is
-    // still inactive and flips faces off and on while turning, so the pulse is (re)started from
-    // OnEnable and Awake must not reset any of this
+    // The wanted state, not the visuals: the book binds its pages while its canvas is still
+    // inactive and flips faces off and on while turning, so the pulse is evaluated in Update from
+    // this flag and Awake must not reset any of it
     private bool pulsing;
 
 
@@ -39,22 +40,25 @@ public class PuzzleStatusRow : MonoBehaviour
     }
 
 
-    private void OnEnable()
+    // Evaluated every frame rather than tweened, from the same clock and formula as the outline
+    // shader, so the button and the outline around the entry swell together. Scaled time, so a
+    // pause freezes both.
+    private void Update()
     {
-        if (pulsing) StartPulse();
+        if (!pulsing) return;
+
+        ApplyVisuals();
     }
 
 
     private void OnDisable()
     {
-        StopPulse();
+        ApplyRest();
     }
 
 
     private void OnDestroy()
     {
-        StopPulse();
-
         if (statusButton != null) statusButton.onClick.RemoveListener(OnClicked);
     }
 
@@ -62,20 +66,20 @@ public class PuzzleStatusRow : MonoBehaviour
     // MARK: setters
 
 
-    // Stops any pulse first, so a recycled entry never keeps the last puzzle's colour or scale
+    // Settles the visuals straight away, so a recycled entry never keeps the last puzzle's colour or scale
     public void SetStatus(Sprite sprite, Color tint)
     {
-        StopPulse();
-
         baseTint = tint;
 
-        if (statusIcon == null) return;
+        if (statusIcon != null)
+        {
+            statusIcon.sprite = sprite;
 
-        statusIcon.sprite = sprite;
-        statusIcon.color = tint;
+            // a null sprite would otherwise draw a solid white rectangle
+            statusIcon.enabled = sprite != null;
+        }
 
-        // a null sprite would otherwise draw a solid white rectangle
-        statusIcon.enabled = sprite != null;
+        ApplyVisuals();
     }
 
 
@@ -106,9 +110,7 @@ public class PuzzleStatusRow : MonoBehaviour
     {
         this.pulsing = pulsing;
 
-        StopPulse();
-
-        if (pulsing && isActiveAndEnabled) StartPulse();
+        ApplyVisuals();
     }
 
 
@@ -131,46 +133,52 @@ public class PuzzleStatusRow : MonoBehaviour
     // MARK: pulse
 
 
-    // Scaled time on purpose: this lives in the book, and a pause freezes the book too
-    private void StartPulse()
+    private void ApplyVisuals()
     {
-        StopPulse();
+        float pulse = pulsing ? PulseAmount() : 0.0f;
 
         if (statusButton != null)
         {
-            scaleTween = statusButton.transform
-                .DOScale(pulseScale, pulseDuration)
-                .SetEase(Ease.InOutSine)
-                .SetLoops(-1, LoopType.Yoyo);
+            statusButton.transform.localScale = Vector3.one * Mathf.Lerp(1.0f, pulseScale, pulse);
         }
 
         if (statusIcon != null)
         {
             Color bright = Color.Lerp(baseTint, Color.white, pulseBrighten);
-            bright.a = baseTint.a;
+            Color colour = Color.Lerp(baseTint, bright, pulse);
+            colour.a = baseTint.a;
 
-            colourTween = statusIcon
-                .DOColor(bright, pulseDuration)
-                .SetEase(Ease.InOutSine)
-                .SetLoops(-1, LoopType.Yoyo);
+            statusIcon.color = colour;
         }
     }
 
 
-    private void StopPulse()
+    private void ApplyRest()
     {
-        KillTween(ref scaleTween);
-        KillTween(ref colourTween);
-
         if (statusButton != null) statusButton.transform.localScale = Vector3.one;
         if (statusIcon != null) statusIcon.color = baseTint;
     }
 
 
-    private static void KillTween(ref Tween tween)
+    // 0..1, peaking exactly when the outline shader's width does
+    private float PulseAmount()
     {
-        if (tween != null && tween.IsActive()) tween.Kill();
+        return 0.5f + 0.5f * Mathf.Sin(Time.timeSinceLevelLoad * PulseSpeed);
+    }
 
-        tween = null;
+
+    private float PulseSpeed
+    {
+        get
+        {
+            // looked up once, so an entry without one does not search every frame
+            if (!highlightLookedUp)
+            {
+                highlight = GetComponent<UnseenHighlight>();
+                highlightLookedUp = true;
+            }
+
+            return highlight != null ? highlight.PulseSpeed : fallbackPulseSpeed;
+        }
     }
 }

@@ -27,6 +27,11 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     public bool IsShowing { get { return showing; } }
 
 
+    // The outline pulses on 0.5 + 0.5 * sin(Time.timeSinceLevelLoad * PulseSpeed), so anything
+    // that wants to pulse in step with it evaluates the same thing
+    public float PulseSpeed { get { return pulseSpeed; } }
+
+
     private void Awake()
     {
         if (outline == null) Debug.LogError("UnseenHighlight: no outline Image, so unseen changes cannot pulse", this);
