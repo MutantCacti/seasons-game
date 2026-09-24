@@ -1,0 +1,976 @@
+{
+  "meta": {
+    "aiDisclaimer": "MARK: ! AI disclaimer. This file was transcribed from the design diagram and written by Claude Opus 5.5",
+    "diagram": "run `tools/progression-tree.py render` to regenerate docs/progression-tree.mmd (gitignored, never edit it by hand), and `tools/progression-tree.py check` after editing this file",
+    "source": "flat diagram (WhatsApp image, 2026-09-24), transcribed by the manager agent",
+    "edgeSemantics": "each node lists `requires`: every listed parent must be reached first (AND). Parents joined by one connector bar in the drawing are all listed.",
+    "kinds": {
+      "tile": "label said TILE",
+      "animal": "label written in CAPITALS (the drawing's convention)",
+      "sfx": "sound effect",
+      "item": "everything else (plants, objects)"
+    },
+    "confidence": "high unless stated. medium = connector readable but crosses others or is faint. `alt` names the other plausible reading.",
+    "root": "wasteland_tile",
+    "final": "whales",
+    "tier": "the node's row in the drawing (0 = top). It is the intended chronology/pacing; a larger tier happens later. It does not gate on its own: hard gates are `requires` (things) and `gates` (states).",
+    "states": "world states, kind 'season' or 'condition', each started (and optionally ended) by a node being reached. A season ends when the next begins.",
+    "sketch": "this is a design sketch, not puzzle definitions: don't infer puzzle mechanics from the dependencies",
+    "gates": "a node's `gates` list needs each state in the given phase: 'active' (started, not ended) or 'ended'. Gates add to `requires`; they don't replace it.",
+    "spawn": "optional notes on how an animal appears: `at` = the node it emerges from; `rule` 'population' = once enough of the listed nodes exist (threshold TBD)."
+  },
+  "states": [
+    {
+      "id": "summer",
+      "kind": "season",
+      "startsOn": "wasteland_tile",
+      "endsOn": "crows",
+      "note": "the game starts in summer"
+    },
+    {
+      "id": "autumn",
+      "kind": "season",
+      "startsOn": "crows",
+      "endsOn": "snow_cloud",
+      "note": "autumn begins the moment the crows spawn"
+    },
+    {
+      "id": "winter",
+      "kind": "season",
+      "startsOn": "snow_cloud",
+      "endsOn": "tulip"
+    },
+    {
+      "id": "spring",
+      "kind": "season",
+      "startsOn": "tulip",
+      "note": "the tulip flowering starts spring, not the seeds being planted"
+    },
+    {
+      "id": "lake_habitable",
+      "kind": "condition",
+      "startsOn": "algae",
+      "note": "the lake becomes habitable once algae is populated"
+    },
+    {
+      "id": "bears_hibernating",
+      "kind": "condition",
+      "startsOn": "snow_cloud",
+      "endsOn": "ladybugs",
+      "note": "bears hibernate from the snow cloud until the ladybugs appear"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "wasteland_tile",
+      "label": "wasteland TILE",
+      "kind": "tile",
+      "tier": 0,
+      "group": "start: the wasteland greens up"
+    },
+    {
+      "id": "water",
+      "label": "water",
+      "kind": "item",
+      "tier": 1,
+      "group": "start: the wasteland greens up",
+      "requires": [
+        "wasteland_tile"
+      ]
+    },
+    {
+      "id": "dirt_tile",
+      "label": "dirt TILE",
+      "kind": "tile",
+      "tier": 1,
+      "group": "start: the wasteland greens up",
+      "requires": [
+        "wasteland_tile"
+      ]
+    },
+    {
+      "id": "grass_tile",
+      "label": "grass TILE",
+      "kind": "tile",
+      "tier": 2,
+      "group": "start: the wasteland greens up",
+      "requires": [
+        "water",
+        "dirt_tile"
+      ]
+    },
+    {
+      "id": "seed_1",
+      "label": "seed 1",
+      "kind": "item",
+      "tier": 3,
+      "group": "first growth",
+      "requires": [
+        "grass_tile"
+      ]
+    },
+    {
+      "id": "seed_2",
+      "label": "seed 2",
+      "kind": "item",
+      "tier": 3,
+      "group": "first growth",
+      "requires": [
+        "grass_tile"
+      ]
+    },
+    {
+      "id": "worms",
+      "label": "WORMS",
+      "kind": "animal",
+      "tier": 3,
+      "group": "first growth",
+      "requires": [
+        "grass_tile"
+      ]
+    },
+    {
+      "id": "flower_1",
+      "label": "flower 1",
+      "kind": "item",
+      "tier": 4,
+      "group": "first growth",
+      "requires": [
+        "seed_1"
+      ]
+    },
+    {
+      "id": "flower_2",
+      "label": "flower 2",
+      "kind": "item",
+      "tier": 4,
+      "group": "first growth",
+      "requires": [
+        "seed_2"
+      ]
+    },
+    {
+      "id": "fertiliser",
+      "label": "fertiliser",
+      "kind": "item",
+      "tier": 4,
+      "group": "first growth",
+      "requires": [
+        "worms"
+      ]
+    },
+    {
+      "id": "fern_1",
+      "label": "fern 1",
+      "kind": "item",
+      "tier": 4,
+      "group": "first growth",
+      "requires": [
+        "worms"
+      ]
+    },
+    {
+      "id": "bees",
+      "label": "BEES",
+      "kind": "animal",
+      "tier": 5,
+      "group": "first growth",
+      "requires": [
+        "flower_1",
+        "flower_2"
+      ]
+    },
+    {
+      "id": "sapling_1",
+      "label": "sapling 1",
+      "kind": "item",
+      "tier": 5,
+      "group": "first growth",
+      "requires": [
+        "fertiliser"
+      ]
+    },
+    {
+      "id": "cattail",
+      "label": "cattail",
+      "kind": "item",
+      "tier": 5,
+      "group": "first growth",
+      "requires": [
+        "fern_1"
+      ]
+    },
+    {
+      "id": "lily_pad",
+      "label": "lily pad",
+      "kind": "item",
+      "tier": 5,
+      "group": "first growth",
+      "requires": [
+        "fern_1"
+      ]
+    },
+    {
+      "id": "bee_hive",
+      "label": "bee hive",
+      "kind": "item",
+      "tier": 6,
+      "group": "first growth",
+      "requires": [
+        "bees"
+      ]
+    },
+    {
+      "id": "tree_1",
+      "label": "tree 1",
+      "kind": "item",
+      "tier": 6,
+      "group": "first growth",
+      "requires": [
+        "sapling_1"
+      ]
+    },
+    {
+      "id": "dragonflies",
+      "label": "DRAGONFLIES",
+      "kind": "animal",
+      "tier": 6,
+      "group": "first growth",
+      "requires": [
+        "cattail",
+        "lily_pad"
+      ]
+    },
+    {
+      "id": "frogs",
+      "label": "FROGS",
+      "kind": "animal",
+      "tier": 6,
+      "group": "first growth",
+      "requires": [
+        "cattail",
+        "lily_pad"
+      ]
+    },
+    {
+      "id": "rock",
+      "label": "rock",
+      "kind": "item",
+      "tier": 7,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "bee_hive"
+      ]
+    },
+    {
+      "id": "short_long_grass",
+      "label": "short/long grass",
+      "kind": "item",
+      "tier": 7,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "bee_hive"
+      ]
+    },
+    {
+      "id": "fruit_bush_1",
+      "label": "fruit bush 1",
+      "kind": "item",
+      "tier": 7,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "bee_hive"
+      ]
+    },
+    {
+      "id": "brown_mushroom",
+      "label": "brown mushroom",
+      "kind": "item",
+      "tier": 7,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "bee_hive"
+      ]
+    },
+    {
+      "id": "moss",
+      "label": "moss",
+      "kind": "item",
+      "tier": 7,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "rock"
+      ]
+    },
+    {
+      "id": "bird_1_sparrows",
+      "label": "BIRD 1 (SPARROWS)",
+      "kind": "animal",
+      "tier": 7,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "tree_1"
+      ]
+    },
+    {
+      "id": "cicada_noise_sfx",
+      "label": "CICADA NOISE SFX",
+      "kind": "sfx",
+      "tier": 7,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "tree_1"
+      ]
+    },
+    {
+      "id": "algae",
+      "label": "algae",
+      "kind": "item",
+      "tier": 8,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "moss"
+      ]
+    },
+    {
+      "id": "sand",
+      "label": "sand",
+      "kind": "item",
+      "tier": 8,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "rock"
+      ]
+    },
+    {
+      "id": "flower_3_lavender",
+      "label": "flower 3 (lavender)",
+      "kind": "item",
+      "tier": 8,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "rock"
+      ],
+      "note": "leaf (confirmed)"
+    },
+    {
+      "id": "flower_bush_rose",
+      "label": "flower bush (rose)",
+      "kind": "item",
+      "tier": 8,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "fruit_bush_1"
+      ]
+    },
+    {
+      "id": "squirrels",
+      "label": "SQUIRRELS",
+      "kind": "animal",
+      "tier": 8,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "tree_1",
+        "brown_mushroom"
+      ]
+    },
+    {
+      "id": "seed_3_sunflower",
+      "label": "seed 3 (sunflower)",
+      "kind": "item",
+      "tier": 8,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "bird_1_sparrows"
+      ]
+    },
+    {
+      "id": "firefly_bush",
+      "label": "firefly bush",
+      "kind": "item",
+      "tier": 8,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "bird_1_sparrows"
+      ]
+    },
+    {
+      "id": "crab",
+      "label": "CRAB",
+      "kind": "animal",
+      "tier": 9,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "algae"
+      ]
+    },
+    {
+      "id": "marram_grass",
+      "label": "marram grass",
+      "kind": "item",
+      "tier": 9,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "sand",
+        "short_long_grass"
+      ]
+    },
+    {
+      "id": "apple",
+      "label": "(apple?)",
+      "kind": "item",
+      "tier": 9,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "flower_bush_rose"
+      ],
+      "note": "name is a placeholder in the drawing"
+    },
+    {
+      "id": "acorn",
+      "label": "acorn",
+      "kind": "item",
+      "tier": 9,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "squirrels"
+      ]
+    },
+    {
+      "id": "flower_4_sunflower",
+      "label": "flower 4 (sunflower)",
+      "kind": "item",
+      "tier": 9,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "seed_3_sunflower"
+      ],
+      "note": "was also called 'flower 3' in the drawing"
+    },
+    {
+      "id": "fish_1",
+      "label": "FISH1",
+      "kind": "animal",
+      "tier": 9,
+      "group": "pond branch (water life)",
+      "requires": [
+        "frogs"
+      ],
+      "gates": [
+        {
+          "state": "lake_habitable",
+          "when": "active"
+        }
+      ],
+      "note": "same step as the crab: both follow from the algae making the lake habitable"
+    },
+    {
+      "id": "puffins",
+      "label": "PUFFINS",
+      "kind": "animal",
+      "tier": 10,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "crab",
+        "marram_grass"
+      ]
+    },
+    {
+      "id": "apple_tree_sapling",
+      "label": "apple tree sapling",
+      "kind": "item",
+      "tier": 10,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "apple"
+      ]
+    },
+    {
+      "id": "sapling_3",
+      "label": "(sapling 3?)",
+      "kind": "item",
+      "tier": 10,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "acorn"
+      ],
+      "note": "name is a placeholder in the drawing"
+    },
+    {
+      "id": "bird_nest",
+      "label": "bird nest",
+      "kind": "item",
+      "tier": 10,
+      "group": "pond branch (water life)",
+      "requires": [
+        "fish_1",
+        "puffins"
+      ]
+    },
+    {
+      "id": "apple_tree",
+      "label": "apple tree",
+      "kind": "item",
+      "tier": 11,
+      "group": "bee hive branch (shore + orchard)",
+      "requires": [
+        "apple_tree_sapling"
+      ]
+    },
+    {
+      "id": "oak_tree",
+      "label": "oak tree",
+      "kind": "item",
+      "tier": 11,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "sapling_3"
+      ]
+    },
+    {
+      "id": "crows",
+      "label": "CROWS",
+      "kind": "animal",
+      "tier": 11,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "oak_tree",
+        "flower_4_sunflower"
+      ]
+    },
+    {
+      "id": "autumn_bush",
+      "label": "autumn bush",
+      "kind": "item",
+      "tier": 11,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "firefly_bush",
+        "dragonflies"
+      ],
+      "gates": [
+        {
+          "state": "autumn",
+          "when": "active"
+        }
+      ],
+      "note": "the dragonflies connector winds a long way round"
+    },
+    {
+      "id": "fish_2_salmon",
+      "label": "FISH 2 (salmon)",
+      "kind": "animal",
+      "tier": 11,
+      "group": "pond branch (water life)",
+      "requires": [
+        "bird_nest"
+      ]
+    },
+    {
+      "id": "autumn_leaves",
+      "label": "autumn leaves",
+      "kind": "item",
+      "tier": 12,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "oak_tree"
+      ]
+    },
+    {
+      "id": "pumpkin",
+      "label": "pumpkin",
+      "kind": "item",
+      "tier": 12,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "autumn_bush",
+        "crows"
+      ]
+    },
+    {
+      "id": "coral_x",
+      "label": "CORAL X",
+      "kind": "animal",
+      "tier": 12,
+      "group": "pond branch (water life)",
+      "requires": [
+        "fish_1",
+        "fish_2_salmon"
+      ],
+      "note": "written in capitals; fish_2 joins via a short bar"
+    },
+    {
+      "id": "red_mushroom",
+      "label": "red mushroom",
+      "kind": "item",
+      "tier": 13,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "autumn_leaves"
+      ]
+    },
+    {
+      "id": "hedgehogs",
+      "label": "HEDGEHOGS",
+      "kind": "animal",
+      "tier": 13,
+      "group": "tree 1 branch (woodland)",
+      "requires": [
+        "pumpkin"
+      ]
+    },
+    {
+      "id": "deer",
+      "label": "DEER",
+      "kind": "animal",
+      "tier": 14,
+      "group": "winter",
+      "requires": [
+        "apple_tree",
+        "red_mushroom"
+      ]
+    },
+    {
+      "id": "bears",
+      "label": "BEARS",
+      "kind": "animal",
+      "tier": 15,
+      "group": "winter",
+      "requires": [
+        "deer",
+        "fish_2_salmon"
+      ],
+      "spawn": {
+        "rule": "population",
+        "of": [
+          "deer",
+          "fish_2_salmon"
+        ],
+        "threshold": "TBD",
+        "note": "bears spawn once there are enough deer and salmon in the world"
+      }
+    },
+    {
+      "id": "pine_tree",
+      "label": "pine tree",
+      "kind": "item",
+      "tier": 15,
+      "group": "winter",
+      "requires": [
+        "deer"
+      ]
+    },
+    {
+      "id": "snow_cloud",
+      "label": "snow cloud",
+      "kind": "item",
+      "tier": 15,
+      "group": "winter",
+      "requires": [
+        "deer",
+        "hedgehogs"
+      ]
+    },
+    {
+      "id": "pine_cones",
+      "label": "pine cones",
+      "kind": "item",
+      "tier": 16,
+      "group": "winter",
+      "requires": [
+        "pine_tree",
+        "snow_cloud"
+      ]
+    },
+    {
+      "id": "snowy_owls",
+      "label": "SNOWY OWLS",
+      "kind": "animal",
+      "tier": 16,
+      "group": "winter",
+      "requires": [
+        "pine_tree",
+        "snow_cloud"
+      ]
+    },
+    {
+      "id": "ice",
+      "label": "ice",
+      "kind": "item",
+      "tier": 17,
+      "group": "winter",
+      "requires": [
+        "water",
+        "snow_cloud"
+      ],
+      "note": "not gated: the plan is to hand the player the water for ice in the same step as the pine cones. Water still feeds it via the long line down the left edge"
+    },
+    {
+      "id": "fern_2",
+      "label": "fern 2",
+      "kind": "item",
+      "tier": 17,
+      "group": "winter",
+      "requires": [
+        "pine_cones"
+      ]
+    },
+    {
+      "id": "fallen_tree_log",
+      "label": "fallen tree log",
+      "kind": "item",
+      "tier": 17,
+      "group": "winter",
+      "requires": [
+        "snowy_owls"
+      ]
+    },
+    {
+      "id": "winter_bush",
+      "label": "winter bush",
+      "kind": "item",
+      "tier": 18,
+      "group": "winter",
+      "requires": [
+        "ice",
+        "fern_2"
+      ]
+    },
+    {
+      "id": "snowy_tree",
+      "label": "snowy tree",
+      "kind": "item",
+      "tier": 19,
+      "group": "winter",
+      "requires": [
+        "winter_bush"
+      ]
+    },
+    {
+      "id": "snowshoe_hares",
+      "label": "SNOWSHOE HARES",
+      "kind": "animal",
+      "tier": 19,
+      "group": "winter",
+      "requires": [
+        "winter_bush"
+      ]
+    },
+    {
+      "id": "hokkaido_snow_fairies",
+      "label": "HOKKAIDO SNOW FAIRIES",
+      "kind": "animal",
+      "tier": 20,
+      "group": "winter",
+      "requires": [
+        "snowy_tree"
+      ]
+    },
+    {
+      "id": "crocuses",
+      "label": "crocuses",
+      "kind": "item",
+      "tier": 20,
+      "group": "winter",
+      "requires": [
+        "snowshoe_hares"
+      ]
+    },
+    {
+      "id": "daffodils",
+      "label": "daffodils",
+      "kind": "item",
+      "tier": 20,
+      "group": "winter",
+      "requires": [
+        "snowshoe_hares"
+      ]
+    },
+    {
+      "id": "holly",
+      "label": "holly",
+      "kind": "item",
+      "tier": 21,
+      "group": "winter",
+      "requires": [
+        "hokkaido_snow_fairies"
+      ],
+      "note": "leaf (confirmed)"
+    },
+    {
+      "id": "arctic_foxes",
+      "label": "ARCTIC FOXES",
+      "kind": "animal",
+      "tier": 21,
+      "group": "winter",
+      "requires": [
+        "crocuses",
+        "daffodils"
+      ]
+    },
+    {
+      "id": "tulip_seeds",
+      "label": "tulip seeds",
+      "kind": "item",
+      "tier": 22,
+      "group": "spring returns",
+      "requires": [
+        "arctic_foxes",
+        "hokkaido_snow_fairies"
+      ]
+    },
+    {
+      "id": "tulip",
+      "label": "tulip",
+      "kind": "item",
+      "tier": 23,
+      "group": "spring returns",
+      "requires": [
+        "tulip_seeds"
+      ],
+      "note": "spring starts when this flowers"
+    },
+    {
+      "id": "sakura_sapling",
+      "label": "sakura (cherry blossom) sapling",
+      "kind": "item",
+      "tier": 24,
+      "group": "spring returns",
+      "requires": [
+        "tulip"
+      ]
+    },
+    {
+      "id": "ladybugs",
+      "label": "LADYBUGS",
+      "kind": "animal",
+      "tier": 24,
+      "group": "spring returns",
+      "requires": [
+        "fallen_tree_log",
+        "tulip"
+      ],
+      "gates": [
+        {
+          "state": "spring",
+          "when": "active"
+        }
+      ],
+      "spawn": {
+        "at": "fallen_tree_log",
+        "note": "ladybugs emerge from inside the fallen tree log when spring starts"
+      }
+    },
+    {
+      "id": "sakura",
+      "label": "sakura (cherry blossom)",
+      "kind": "item",
+      "tier": 25,
+      "group": "spring returns",
+      "requires": [
+        "sakura_sapling"
+      ]
+    },
+    {
+      "id": "clovers",
+      "label": "clovers",
+      "kind": "item",
+      "tier": 25,
+      "group": "spring returns",
+      "requires": [
+        "ladybugs"
+      ]
+    },
+    {
+      "id": "daisy",
+      "label": "daisy",
+      "kind": "item",
+      "tier": 26,
+      "group": "spring returns",
+      "requires": [
+        "clovers"
+      ]
+    },
+    {
+      "id": "bamboo",
+      "label": "bamboo",
+      "kind": "item",
+      "tier": 26,
+      "group": "spring returns",
+      "requires": [
+        "sakura"
+      ]
+    },
+    {
+      "id": "white_duck_ducklings",
+      "label": "WHITE DUCK W/ YELLOW DUCKLINGS",
+      "kind": "animal",
+      "tier": 27,
+      "group": "spring returns",
+      "requires": [
+        "bamboo"
+      ]
+    },
+    {
+      "id": "butterflies",
+      "label": "BUTTERFLIES",
+      "kind": "animal",
+      "tier": 27,
+      "group": "spring returns",
+      "requires": [
+        "bears",
+        "daisy"
+      ],
+      "gates": [
+        {
+          "state": "bears_hibernating",
+          "when": "ended",
+          "note": "butterflies also wait for the bears to wake"
+        }
+      ]
+    },
+    {
+      "id": "peacock",
+      "label": "PEACOCK",
+      "kind": "animal",
+      "tier": 28,
+      "group": "spring returns",
+      "requires": [
+        "white_duck_ducklings"
+      ]
+    },
+    {
+      "id": "tree_n_plus_1",
+      "label": "tree n+1 (spring tree?)",
+      "kind": "item",
+      "tier": 28,
+      "group": "spring returns",
+      "requires": [
+        "butterflies"
+      ],
+      "note": "name is a placeholder in the drawing"
+    },
+    {
+      "id": "wolves",
+      "label": "WOLVES",
+      "kind": "animal",
+      "tier": 29,
+      "group": "spring returns",
+      "requires": [
+        "tree_n_plus_1"
+      ]
+    },
+    {
+      "id": "whales",
+      "label": "WHALES",
+      "kind": "animal",
+      "tier": 30,
+      "group": "finale",
+      "requires": [
+        "coral_x",
+        "peacock",
+        "wolves"
+      ]
+    }
+  ]
+}
