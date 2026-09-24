@@ -35,6 +35,15 @@ public abstract class CompendiumTabManager : MonoBehaviour
     public virtual void OnHidden() { }
 
 
+    // Asked each time the book opens. A tab with something urgent to show (a failed puzzle, say)
+    // returns true and the book opens on it at pageIndex; otherwise the book opens as it always does.
+    public virtual bool TryGetRequestedPage(out int pageIndex)
+    {
+        pageIndex = 0;
+        return false;
+    }
+
+
     protected void RaiseChanged()
     {
         if (Changed != null) Changed();

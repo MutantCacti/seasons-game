@@ -177,7 +177,10 @@ public class CompendiumUIManager : MonoBehaviour
         if (uiRoot == null) return;
 
         EnsureCamera();
-        LayoutSpread(0);
+
+        // ShowTab lays out by itself, so it replaces the usual layout rather than following it
+        if (TryGetRequestedTab(out CompendiumTabManager requestedTab, out int requestedPage)) ShowTab(requestedTab, requestedPage);
+        else LayoutSpread(0);
 
         uiRoot.SetActive(true);
 
@@ -628,6 +631,30 @@ public class CompendiumUIManager : MonoBehaviour
         }
 
         return -1;
+    }
+
+
+    // The first tab in array order that wants the book opened on one of its pages
+    private bool TryGetRequestedTab(out CompendiumTabManager requestedTab, out int requestedPage)
+    {
+        requestedTab = null;
+        requestedPage = 0;
+
+        if (tabs == null) return false;
+
+        for (int i = 0; i < tabs.Length; i++)
+        {
+            CompendiumTabManager tab = tabs[i];
+            if (tab == null) continue;
+
+            if (!tab.TryGetRequestedPage(out int pageIndex)) continue;
+
+            requestedTab = tab;
+            requestedPage = pageIndex;
+            return true;
+        }
+
+        return false;
     }
 
 
