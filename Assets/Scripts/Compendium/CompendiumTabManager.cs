@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -47,5 +48,144 @@ public abstract class CompendiumTabManager : MonoBehaviour
     protected void RaiseChanged()
     {
         if (Changed != null) Changed();
+    }
+
+
+    // MARK: saved state
+
+
+    // Names this tab's entry in the save. The class name, so nothing needs wiring; renaming the class
+    // orphans whatever the old name saved, which the next save simply leaves behind.
+    protected virtual string SaveKey { get { return GetType().Name; } }
+
+
+    private bool warnedAboutMissingSave;
+
+
+    // The left page of the spread this tab was last on. Setting it saves, but only when it changed,
+    // so a book that settles on the same spread again does not rewrite the file.
+    public int RememberedPage
+    {
+        get
+        {
+            CompendiumTabSave tab = TabSave;
+            return tab != null ? tab.page : 0;
+        }
+        set
+        {
+            CompendiumTabSave tab = TabSave;
+            if (tab == null || tab.page == value) return;
+
+            tab.page = value;
+            SaveCompendium();
+        }
+    }
+
+
+    protected bool TryGetUnseen(string id, out int kind)
+    {
+        kind = 0;
+
+        if (string.IsNullOrEmpty(id)) return false;
+
+        CompendiumTabSave tab = TabSave;
+        if (tab == null) return false;
+
+        int index = tab.IndexOfUnseen(id);
+        if (index < 0) return false;
+
+        kind = tab.unseen[index].kind;
+        return true;
+    }
+
+
+    // Overwrites any earlier kind. Pass save false inside a batch and call SaveCompendium once after.
+    protected void MarkUnseen(string id, int kind, bool save = true)
+    {
+        if (string.IsNullOrEmpty(id)) return;
+
+        CompendiumTabSave tab = TabSave;
+        if (tab == null) return;
+
+        if (tab.unseen == null) tab.unseen = new List<UnseenSave>();
+
+        int index = tab.IndexOfUnseen(id);
+
+        if (index >= 0)
+        {
+            if (tab.unseen[index].kind == kind) return;
+
+            tab.unseen[index].kind = kind;
+        }
+        else
+        {
+            tab.unseen.Add(new UnseenSave { id = id, kind = kind });
+        }
+
+        if (save) SaveCompendium();
+    }
+
+
+    protected void ClearUnseen(string id, bool save = true)
+    {
+        if (string.IsNullOrEmpty(id)) return;
+
+        CompendiumTabSave tab = TabSave;
+        if (tab == null) return;
+
+        int index = tab.IndexOfUnseen(id);
+        if (index < 0) return;
+
+        tab.unseen.RemoveAt(index);
+
+        if (save) SaveCompendium();
+    }
+
+
+    // A copy, so a load can prune the real list while walking this one
+    protected void CopyUnseen(List<UnseenSave> results)
+    {
+        results.Clear();
+
+        CompendiumTabSave tab = TabSave;
+        if (tab == null || tab.unseen == null) return;
+
+        for (int i = 0; i < tab.unseen.Count; i++)
+        {
+            UnseenSave entry = tab.unseen[i];
+            if (entry != null) results.Add(new UnseenSave { id = entry.id, kind = entry.kind });
+        }
+    }
+
+
+    protected void SaveCompendium()
+    {
+        if (SaveDataManager.Instance != null) SaveDataManager.Instance.Save();
+    }
+
+
+    // Looked up on every use and never cached: binds can arrive before Awake, and a new game swaps
+    // the whole SaveData out from under us
+    private CompendiumTabSave TabSave
+    {
+        get
+        {
+            SaveDataManager manager = SaveDataManager.Instance;
+
+            if (manager == null || manager.SaveData == null)
+            {
+                if (!warnedAboutMissingSave)
+                {
+                    warnedAboutMissingSave = true;
+                    Debug.LogError($"{GetType().Name}: no SaveDataManager, so this tab's page and unseen entries are not remembered", this);
+                }
+
+                return null;
+            }
+
+            if (manager.SaveData.compendium == null) manager.SaveData.compendium = new CompendiumSaveData();
+
+            return manager.SaveData.compendium.GetOrAddTab(SaveKey);
+        }
     }
 }
