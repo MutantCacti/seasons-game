@@ -386,6 +386,37 @@ public class PuzzleTabManager : CompendiumTabManager
     // MARK: unseen
 
 
+    // A soft lock outranks a completion, which outranks anything merely new
+    public override UnseenPriority HighestUnseen()
+    {
+        UnseenPriority highest = UnseenPriority.None;
+        int count = UnseenCount;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (!TryGetUnseenAt(i, out int kind)) continue;
+
+            UnseenPriority priority = PriorityOf((UnseenKind)kind);
+
+            if (priority == UnseenPriority.SoftLock) return priority;
+            if (priority > highest) highest = priority;
+        }
+
+        return highest;
+    }
+
+
+    private static UnseenPriority PriorityOf(UnseenKind kind)
+    {
+        switch (kind)
+        {
+            case UnseenKind.Failed: return UnseenPriority.SoftLock;
+            case UnseenKind.Completed: return UnseenPriority.Completion;
+            default: return UnseenPriority.Discovery;
+        }
+    }
+
+
     private void OnPuzzleUnlocked(Puzzle puzzle)
     {
         MarkPuzzleUnseen(puzzle, UnseenKind.Unlocked);

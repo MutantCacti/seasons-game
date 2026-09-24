@@ -4,6 +4,17 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
+// How loudly a tab's unseen entries call for attention. Ordered, so the larger value wins when tabs
+// are combined (the book glow takes the max over every tab).
+public enum UnseenPriority
+{
+    None = 0,
+    Discovery = 1,
+    Completion = 2,
+    SoftLock = 3,
+}
+
+
 // One tab in the compendium book. Concrete tabs supply a page prefab, a page count and
 // a way to bind a page instance to an index; the CompendiumUIManager owns the leaves and
 // the turning, and asks the current tab to fill each face through BindPage.
@@ -16,6 +27,11 @@ public abstract class CompendiumTabManager : MonoBehaviour
 
     // Raised when a tab's content changes and its visible pages should be re-bound.
     public event Action Changed;
+
+
+    // Raised whenever any tab's unseen list actually changes, batched or not. Static so the book can
+    // listen once for every tab, including ones that bind before it exists.
+    public static event Action UnseenChanged;
 
 
     // May be null: the tab then instantiates nothing and its faces stay empty (just the
@@ -48,6 +64,21 @@ public abstract class CompendiumTabManager : MonoBehaviour
     protected void RaiseChanged()
     {
         if (Changed != null) Changed();
+    }
+
+
+    // The loudest thing this tab has unseen. The base only knows that something is unseen, so anything
+    // counts as a discovery; tabs whose kinds mean more override this.
+    public virtual UnseenPriority HighestUnseen()
+    {
+        int count = UnseenCount;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (TryGetUnseenAt(i, out int _)) return UnseenPriority.Discovery;
+        }
+
+        return UnseenPriority.None;
     }
 
 
@@ -103,6 +134,32 @@ public abstract class CompendiumTabManager : MonoBehaviour
     }
 
 
+    protected int UnseenCount
+    {
+        get
+        {
+            CompendiumTabSave tab = TabSave;
+            return tab != null && tab.unseen != null ? tab.unseen.Count : 0;
+        }
+    }
+
+
+    // By position, so an override can walk the kinds without copying the list
+    protected bool TryGetUnseenAt(int index, out int kind)
+    {
+        kind = 0;
+
+        CompendiumTabSave tab = TabSave;
+        if (tab == null || tab.unseen == null || index < 0 || index >= tab.unseen.Count) return false;
+
+        UnseenSave entry = tab.unseen[index];
+        if (entry == null) return false;
+
+        kind = entry.kind;
+        return true;
+    }
+
+
     // Overwrites any earlier kind. Pass save false inside a batch and call SaveCompendium once after.
     protected void MarkUnseen(string id, int kind, bool save = true)
     {
@@ -126,6 +183,8 @@ public abstract class CompendiumTabManager : MonoBehaviour
             tab.unseen.Add(new UnseenSave { id = id, kind = kind });
         }
 
+        RaiseUnseenChanged();
+
         if (save) SaveCompendium();
     }
 
@@ -141,6 +200,8 @@ public abstract class CompendiumTabManager : MonoBehaviour
         if (index < 0) return;
 
         tab.unseen.RemoveAt(index);
+
+        RaiseUnseenChanged();
 
         if (save) SaveCompendium();
     }
@@ -159,6 +220,12 @@ public abstract class CompendiumTabManager : MonoBehaviour
             UnseenSave entry = tab.unseen[i];
             if (entry != null) results.Add(new UnseenSave { id = entry.id, kind = entry.kind });
         }
+    }
+
+
+    private static void RaiseUnseenChanged()
+    {
+        if (UnseenChanged != null) UnseenChanged();
     }
 
 
