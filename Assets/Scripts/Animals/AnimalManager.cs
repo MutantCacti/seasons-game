@@ -132,6 +132,22 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
     }
 
 
+    // Copies every live animal's transform into its save row, in memory only. Every save and every
+    // checkpoint capture (which clones the world) then sees where the animals are now, not where
+    // they spawned. LateUpdate so a mover's Update this frame is included.
+    private void LateUpdate()
+    {
+        for (int i = 0; i < live.Count; i++)
+        {
+            LiveAnimal animal = live[i];
+            if (animal.transform == null || animal.save == null) continue;
+
+            animal.save.position = animal.transform.position;
+            animal.save.rotation = animal.transform.rotation;
+        }
+    }
+
+
     // MARK: queries
 
 
