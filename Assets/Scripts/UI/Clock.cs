@@ -1,0 +1,172 @@
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+
+// Lays out and drives the on-screen clock from the frame's rect and DayNightManager's time API.
+// The human only nests the objects and drags references; every position and size is computed here,
+// so none of them need to be typed in the Inspector.
+public class Clock : MonoBehaviour
+{
+    [SerializeField] private RectTransform frame;   // falls back to this transform when null
+    [SerializeField] private RectTransform window;  // the Mask that clips the dial to the circle
+    [SerializeField] private RectTransform dial;
+    [SerializeField] private Image daylight;
+    [SerializeField] private Image nightMask;
+    [SerializeField] private Image starsClouds;
+    [SerializeField] private Image sun;
+    [SerializeField] private Image moon;
+    [SerializeField] private TextMeshProUGUI dayText;
+
+    [SerializeField] private Color daylightColour = new Color(0.45f, 0.7f, 1f);
+    [SerializeField] private Color nightColour = new Color(0.08f, 0.1f, 0.26f);
+    [SerializeField] private Color starsColour = new Color(0.95f, 0.97f, 1f);
+    [SerializeField] private Color sunColour = new Color(1f, 0.85f, 0.4f);
+    [SerializeField] private Color moonColour = new Color(0.9f, 0.93f, 1f);
+    [SerializeField] private Color textColour = new Color(0.1f, 0.12f, 0.2f);
+
+
+    private DayNightManager dayNight;
+    private bool validationLogged;
+
+
+    private void Awake()
+    {
+        ValidateHierarchy();
+        ApplyLayout();
+    }
+
+
+    private void OnEnable()
+    {
+        ApplyLayout();
+    }
+
+
+    // Pitfall 2: a layout-driven rect is 0x0 at bind time, so re-measure whenever the frame resizes.
+    private void OnRectTransformDimensionsChange()
+    {
+        ApplyLayout();
+    }
+
+
+    private void Start()
+    {
+        dayNight = DayNightManager.Instance;
+
+        if (dayNight == null)
+        {
+            Debug.LogError("Clock: no DayNightManager in the scene, so the clock cannot run", this);
+            enabled = false;
+            return;
+        }
+
+        ApplyColours();
+
+        if (dayText != null) dayText.text = $"Day {dayNight.Day}";
+
+        dayNight.DayStarted += OnDayStarted;
+    }
+
+
+    private void OnDestroy()
+    {
+        if (dayNight != null) dayNight.DayStarted -= OnDayStarted;
+    }
+
+
+    private void Update()
+    {
+        if (dayNight == null || dial == null) return;
+
+        // positive Z is counter-clockwise in screen space
+        dial.localRotation = Quaternion.Euler(0f, 0f, dayNight.DialAngleDegrees);
+    }
+
+
+    private void OnDayStarted()
+    {
+        if (dayText != null) dayText.text = $"Day {dayNight.Day}";
+    }
+
+
+    // MARK: layout
+
+
+    // Sizes and positions the dial, sun and moon from the frame's rect using the art's measured
+    // ratios, measured from the frame's bottom-left:
+    //   - the dial's centre sits at (128/512, 16/256) of the frame = (128, 240) top-left at native
+    //   - the dial is a 512/256 x 512/256 square (twice the frame height), so it always covers the
+    //     window circle (whose farthest point is 224/256 of the frame height from the pivot)
+    //   - the sun and moon sit at +/-112/256 of the frame height on the dial's local y, and are
+    //     sized 256/256 of the frame height
+    private void ApplyLayout()
+    {
+        RectTransform frameRt = frame != null ? frame : transform as RectTransform;
+        if (frameRt == null) return;
+
+        float w = frameRt.rect.width;
+        float h = frameRt.rect.height;
+        if (w <= 0f || h <= 0f) return;
+
+        if (dial != null)
+        {
+            dial.anchorMin = dial.anchorMax = new Vector2(0.5f, 0.5f);
+            dial.pivot = new Vector2(0.5f, 0.5f);
+            dial.sizeDelta = new Vector2(2f * h, 2f * h);
+            dial.anchoredPosition = new Vector2(-0.25f * w, -0.4375f * h);
+        }
+
+        float sunMoonOffset = 112f / 256f * h;
+
+        if (sun != null)
+        {
+            sun.rectTransform.anchorMin = sun.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            sun.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            sun.rectTransform.sizeDelta = new Vector2(h, h);
+            sun.rectTransform.anchoredPosition = new Vector2(0f, sunMoonOffset);
+        }
+
+        if (moon != null)
+        {
+            moon.rectTransform.anchorMin = moon.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            moon.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            moon.rectTransform.sizeDelta = new Vector2(h, h);
+            moon.rectTransform.anchoredPosition = new Vector2(0f, -sunMoonOffset);
+        }
+    }
+
+
+    private void ValidateHierarchy()
+    {
+        if (validationLogged) return;
+        validationLogged = true;
+
+        if (window == null)
+        {
+            Debug.LogError("Clock: no Window referenced, so the dial is not masked to the circle", this);
+            return;
+        }
+
+        if (window.GetComponent<Mask>() == null)
+        {
+            Debug.LogError("Clock: the Window has no Mask, so the dial is not clipped to the circle", this);
+        }
+
+        if (dial != null && dial.parent != window)
+        {
+            Debug.LogError("Clock: the dial is not a child of the Window, so the mask cannot clip it", this);
+        }
+    }
+
+
+    private void ApplyColours()
+    {
+        if (daylight != null) daylight.color = daylightColour;
+        if (nightMask != null) nightMask.color = nightColour;
+        if (starsClouds != null) starsClouds.color = starsColour;
+        if (sun != null) sun.color = sunColour;
+        if (moon != null) moon.color = moonColour;
+        if (dayText != null) dayText.color = textColour;
+    }
+}
