@@ -59,6 +59,10 @@ public abstract class CompendiumTabManager : MonoBehaviour
     protected virtual string SaveKey { get { return GetType().Name; } }
 
 
+    // read-only for the book, which remembers which tab was open by this key
+    public string TabKey { get { return SaveKey; } }
+
+
     private bool warnedAboutMissingSave;
 
 

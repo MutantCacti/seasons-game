@@ -116,7 +116,8 @@ public class CompendiumUIManager : MonoBehaviour
                     continue;
                 }
 
-                if (tab.TabButton != null) tab.TabButton.onClick.AddListener(() => ShowTab(tab, 0));
+                // each tab reopens where the player left it
+                if (tab.TabButton != null) tab.TabButton.onClick.AddListener(() => ShowTab(tab, tab.RememberedPage));
 
                 Action handler = () => OnTabChanged(tab);
                 tab.Changed += handler;
@@ -178,9 +179,19 @@ public class CompendiumUIManager : MonoBehaviour
 
         EnsureCamera();
 
-        // ShowTab lays out by itself, so it replaces the usual layout rather than following it
-        if (TryGetRequestedTab(out CompendiumTabManager requestedTab, out int requestedPage)) ShowTab(requestedTab, requestedPage);
-        else LayoutSpread(0);
+        // ShowTab lays out by itself, so it replaces the usual layout rather than following it. A
+        // requested page (a failed puzzle) wins over where the book was left.
+        if (TryGetRequestedTab(out CompendiumTabManager requestedTab, out int requestedPage))
+        {
+            ShowTab(requestedTab, requestedPage);
+        }
+        else
+        {
+            CompendiumTabManager rememberedTab = RememberedTab;
+
+            if (rememberedTab != null) ShowTab(rememberedTab, rememberedTab.RememberedPage);
+            else LayoutSpread(0);
+        }
 
         uiRoot.SetActive(true);
 
@@ -323,6 +334,7 @@ public class CompendiumUIManager : MonoBehaviour
         spreadCount = SpreadCount;
         AssignSpreadPages(target);
         UpdateTurnButtons();
+        RememberSpread();
     }
 
 
@@ -372,6 +384,7 @@ public class CompendiumUIManager : MonoBehaviour
 
             spread = nextSpread;
             turning = false;
+            RememberSpread();
 
             Promote(left);
             Promote(right);
@@ -413,6 +426,7 @@ public class CompendiumUIManager : MonoBehaviour
 
             spread = previousSpread;
             turning = false;
+            RememberSpread();
 
             Promote(left);
             Promote(right);
@@ -685,6 +699,7 @@ public class CompendiumUIManager : MonoBehaviour
             if (CurrentTab != null) CurrentTab.OnShown();
         }
 
+        RememberCurrentTab();
         ApplyTabSiblingOrder();
         JumpToSpread(pageIndex);
     }
@@ -699,6 +714,69 @@ public class CompendiumUIManager : MonoBehaviour
         int target = count > 0 ? Mathf.Clamp(pageIndex / 2, 0, count - 1) : 0;
 
         LayoutSpread(target);
+    }
+
+
+    // MARK: remembered state
+
+
+    // Called once the spread has settled, after a jump or a finished turn
+    private void RememberSpread()
+    {
+        CompendiumTabManager tab = CurrentTab;
+        if (tab != null) tab.RememberedPage = spread * 2;
+    }
+
+
+    private void RememberCurrentTab()
+    {
+        CompendiumSaveData save = CompendiumSave;
+        CompendiumTabManager tab = CurrentTab;
+        if (save == null || tab == null) return;
+
+        string key = tab.TabKey;
+        if (save.currentTab == key) return;
+
+        save.currentTab = key;
+        SaveDataManager.Instance.Save();
+    }
+
+
+    // The tab the book was last left on. An unknown or missing key falls back to the first tab.
+    private CompendiumTabManager RememberedTab
+    {
+        get
+        {
+            if (tabs == null || tabs.Length == 0) return null;
+
+            CompendiumSaveData save = CompendiumSave;
+            string key = save != null ? save.currentTab : null;
+
+            if (!string.IsNullOrEmpty(key))
+            {
+                for (int i = 0; i < tabs.Length; i++)
+                {
+                    if (tabs[i] != null && tabs[i].TabKey == key) return tabs[i];
+                }
+            }
+
+            return tabs[0];
+        }
+    }
+
+
+    // looked up on every use: a new game swaps the whole SaveData out
+    private CompendiumSaveData CompendiumSave
+    {
+        get
+        {
+            SaveDataManager manager = SaveDataManager.Instance;
+            if (manager == null || manager.SaveData == null) return null;
+
+            if (manager.SaveData.compendium == null) manager.SaveData.compendium = new CompendiumSaveData();
+
+            return manager.SaveData.compendium;
+        }
     }
 
 
