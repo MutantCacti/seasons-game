@@ -22,6 +22,15 @@ public class PuzzleTabManager : CompendiumTabManager
     }
 
 
+    // what last happened to a puzzle the player has not looked at yet; the latest one wins
+    private enum UnseenKind
+    {
+        Unlocked,
+        Completed,
+        Failed,
+    }
+
+
     [SerializeField] private GameObject pagePrefab;
     [SerializeField] private Shader silhouetteShader;
 
@@ -35,11 +44,16 @@ public class PuzzleTabManager : CompendiumTabManager
     [SerializeField] private Color activeTint = new Color(138.0f / 255.0f, 129.0f / 255.0f, 116.0f / 255.0f, 1.0f);   // #8A8174
     [SerializeField] private Color completeTint = new Color(141.0f / 255.0f, 191.0f / 255.0f, 90.0f / 255.0f, 1.0f);  // #8DBF5A, the complete ping
     [SerializeField] private Color failTint = new Color(210.0f / 255.0f, 87.0f / 255.0f, 63.0f / 255.0f, 1.0f);       // #D2573F, the fail ping
+    [SerializeField] private Color unlockedColour = new Color(237.0f / 255.0f, 196.0f / 255.0f, 59.0f / 255.0f, 1.0f); // #EDC43B, as GameItemTabManager
 
     private Material silhouetteMaterial;
     private CameraController cameraController;
     private int rowsPerPage = -1;
     private bool warnedAboutMissingStatusRow;
+
+    // runtime-only unseen tracking, never saved
+    private readonly Dictionary<Puzzle, UnseenKind> unseen = new Dictionary<Puzzle, UnseenKind>();
+    private bool baselineEmpty;
 
 
     public override GameObject PagePrefab { get { return pagePrefab; } }
@@ -60,11 +74,46 @@ public class PuzzleTabManager : CompendiumTabManager
         if (pagePrefab == null) Debug.LogError("PuzzleTabManager: no page prefab, so the tab cannot render pages", this);
         if (silhouetteShader == null) Debug.LogError("PuzzleTabManager: no silhouette shader, so undiscovered puzzles render normally instead of greyed out", this);
         if (hiddenSprite == null || completeSprite == null || failSprite == null) Debug.LogError("PuzzleTabManager: a status sprite is missing, so some puzzle states show no status icon", this);
+
+        // Captured now because EntityManager clears IsConstructingNewWorld later this same frame,
+        // once it has finished seeding the world fixtures (this compendium included).
+        baselineEmpty = SaveDataManager.Instance != null && SaveDataManager.Instance.IsConstructingNewWorld;
+    }
+
+
+    private void Start()
+    {
+        PuzzleManager manager = PuzzleManager.Instance;
+
+        if (manager == null)
+        {
+            Debug.LogError("PuzzleTabManager: no PuzzleManager, so the tab has no puzzles and nothing is ever marked unseen", this);
+            return;
+        }
+
+        manager.OnPuzzleUnlocked += OnPuzzleUnlocked;
+        manager.OnPuzzleComplete += OnPuzzleComplete;
+        manager.OnPuzzleSoftLocked += OnPuzzleSoftLocked;
+
+        // GameItemTabManager takes its baseline in Start, but this one waits for the puzzles to load:
+        // the compendium is an entity, so this Start can run before PuzzleManager has restored
+        // anything. Sticky, so it answers at once if loading already finished.
+        manager.OnPuzzlesLoaded += OnPuzzlesLoaded;
     }
 
 
     private void OnDestroy()
     {
+        PuzzleManager manager = PuzzleManager.Instance;
+
+        if (manager != null)
+        {
+            manager.OnPuzzleUnlocked -= OnPuzzleUnlocked;
+            manager.OnPuzzleComplete -= OnPuzzleComplete;
+            manager.OnPuzzleSoftLocked -= OnPuzzleSoftLocked;
+            manager.OnPuzzlesLoaded -= OnPuzzlesLoaded;
+        }
+
         if (silhouetteMaterial != null) Destroy(silhouetteMaterial);
         silhouetteMaterial = null;
     }
@@ -269,16 +318,25 @@ public class PuzzleTabManager : CompendiumTabManager
             return;
         }
 
+        if (state != PuzzleState.Hidden && unseen.TryGetValue(puzzle, out UnseenKind kind))
+        {
+            highlight.Show(ColourOf(kind), () => unseen.Remove(puzzle));
+            return;
+        }
+
         highlight.Hide();
     }
 
 
-    // A soft locked puzzle glows for as long as it stays stuck. Hovering hides the highlight before
-    // calling back, so the callback just puts it straight back up.
+    // A soft locked puzzle glows for as long as it stays stuck, whether or not it has been seen.
+    // Hovering still marks it seen, but it hides the highlight before calling back, so the callback
+    // puts it straight back up.
     private void ShowFailGlow(UnseenHighlight highlight, Puzzle puzzle)
     {
         highlight.Show(failTint, () =>
         {
+            unseen.Remove(puzzle);
+
             if (highlight != null && PuzzleManager.Instance != null && PuzzleManager.Instance.IsSoftLocked(puzzle))
             {
                 ShowFailGlow(highlight, puzzle);
@@ -310,6 +368,77 @@ public class PuzzleTabManager : CompendiumTabManager
         if (manager.IsSoftLocked(puzzle)) return PuzzleState.SoftLocked;
 
         return PuzzleState.Active;
+    }
+
+
+    private Color ColourOf(UnseenKind kind)
+    {
+        switch (kind)
+        {
+            case UnseenKind.Completed: return completeTint;
+            case UnseenKind.Failed: return failTint;
+            default: return unlockedColour;
+        }
+    }
+
+
+    // MARK: unseen
+
+
+    private void OnPuzzleUnlocked(Puzzle puzzle)
+    {
+        MarkUnseen(puzzle, UnseenKind.Unlocked);
+    }
+
+
+    private void OnPuzzleComplete(Puzzle puzzle)
+    {
+        MarkUnseen(puzzle, UnseenKind.Completed);
+    }
+
+
+    // Also raised again about half a second after every load for a puzzle that is still stuck,
+    // so a reload brings its fail highlight back. That is intended.
+    private void OnPuzzleSoftLocked(Puzzle puzzle)
+    {
+        MarkUnseen(puzzle, UnseenKind.Failed);
+    }
+
+
+    private void MarkUnseen(Puzzle puzzle, UnseenKind kind)
+    {
+        if (puzzle == null) return;
+
+        unseen[puzzle] = kind;
+        RaiseChanged();
+    }
+
+
+    // A new world starts from an empty baseline, so every puzzle the player begins with is unseen.
+    // A loaded world starts with nothing unseen.
+    private void OnPuzzlesLoaded()
+    {
+        if (!baselineEmpty) return;
+
+        PuzzleManager manager = PuzzleManager.Instance;
+        if (manager == null) return;
+
+        bool changed = false;
+        int count = Count;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (!TryGetPuzzle(i, out Puzzle puzzle)) continue;
+            if (!manager.IsUnlocked(puzzle)) continue;
+
+            // an event this frame may already have marked it with something more recent
+            if (unseen.ContainsKey(puzzle)) continue;
+
+            unseen[puzzle] = UnseenKind.Unlocked;
+            changed = true;
+        }
+
+        if (changed) RaiseChanged();
     }
 
 
