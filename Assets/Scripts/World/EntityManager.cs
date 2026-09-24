@@ -29,6 +29,10 @@ public class EntityManager : MonoBehaviour
 
 
     private readonly List<LiveEntity> live = new List<LiveEntity>();
+
+    // entities another manager owns and saves (animals), kept out of live so they never occupy a cell
+    // or count as a GameItem. only guid lookups search them.
+    private readonly List<EntityId> external = new List<EntityId>();
     private bool loaded;
 
     // Cached for the same reason TerrainManager caches it: SaveData.world is the one object every
@@ -186,6 +190,27 @@ public class EntityManager : MonoBehaviour
         }
 
         return false;
+    }
+
+
+    // Guid lookup for entities this manager does not own. For a manager that saves its own entities
+    // but still wants TryGetEntity to find them, e.g. so a puzzle can point at the animal that did it.
+    public void RegisterExternal(EntityId entityId)
+    {
+        if (entityId == null) return;
+        if (external.Contains(entityId)) return;
+
+        external.Add(entityId);
+        entityId.Destroyed += OnExternalDestroyed;
+    }
+
+
+    public void UnregisterExternal(EntityId entityId)
+    {
+        if (entityId == null) return;
+
+        entityId.Destroyed -= OnExternalDestroyed;
+        external.Remove(entityId);
     }
 
 
@@ -358,6 +383,17 @@ public class EntityManager : MonoBehaviour
             return true;
         }
 
+        for (int i = 0; i < external.Count; i++)
+        {
+            EntityId candidate = external[i];
+            if (candidate == null) continue;
+            if (!candidate.HasGuid) continue;
+            if (candidate.Guid != guid) continue;
+
+            entity = candidate;
+            return true;
+        }
+
         return false;
     }
 
@@ -399,6 +435,17 @@ public class EntityManager : MonoBehaviour
             live.RemoveAt(i);
             return;
         }
+    }
+
+
+    private void OnExternalDestroyed(EntityId entityId)
+    {
+        if (entityId != null) entityId.Destroyed -= OnExternalDestroyed;
+
+        // teardown order is not guaranteed, so the manager may already be gone
+        if (instance != this) return;
+
+        external.Remove(entityId);
     }
 
 
