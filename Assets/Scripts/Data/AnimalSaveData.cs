@@ -8,7 +8,10 @@ public class AnimalSave
 {
     public string animalId;     // resolves through AnimalRegistry to the prefab that gets instantiated
     public string guid;         // this instance's EntityId, so a puzzle can name the animal that completed it
-    public Vector3 position;    // world space rather than a cell, because animals may wander later
+    public Vector3 position;    // world space rather than a cell, because animals wander
+
+    // all zero in a save from before rotation was written, which reads as "use the prefab's"
+    public Quaternion rotation;
 }
 
 

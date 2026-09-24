@@ -31,6 +31,11 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
     {
         public Animal animal;
         public EntityId entityId;
+        public Transform transform;
+
+        // the row this animal's transform is copied into. AnimalSaveData.Sort reorders the list but
+        // never replaces the rows, so this stays the one in the save
+        public AnimalSave save;
     }
 
 
@@ -196,17 +201,16 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
         // logs and gives up if the animal is not in the registry
         if (registry == null || !registry.TryGetIdByEntry(animal, out string animalId)) return false;
 
-        EntityId entityId = CreateInstance(animal, position);
+        AnimalSave save = new AnimalSave { animalId = animalId, position = position };
+
+        EntityId entityId = CreateInstance(animal, save, position, animal.Prefab != null ? animal.Prefab.transform.rotation : Quaternion.identity);
         if (entityId == null) return false;
 
-        world.animals.animals.Add(new AnimalSave
-        {
-            animalId = animalId,
+        // reading the guid here is what gives a freshly spawned animal its identity
+        save.guid = entityId.Guid;
+        save.rotation = entityId.transform.rotation;
 
-            // reading the guid here is what gives a freshly spawned animal its identity
-            guid = entityId.Guid,
-            position = position,
-        });
+        world.animals.animals.Add(save);
 
         world.animals.firedRules.Add(rule.Id);
 
@@ -268,7 +272,20 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
             return false;
         }
 
-        EntityId entityId = CreateInstance(animal, entry.position);
+        if (animal.Prefab == null)
+        {
+            Debug.LogError($"AnimalManager: '{animal.name}' has no prefab, so the saved one cannot be " +
+                $"loaded - dropping it", animal);
+            return false;
+        }
+
+        // a save from before rotation was written holds an all-zero quaternion, which is not a rotation
+        Quaternion rotation = entry.rotation;
+        bool unset = rotation.x == 0.0f && rotation.y == 0.0f && rotation.z == 0.0f && rotation.w == 0.0f;
+
+        if (unset) rotation = animal.Prefab.transform.rotation;
+
+        EntityId entityId = CreateInstance(animal, entry, entry.position, rotation);
         if (entityId == null) return false;
 
         // same repair as EntityManager.LoadEntity: an animal loaded earlier keeps a clashing guid, so
@@ -304,7 +321,8 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
     // MARK: internals
 
 
-    private EntityId CreateInstance(Animal animal, Vector3 position)
+    // Instantiates an animal and binds its controller to the save row it writes through to
+    private EntityId CreateInstance(Animal animal, AnimalSave save, Vector3 position, Quaternion rotation)
     {
         if (animal.Prefab == null)
         {
@@ -312,17 +330,35 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
             return null;
         }
 
-        GameObject instance = Instantiate(animal.Prefab, position, animal.Prefab.transform.rotation, animalParent);
+        GameObject instance = Instantiate(animal.Prefab, position, rotation, animalParent);
         instance.name = animal.Prefab.name;
 
-        // the worm prefab carries one already, but an animal prefab without one still gets an identity
+        AnimalController controller = instance.GetComponent<AnimalController>();
+
+        if (controller == null)
+        {
+            Debug.LogWarning($"AnimalManager: '{animal.Prefab.name}' has no AnimalController on its root, so " +
+                $"the base one was added - add it to the prefab", animal.Prefab);
+
+            // RequireComponent brings an EntityId along with it
+            controller = instance.AddComponent<AnimalController>();
+        }
+
         EntityId entityId = instance.GetComponent<EntityId>();
 
-        if (entityId == null) entityId = instance.AddComponent<EntityId>();
+        // unreachable while AnimalController requires an EntityId; kept so losing that attribute is loud
+        if (entityId == null)
+        {
+            Debug.LogError($"AnimalManager: '{animal.Prefab.name}' came out with no EntityId, so one was added " +
+                $"- a puzzle it completes could not otherwise find it", animal.Prefab);
+            entityId = instance.AddComponent<EntityId>();
+        }
+
+        controller.Bind(animal, entityId, save);
 
         entityId.Destroyed += OnAnimalDestroyed;
 
-        live.Add(new LiveAnimal { animal = animal, entityId = entityId });
+        live.Add(new LiveAnimal { animal = animal, entityId = entityId, transform = instance.transform, save = save });
 
         return entityId;
     }
