@@ -1,8 +1,10 @@
 // A UI shader that draws a rectangular outline just inside an Image's rect, with its
 // pixel width pulsing in and out over time. Based on UI/Default so masks keep working.
-// Distance to the edge is measured from the Graphic's rect-local vertex position, so it
-// holds regardless of sprite or slicing. A soft glow halo falls inward from the core band
-// so the highlight reads as breathing light rather than a painted border.
+// Distance to the edge comes from the UVs scaled by _RectSize, so the Image must be Simple
+// with no sprite (UnseenHighlight enforces that). Vertex positions are no use here: the
+// canvas batches UI meshes into canvas space, and the book's leaves rotate and mirror.
+// A soft glow halo falls inward from the core band so the highlight reads as breathing
+// light rather than a painted border.
 Shader "UI/PulsingOutline"
 {
     Properties
@@ -13,7 +15,7 @@ Shader "UI/PulsingOutline"
         _PulseSpeed ("Pulse Speed", Float) = 5
         _GlowWidth ("Glow Width", Float) = 14
         _GlowIntensity ("Glow Intensity", Float) = 0.8
-        _Rect ("Rect", Vector) = (0, 0, 580, 740)
+        _RectSize ("Rect Size", Vector) = (580, 740, 0, 0)
 
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
@@ -89,7 +91,7 @@ Shader "UI/PulsingOutline"
             float _PulseSpeed;
             float _GlowWidth;
             float _GlowIntensity;
-            float4 _Rect;
+            float4 _RectSize;
             float4 _ClipRect;
 
             v2f vert(appdata_t v)
@@ -108,10 +110,9 @@ Shader "UI/PulsingOutline"
 
             fixed4 frag(v2f IN) : SV_Target
             {
-                float2 p = IN.worldPosition.xy;
-                float xMax = _Rect.x + _Rect.z;
-                float yMax = _Rect.y + _Rect.w;
-                float dist = min(min(p.x - _Rect.x, xMax - p.x), min(p.y - _Rect.y, yMax - p.y));
+                // UVs run 0..1 across a Simple, spriteless Image, so this is rect units to the nearest edge
+                float2 edge = min(IN.texcoord, 1.0 - IN.texcoord) * _RectSize.xy;
+                float dist = min(edge.x, edge.y);
 
                 float pulse = 0.5 + 0.5 * sin(_Time.y * _PulseSpeed);
                 float width = _MaxWidth * pulse;

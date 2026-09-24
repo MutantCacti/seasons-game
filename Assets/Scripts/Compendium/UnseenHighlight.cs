@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 // Pulses an outline around a compendium entry while it has unseen changes, and clears itself
 // on hover. One material instance per highlight because each entry's outline needs its own
-// _Rect, so its edge distance is measured in that outline's own rect space.
+// _RectSize, so its width is measured in that outline's own rect units.
 public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
 {
     [SerializeField] private Image outline;
@@ -19,8 +19,12 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     private Material material;
     private Action onSeen;
 
+    // The wanted state, kept apart from outline.enabled: the book binds its pages while its canvas
+    // is still inactive, so Show can run before this entry's Awake, and Awake must not undo it
+    private bool showing;
 
-    public bool IsShowing { get { return outline != null && outline.enabled; } }
+
+    public bool IsShowing { get { return showing; } }
 
 
     private void Awake()
@@ -28,8 +32,10 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
         if (outline == null) Debug.LogError("UnseenHighlight: no outline Image, so unseen changes cannot pulse", this);
         if (outlineShader == null) Debug.LogError("UnseenHighlight: no outline shader, so the outline cannot be drawn", this);
 
-        // the prefab ships with the outline enabled; make sure it never flashes before the first bind
-        if (outline != null) outline.enabled = false;
+        PrepareOutline();
+
+        // the prefab ships with the outline enabled, so settle it to whatever was last asked for
+        if (outline != null) outline.enabled = showing;
     }
 
 
@@ -38,15 +44,17 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     public void Show(Color colour, Action onSeen)
     {
         this.onSeen = onSeen;
+        showing = true;
 
         if (outline == null) return;
 
+        PrepareOutline();
         EnsureMaterial();
 
         if (material != null)
         {
             material.SetColor("_OutlineColor", colour);
-            SetRect();
+            SetRectSize();
         }
 
         outline.enabled = true;
@@ -56,6 +64,7 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     public void Hide()
     {
         onSeen = null;
+        showing = false;
 
         if (outline != null) outline.enabled = false;
     }
@@ -63,13 +72,26 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (!IsShowing) return;
+        if (!showing) return;
 
         Action callback = onSeen;
 
         Hide();
 
         if (callback != null) callback();
+    }
+
+
+    // The shader reads the edge distance from the UVs, which only run 0..1 across the rect for a
+    // Simple Image with no sprite. A sliced sprite warps them, so this is enforced rather than
+    // left to the prefab.
+    private void PrepareOutline()
+    {
+        if (outline == null) return;
+
+        outline.sprite = null;
+        outline.type = Image.Type.Simple;
+        outline.raycastTarget = false;
     }
 
 
@@ -87,12 +109,12 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     }
 
 
-    private void SetRect()
+    private void SetRectSize()
     {
         if (material == null || outline == null) return;
 
         Rect rect = outline.rectTransform.rect;
-        material.SetVector("_Rect", new Vector4(rect.xMin, rect.yMin, rect.width, rect.height));
+        material.SetVector("_RectSize", new Vector4(rect.width, rect.height, 0.0f, 0.0f));
     }
 
 
@@ -100,9 +122,9 @@ public class UnseenHighlight : MonoBehaviour, IPointerEnterHandler
     // (the book binds before its canvas has laid out). Re-measure once the rect settles.
     private void OnRectTransformDimensionsChange()
     {
-        if (material == null || outline == null || !IsShowing) return;
+        if (material == null || outline == null || !showing) return;
 
-        SetRect();
+        SetRectSize();
     }
 
 
