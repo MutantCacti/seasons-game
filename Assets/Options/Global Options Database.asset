@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c2aa6ce254ac8da39f39db69b351c74, type: 3}
+  m_Name: Global Options Database
+  m_EditorClassIdentifier: Assembly-CSharp::GlobalOptionsDatabase
+  allGlobalOptions:
+  - {fileID: 11400000, guid: 1fbe0b133686d9a75a09ad31226cc650, type: 2}
+  - {fileID: 11400000, guid: ac0373c2168b1c49dbcabf9673a197c8, type: 2}
+  - {fileID: 11400000, guid: d888217a0a66e31a7aa827e1f8b416a0, type: 2}
+  - {fileID: 11400000, guid: 8af4631696abc06129fcae85557a68cb, type: 2}
