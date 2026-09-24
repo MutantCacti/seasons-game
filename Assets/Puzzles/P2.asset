@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Puzzle
   id: p2
   description: The tree will give you some water back
+  icon: {fileID: 21300000, guid: ea6283715165ffc9db883f1b4b55721f, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
     count: 1
