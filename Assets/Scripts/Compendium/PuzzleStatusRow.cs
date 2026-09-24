@@ -23,6 +23,7 @@ public class PuzzleStatusRow : MonoBehaviour
     private Color baseTint = Color.white;
     private UnseenHighlight highlight;
     private bool highlightLookedUp;
+    private StatusButtonFeedback feedback;
 
     // The wanted state, not the visuals: the book binds its pages while its canvas is still
     // inactive and flips faces off and on while turning, so the pulse is evaluated in Update from
@@ -53,6 +54,8 @@ public class PuzzleStatusRow : MonoBehaviour
 
     private void OnDisable()
     {
+        if (feedback != null) feedback.ResetState();
+
         ApplyRest();
     }
 
@@ -60,6 +63,7 @@ public class PuzzleStatusRow : MonoBehaviour
     private void OnDestroy()
     {
         if (statusButton != null) statusButton.onClick.RemoveListener(OnClicked);
+        if (feedback != null) feedback.Changed -= OnFeedbackChanged;
     }
 
 
@@ -70,6 +74,9 @@ public class PuzzleStatusRow : MonoBehaviour
     public void SetStatus(Sprite sprite, Color tint)
     {
         baseTint = tint;
+
+        StatusButtonFeedback buttonFeedback = Feedback;
+        if (buttonFeedback != null) buttonFeedback.ResetState();
 
         if (statusIcon != null)
         {
@@ -95,6 +102,10 @@ public class PuzzleStatusRow : MonoBehaviour
     public void SetInteractable(bool interactable)
     {
         if (statusButton != null) statusButton.interactable = interactable;
+
+        // a button that stops being clickable under the pointer lets go of its hover
+        StatusButtonFeedback buttonFeedback = Feedback;
+        if (!interactable && buttonFeedback != null) buttonFeedback.ResetState();
     }
 
 
@@ -133,19 +144,26 @@ public class PuzzleStatusRow : MonoBehaviour
     // MARK: pulse
 
 
+    // The pulse and the hover/press feedback compose multiplicatively: scales multiply, and each
+    // brighten closes its share of what is left of the gap to white
     private void ApplyVisuals()
     {
         float pulse = pulsing ? PulseAmount() : 0.0f;
 
+        StatusButtonFeedback buttonFeedback = Feedback;
+        float interactionScale = buttonFeedback != null ? buttonFeedback.Scale : 1.0f;
+        float interactionBrighten = buttonFeedback != null ? buttonFeedback.Brighten : 0.0f;
+
         if (statusButton != null)
         {
-            statusButton.transform.localScale = Vector3.one * Mathf.Lerp(1.0f, pulseScale, pulse);
+            statusButton.transform.localScale = Vector3.one * (Mathf.Lerp(1.0f, pulseScale, pulse) * interactionScale);
         }
 
         if (statusIcon != null)
         {
             Color bright = Color.Lerp(baseTint, Color.white, pulseBrighten);
             Color colour = Color.Lerp(baseTint, bright, pulse);
+            colour = Color.Lerp(colour, Color.white, interactionBrighten);
             colour.a = baseTint.a;
 
             statusIcon.color = colour;
@@ -157,6 +175,32 @@ public class PuzzleStatusRow : MonoBehaviour
     {
         if (statusButton != null) statusButton.transform.localScale = Vector3.one;
         if (statusIcon != null) statusIcon.color = baseTint;
+    }
+
+
+    // Only while live: the feedback also resets from its own OnDisable, and that must not undo the
+    // rest state this row has just restored
+    private void OnFeedbackChanged()
+    {
+        if (isActiveAndEnabled) ApplyVisuals();
+    }
+
+
+    // Found or added on first use, so the prefab does not have to carry it; add it there to tune it.
+    // Lazy rather than in Awake, because binds can arrive before Awake.
+    private StatusButtonFeedback Feedback
+    {
+        get
+        {
+            if (feedback != null || statusButton == null) return feedback;
+
+            feedback = statusButton.GetComponent<StatusButtonFeedback>();
+            if (feedback == null) feedback = statusButton.gameObject.AddComponent<StatusButtonFeedback>();
+
+            feedback.Changed += OnFeedbackChanged;
+
+            return feedback;
+        }
     }
 
 
