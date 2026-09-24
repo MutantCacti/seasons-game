@@ -1838,6 +1838,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AnimalTabManager
   tabButton: {fileID: 5145155190649284523}
+  registry: {fileID: 11400000, guid: 8052dc3982df2c30d821444937d3222e, type: 2}
+  pagePrefab: {fileID: 9000800821489009531, guid: c09b000d3d2abd149a37edfc99bb6189, type: 3}
+  silhouetteShader: {fileID: 4800000, guid: 87a98762bd45ea766842350efd6fa2d1, type: 3}
+  discoveredColour: {r: 0.92941177, g: 0.76862746, b: 0.23137255, a: 1}
 --- !u!114 &213924963648014241
 MonoBehaviour:
   m_ObjectHideFlags: 0
