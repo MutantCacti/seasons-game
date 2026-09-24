@@ -56,6 +56,28 @@ public class SaveDataManager : MonoBehaviour
     }
 
 
+    // Catches what only lives in memory, like animal positions. Unity sends OnApplicationQuit to every
+    // active object before any OnDisable/OnDestroy (manual, "When quitting"), and in the editor when
+    // play mode exits, so the scene still holds its latest state here. Handler order between objects is
+    // undefined, which is fine: everything is already written into saveData by the last LateUpdate.
+    private void OnApplicationQuit()
+    {
+        if (CanFlush) Save();
+    }
+
+
+    // mobile and alt-tab never promise a quit, so going into the background saves too
+    private void OnApplicationPause(bool paused)
+    {
+        if (paused && CanFlush) Save();
+    }
+
+
+    // a world still being built would reach disk without its fixtures, and a loaded one would then
+    // never seed them
+    private bool CanFlush { get { return saveData != null && !IsConstructingNewWorld; } }
+
+
     // NB: currently only the EntityManager needs to track this
     // if another system needs to populate a new world later,
     // this function will need to track each one and only clear
