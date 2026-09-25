@@ -15,5 +15,7 @@ MonoBehaviour:
   id: worm_water
   animal: {fileID: 11400000, guid: 35aca377dbe5c7b5fb0e1e5f3c104ad4, type: 2}
   completes: {fileID: 11400000, guid: b9b83a21279a4dd2b23fcb4ef994a5c6, type: 2}
-  placedTile: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
-  neighbourTile: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
+  placed: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
+  near: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
+  radius: 1.5
+  catchUpFromWorld: 1
