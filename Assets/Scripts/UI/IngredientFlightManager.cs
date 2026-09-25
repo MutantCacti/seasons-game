@@ -21,23 +21,23 @@ public class IngredientFlightManager : MonoBehaviour
 
     // MARK: references
     [SerializeField] private InventoryManager inventoryManager;
-    // a Simple Image, no raycast target, sized like a slot's icon. an optional SpriteGlow child with
-    // pulseSpeed 0 gives it a steady glow
+    // a Simple Image, no raycast target, sized like a slot's icon. no glow by default (the director
+    // prefers it without); a SpriteGlow child with pulseSpeed 0 still works if one is ever added
     [SerializeField] private Image flierPrefab;
     [SerializeField] private Color glowColour = new Color(1.0f, 0.95f, 0.8f, 1.0f);
 
     // MARK: rhythm
     [SerializeField] private float stagger = 0.07f;
-    [SerializeField] private float flightDuration = 0.75f;
+    [SerializeField] private float flightDuration = 0.5f;
     // past this many icons in one batch the rest ride on each item's last icon, so a huge grant
     // doesn't turn into a queue
     [SerializeField] private int maxIcons = 12;
 
     // MARK: arc (canvas units, scaled by the canvas like everything else on it)
-    [SerializeField] private float arcHeight = 180.0f;
+    [SerializeField] private float arcHeight = 560.0f;
     [Range(0f, 1f)] [SerializeField] private float arcHeightJitter = 0.3f;
     [SerializeField] private float arcLean = 60.0f;
-    [SerializeField] private Ease flightEase = Ease.Linear;
+    [SerializeField] private Ease flightEase = Ease.InOutQuad;
     [SerializeField] private float sourceHeightOffset = 1.0f;
     [SerializeField] private float edgeMargin = 48.0f;
 
@@ -264,9 +264,9 @@ public class IngredientFlightManager : MonoBehaviour
     // MARK: flight
 
 
-    // quadratic bezier, control point above the midpoint. with an even t it traces a parabola, so it
-    // slows at the top and speeds up into the slot like something tossed. the end is re-read every
-    // update because the hotbar re-centres as slots appear
+    // quadratic bezier, control point above the midpoint, so the path is a tossed parabola. the ease
+    // (InOutQuad by default) gives it a quick throw and a soft settle into the slot. the end is re-read
+    // every update because the hotbar re-centres as slots appear
     private void Step(Flight flight, float t)
     {
         Vector3 end = Target(flight);
