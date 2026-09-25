@@ -347,6 +347,22 @@ public class EntityManager : MonoBehaviour
     }
 
 
+    // Fills results with every live entity of this item. Takes the caller's list so a spawn rule
+    // scanning the world does not allocate
+    public void CollectEntitiesOf(GameItem item, List<EntityId> results)
+    {
+        results.Clear();
+        if (item == null) return;
+
+        for (int i = 0; i < live.Count; i++)
+        {
+            if (live[i].item != item || live[i].entityId == null) continue;
+
+            results.Add(live[i].entityId);
+        }
+    }
+
+
     // Fills results with the GameItems standing on a cell, so that a change to the ground under them
     // can be tested against their own placement rules. Takes the caller's list because this runs once
     // a frame while a placement drag is live.

@@ -85,9 +85,9 @@ public class AnimalSpawnRuleRegistryEditor : Editor
 
             if (!string.IsNullOrEmpty(id.stringValue)) continue;
 
-            // writes the id the rule already reports, which is the asset name while id is empty.
-            // writing a slug instead would change what an old save's firedRules entry means, and a rule
-            // that already fired would fire a second time on that save.
+            // writes the id the rule already reports, which is the asset name while id is empty, so
+            // assigning an id never renames a rule: the registry lookup and every log that names it
+            // keep matching what they matched before.
             string effective = rule.Id;
 
             if (string.IsNullOrEmpty(effective))

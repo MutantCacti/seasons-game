@@ -163,7 +163,7 @@ public class AnimalRegistryEditor : Editor
             problems++;
         }
 
-        // rule ids key the save's fired list, so two rules sharing one would fire only once between them
+        // rule ids key the registry's lookup, so of two rules sharing one, only the first could be found by id
         Dictionary<string, AnimalSpawnRule> ruleIds = new Dictionary<string, AnimalSpawnRule>();
 
         foreach (AnimalSpawnRule rule in FindAllRules())

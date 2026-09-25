@@ -333,6 +333,27 @@ public partial class TerrainManager : MonoBehaviour
     }
 
 
+    // Fills results with every cell holding this tile, on every level. A whole-map scan, so it is for
+    // events (a load, a puzzle unlocking), not for every frame
+    public void CollectCellsOf(TerrainTile tile, List<Vector3Int> results)
+    {
+        results.Clear();
+        if (tile == null || state == null || state.CountTile(tile) == 0) return;
+
+        for (int level = 0; level < state.LevelCount; level++)
+        {
+            for (int z = state.originZ; z < state.originZ + state.depth; z++)
+            {
+                for (int x = state.originX; x < state.originX + state.width; x++)
+                {
+                    Vector3Int cell = new Vector3Int(x, level, z);
+                    if (state.GetTile(cell) == tile) results.Add(cell);
+                }
+            }
+        }
+    }
+
+
     // MARK: placement targeting
 
 

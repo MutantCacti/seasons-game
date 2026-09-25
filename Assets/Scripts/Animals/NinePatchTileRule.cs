@@ -39,8 +39,6 @@ public class NinePatchTileRule : AnimalSpawnRule
         // tiles are matched rather than items, so a tile-only item like Water works
         if (itemOrTileJustPlaced.Tile != requiredTileToBePlaced) return;
 
-        if (context.HasFired(this)) return;
-
         TerrainManager terrain = context.Terrain;
         if (terrain == null) return;
 
@@ -73,5 +71,12 @@ public class NinePatchTileRule : AnimalSpawnRule
             return;
         }
     }
-    
+
+
+    // placement only until this rule is ported to the new spawn check
+    protected override bool TryFindSpawn(AnimalSpawnContext context, out Vector3 position)
+    {
+        position = default;
+        return false;
+    }
 }
