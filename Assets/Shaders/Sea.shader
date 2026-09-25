@@ -11,6 +11,8 @@
 // on the bottom edge drops to the void (_SeaFloorY) and the world reads as a cut-away diorama.
 // Skirt sorting comes from the mesh: skirts are first in the index buffer, and blending follows
 // primitive order within a draw, so the sheet always blends over the skirt behind it.
+// The skirt lies exactly on the terrain's outer walls, so the pass is depth offset towards the camera
+// (the ShaderLab Offset docs' decal case) to win that tie instead of z-fighting it.
 Shader "Seasons/Sea"
 {
     Properties
@@ -61,6 +63,8 @@ Shader "Seasons/Sea"
         _SkirtBandHeight ("Skirt Band Height", Float) = 1.1
         _SkirtLip ("Skirt Lip", Float) = 0.07
         _SkirtOpacity ("Skirt Opacity", Range(0, 1)) = 0.6
+        _DepthOffsetFactor ("Depth Offset Factor", Float) = -1
+        _DepthOffsetUnits ("Depth Offset Units", Float) = -1
     }
 
     SubShader
@@ -124,6 +128,7 @@ Shader "Seasons/Sea"
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
             ZTest LEqual
+            Offset [_DepthOffsetFactor], [_DepthOffsetUnits]
             Cull Back
 
             HLSLPROGRAM
