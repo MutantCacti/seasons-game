@@ -16,5 +16,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: bd4630a77a7540558b20af04706645f4, type: 2}
   - {fileID: 11400000, guid: b9b83a21279a4dd2b23fcb4ef994a5c6, type: 2}
   - {fileID: 11400000, guid: f37ad24fc6edf73e68843a0f9611a65d, type: 2}
+  - {fileID: 11400000, guid: d12a47384b8df9023baaff12a1ce62c4, type: 2}
   startingPuzzles:
   - {fileID: 11400000, guid: bd4630a77a7540558b20af04706645f4, type: 2}
