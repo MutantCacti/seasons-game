@@ -81,7 +81,10 @@ public static class RegistryMenu
     //   AnimalSpawnRule comes after Animal so the rules that point at animals are gathered once the
     //     animals they point at are in the animal registry.
     //   GlobalOptions is independent; it goes last so the log reads in the same order every time.
-    private const string GATHER_ALL_ORDER = "TerrainTile, Puzzle, GameItem, Animal, AnimalSpawnRule, GlobalOptions";
+    //
+    // GlobalOptions has no Assign Missing Ids at all: an option id has to be the name of an exposed
+    // mixer parameter, so only a human can write it.
+    private const string REGISTRY_LIST = "TerrainTile, Puzzle, GameItem, Animal, AnimalSpawnRule, GlobalOptions";
 
 
     [MenuItem("Tools/Registries/Gather All Registries")]
@@ -96,12 +99,14 @@ public static class RegistryMenu
         AnimalSpawnRuleRegistry rules = FindExactlyOne<AnimalSpawnRuleRegistry>();
         GlobalOptionsRegistry options = FindExactlyOne<GlobalOptionsRegistry>();
 
-        if (tiles != null) TerrainTileRegistryEditor.GatherAllTiles(tiles);
-        if (puzzles != null) PuzzleRegistryEditor.GatherAllPuzzles(puzzles);
-        if (items != null) GameItemRegistryEditor.GatherAllItems(items);
-        if (animals != null) AnimalRegistryEditor.GatherAllAnimals(animals);
-        if (rules != null) AnimalSpawnRuleRegistryEditor.GatherAllRules(rules);
-        if (options != null) GlobalOptionsRegistryEditor.GatherAllOptions(options);
+        int found = 0;
+
+        if (tiles != null) { TerrainTileRegistryEditor.GatherAllTiles(tiles); found++; }
+        if (puzzles != null) { PuzzleRegistryEditor.GatherAllPuzzles(puzzles); found++; }
+        if (items != null) { GameItemRegistryEditor.GatherAllItems(items); found++; }
+        if (animals != null) { AnimalRegistryEditor.GatherAllAnimals(animals); found++; }
+        if (rules != null) { AnimalSpawnRuleRegistryEditor.GatherAllRules(rules); found++; }
+        if (options != null) { GlobalOptionsRegistryEditor.GatherAllOptions(options); found++; }
 
         // gathers first, then assigns ids: assigning first would hand ids to whatever happened to be in
         // each registry before the gather reshuffled it
@@ -111,11 +116,7 @@ public static class RegistryMenu
         if (animals != null) AnimalRegistryEditor.AssignMissingIds(animals);
         if (rules != null) AnimalSpawnRuleRegistryEditor.AssignMissingIds(rules);
 
-        // GlobalOptions has no Assign Missing Ids: an option id has to be the name of an exposed mixer
-        // parameter, so only a human can write it
-        Debug.Log($"RegistryMenu: gathered every registry it could find, in the order {GATHER_ALL_ORDER}, " +
-            $"then assigned missing ids; GlobalOptions ids are left alone because they must name a " +
-            $"mixer parameter");
+        Debug.Log($"RegistryMenu: {found}/6 registries gathered then assigned missing ids: {REGISTRY_LIST}");
     }
 
 
@@ -147,11 +148,11 @@ public static class RegistryMenu
 
         if (problems == 0)
         {
-            Debug.Log($"RegistryMenu: {validated}/6 registries validated, no problems found");
+            Debug.Log($"RegistryMenu: {validated}/6 registries validated, no problems found: {REGISTRY_LIST}");
         }
         else
         {
-            Debug.LogError($"RegistryMenu: {validated}/6 registries validated, {problems} problem(s) found");
+            Debug.LogError($"RegistryMenu: {validated}/6 registries validated, {problems} problem(s) found: {REGISTRY_LIST}");
         }
     }
 
