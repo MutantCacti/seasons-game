@@ -32,13 +32,14 @@ public class AnimalSelection : MonoBehaviour
     [Header("Marker")]
     [SerializeField] private Sprite markerSprite;           // the ring, laid flat on the ground
     [SerializeField] private Material markerMaterial;       // an unlit sprite material, like the worm's
-    [SerializeField] private float markerSize = 0.9f;       // world units across
+    [SerializeField] private float markerWidthScale = 0.85f; // the ring's width, as a multiple of the animal's sprite's world width
     [SerializeField] private float markerPulse = 0.08f;     // fraction of the size it swells by
     [SerializeField] private float markerPulseSpeed = 4.0f; // radians per second
     [SerializeField] private float markerLift = 0.01f;      // world units above the ground, so it never z-fights it
 
 
     private AnimalController focused;
+    private float markerWidth;      // world units across, measured from the focused animal when focus lands
     private Transform markerTransform;
     private SpriteRenderer marker;
 
@@ -140,6 +141,8 @@ public class AnimalSelection : MonoBehaviour
         focused = animal;
 
         if (cameraController != null) cameraController.Follow(animal.transform);
+
+        markerWidth = markerWidthScale * SpriteWorldWidth(animal);
 
         if (marker != null) marker.enabled = true;
         UpdateMarker();
@@ -324,6 +327,20 @@ public class AnimalSelection : MonoBehaviour
     // MARK: marker
 
 
+    // The world width of the sprite the animal draws, read from the sprite rather than the renderer so
+    // a hidden animal (a burrowed worm) still measures. Measured once per focus: the worm's burrow
+    // sprite swapping in shouldn't make the ring jump. 1 when the animal has no sprite
+    private static float SpriteWorldWidth(AnimalController animal)
+    {
+        SpriteRenderer spriteRenderer = animal.GetComponentInChildren<SpriteRenderer>(true);
+        if (spriteRenderer == null || spriteRenderer.sprite == null) return 1.0f;
+
+        float width = spriteRenderer.sprite.bounds.size.x * Mathf.Abs(spriteRenderer.transform.lossyScale.x);
+
+        return width > 0.0f ? width : 1.0f;
+    }
+
+
     private void CreateMarker()
     {
         // at the scene root, so nothing this sits under can scale or tilt it
@@ -363,7 +380,7 @@ public class AnimalSelection : MonoBehaviour
         if (spriteWidth <= 0.0f) spriteWidth = 1.0f;
 
         float pulse = 1.0f + markerPulse * Mathf.Sin(Time.time * markerPulseSpeed);
-        float scale = markerSize / spriteWidth * pulse;
+        float scale = markerWidth / spriteWidth * pulse;
 
         markerTransform.localScale = new Vector3(scale, scale, scale);
     }
