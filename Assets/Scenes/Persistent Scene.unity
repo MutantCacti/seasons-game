@@ -409,6 +409,8 @@ MonoBehaviour:
   disabledHotSpot: {x: 16, y: 16}
   pointerCursor: {fileID: 2800000, guid: cf14dfd1c1a6d07d6ad2eadcdcce4e73, type: 3}
   pointerHotSpot: {x: 2, y: 1}
+  textCursor: {fileID: 2800000, guid: 347e65e4a71cc9e0bbf9efcceecf7582, type: 3}
+  textHotSpot: {x: 16, y: 16}
   cursorMode: 1
   fallbackHotSpot: {x: 0, y: 0}
 --- !u!1 &1041355075
