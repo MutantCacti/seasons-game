@@ -8565,6 +8565,7 @@ GameObject:
   - component: {fileID: 1764824870}
   - component: {fileID: 1764824872}
   - component: {fileID: 1764824873}
+  - component: {fileID: 1764824874}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -8715,6 +8716,26 @@ MonoBehaviour:
   testSO: {fileID: 11400000, guid: 37df897fd2e48c72f8ade9e939f56cf6, type: 2}
   testGameItem: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
   treeGameItem: {fileID: 11400000, guid: 8a411905243b1919b9f03600a40296ce, type: 2}
+--- !u!114 &1764824874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1764824868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d67abcd2c7c0cd5e9be4f6e4f0adced, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeaReflection
+  sourceCamera: {fileID: 1764824870}
+  reflectedLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  resolutionScale: 0.5
+  clipPlaneOffset: 0.01
+  rendererIndex: -1
+  renderShadows: 0
 --- !u!1 &1793132071
 GameObject:
   m_ObjectHideFlags: 0
