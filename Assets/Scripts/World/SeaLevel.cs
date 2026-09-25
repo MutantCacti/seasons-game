@@ -141,10 +141,16 @@ public class SeaLevel : MonoBehaviour
         DayNightManager dayNight = DayNightManager.Instance;
         Shader.SetGlobalFloat(SeaDaylightId, dayNight != null ? dayNight.Daylight01 : 1.0f);
 
-        // DayNightManager already lerps the camera's clear colour between its sky colours, so the
-        // camera is the one place that always has the sky as drawn
+        // DayNightManager already lerps the camera's clear colour between its sky colours (in Update,
+        // so this is the same frame's), so the camera is the one place that always has the sky as drawn
         Camera sky = Camera.main;
-        Shader.SetGlobalColor(SeaSkyColourId, sky != null ? sky.backgroundColor : FallbackSky);
+        Color skyColour = sky != null ? sky.backgroundColor : FallbackSky;
+
+        // the conversion URP makes for the clear itself (UniversalRenderPipeline, via
+        // CoreUtils.ConvertSRGBToActiveColorSpace), sent as a vector so nothing converts it again:
+        // the skirt's bottom has to be exactly the clear colour
+        if (QualitySettings.activeColorSpace == ColorSpace.Linear) skyColour = skyColour.linear;
+        Shader.SetGlobalVector(SeaSkyColourId, skyColour);
 
         Shader.SetGlobalFloat(SeaFloorYId, floorY);
     }
