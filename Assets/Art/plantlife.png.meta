@@ -144,28 +144,6 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: tree_autumn
-      rect:
-        serializedVersion: 2
-        x: 96
-        y: 256
-        width: 48
-        height: 64
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 9b24485ecbcc6af418dda0684ac6657c
-      internalID: -319598832
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
       name: tree_winter
       rect:
         serializedVersion: 2
@@ -232,7 +210,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: plantlife 1_12
+      name: tree_autumn
       rect:
         serializedVersion: 2
         x: 96
@@ -1112,28 +1090,6 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: plantlife 1_57
-      rect:
-        serializedVersion: 2
-        x: 192
-        y: 96
-        width: 32
-        height: 32
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: e7bd44d218d6cf648879b95c0aabbe96
-      internalID: 423067959
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
       name: strawberry
       rect:
         serializedVersion: 2
@@ -1532,7 +1488,6 @@ TextureImporter:
       plantlife 1_1: 1043243143
       plantlife 1_10: 161244011
       plantlife 1_11: 1932919301
-      plantlife 1_12: -1984029038
       plantlife 1_13: -337126063
       plantlife 1_14: 1523262709
       plantlife 1_15: 663052043
@@ -1569,7 +1524,7 @@ TextureImporter:
       strawberry: 782874589
       sunflower_flower: 1010302826
       tree_apple: 1688137330
-      tree_autumn: -319598832
+      tree_autumn: -1984029038
       tree_jungle: 194870359
       tree_sapling: 1681519122
       tree_sapling_apple: 685205122
