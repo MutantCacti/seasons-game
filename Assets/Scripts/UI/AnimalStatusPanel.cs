@@ -73,6 +73,13 @@ public class AnimalStatusPanel : MonoBehaviour
     [SerializeField] private float starOffDuration = 0.2f;
 
 
+    [Header("Ink")]
+    // applied over whatever the built parts were given, so the text reads clearly on the paper
+    [SerializeField] private Color nameColour = new Color(30.0f / 255.0f, 27.0f / 255.0f, 23.0f / 255.0f, 1.0f);      // #1E1B17
+    [SerializeField] private Color nameFieldColour = new Color(230.0f / 255.0f, 222.0f / 255.0f, 202.0f / 255.0f, 1.0f); // #E6DECA
+    [SerializeField] private Color tipColour = new Color(79.0f / 255.0f, 72.0f / 255.0f, 63.0f / 255.0f, 1.0f);       // #4F483F
+
+
     [Header("Name")]
     [SerializeField] private Color editingTextColour = new Color(138.0f / 255.0f, 129.0f / 255.0f, 116.0f / 255.0f, 1.0f);   // #8A8174, pencil
     [SerializeField] private Color editingFieldColour = new Color(233.0f / 255.0f, 226.0f / 255.0f, 207.0f / 255.0f, 1.0f);  // #E9E2CF, a shade lighter
@@ -149,8 +156,11 @@ public class AnimalStatusPanel : MonoBehaviour
             nameField.onSubmit.AddListener(OnNameSubmitted);
             nameField.onEndEdit.AddListener(OnNameEdited);
 
-            inkTextColour = nameField.textComponent != null ? nameField.textComponent.color : Color.black;
-            restFieldColour = nameField.image != null ? nameField.image.color : Color.white;
+            inkTextColour = nameColour;
+            restFieldColour = nameFieldColour;
+
+            if (nameField.textComponent != null) nameField.textComponent.color = nameColour;
+            if (nameField.image != null) nameField.image.color = nameFieldColour;
             viewportRest = nameField.textViewport != null ? nameField.textViewport.anchoredPosition : Vector2.zero;
         }
 
@@ -169,7 +179,11 @@ public class AnimalStatusPanel : MonoBehaviour
         if (happinessMeter == null) Debug.LogWarning("AnimalStatusPanel: no happinessMeter, so happiness is not shown", this);
         if (tipsContainer == null || tipTemplate == null) Debug.LogWarning("AnimalStatusPanel: no tipsContainer or tipTemplate, so happiness tips are not shown", this);
 
-        if (tipTemplate != null) tipTemplate.gameObject.SetActive(false);
+        if (tipTemplate != null)
+        {
+            tipTemplate.color = tipColour;
+            tipTemplate.gameObject.SetActive(false);
+        }
 
         // matches shownTips being empty, so a content animal never shows an empty tips block
         if (tipsContainer != null) tipsContainer.gameObject.SetActive(false);
@@ -308,15 +322,18 @@ public class AnimalStatusPanel : MonoBehaviour
     {
         if (bound == null) return;
 
+        string[] tips = bound.GetHappinessTips();
+
         if (happinessMeter != null)
         {
-            float happiness = bound.Happiness;
+            // nothing bothering it means content, whatever the sum says
+            float happiness = tips == null || tips.Length == 0 ? 1.0f : bound.Happiness;
 
             if (fromEmpty) happinessMeter.SetValue(happiness, true, 0.0f);
             else if (!Mathf.Approximately(happiness, happinessMeter.Value)) happinessMeter.SetValue(happiness, true);
         }
 
-        ShowTips(bound.GetHappinessTips());
+        ShowTips(tips);
     }
 
 

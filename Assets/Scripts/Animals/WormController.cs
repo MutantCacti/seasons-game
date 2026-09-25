@@ -247,6 +247,10 @@ public class WormController : AnimalController
         state = WormState.Burrowed;
         SetVisible(false);
 
+        // underground it is just a worm again: its own sprite, wiggling, which a starred worm's glow shows
+        SetSprite(crawlSprite);
+        flipTimer = RandomIn(flipInterval);
+
         burrowFrom = feet;
         burrowTo = PickResurfacePoint(burrowFrom);
         burrowElapsed = 0.0f;
@@ -257,6 +261,14 @@ public class WormController : AnimalController
     // silent, and moving the whole time, so anything following the transform follows it underground
     private void UpdateBurrowed(float dt)
     {
+        flipTimer -= dt;
+
+        if (flipTimer <= 0.0f)
+        {
+            flipTimer = RandomIn(flipInterval);
+            if (spriteRenderer != null) spriteRenderer.flipX = !spriteRenderer.flipX;
+        }
+
         burrowElapsed += dt;
 
         float t = Mathf.Clamp01(burrowElapsed / burrowTime);

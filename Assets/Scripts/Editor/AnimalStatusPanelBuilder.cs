@@ -28,6 +28,7 @@ public static class AnimalStatusPanelBuilder
     private static readonly Color FIELD_COLOUR = new Color(221.0f / 255.0f, 212.0f / 255.0f, 189.0f / 255.0f, 1.0f);    // #DDD4BD, the paper a shade darker
     private static readonly Color TEXT_COLOUR = new Color(50.0f / 255.0f, 50.0f / 255.0f, 50.0f / 255.0f, 1.0f);        // #323232
     private static readonly Color FADED_COLOUR = new Color(138.0f / 255.0f, 129.0f / 255.0f, 116.0f / 255.0f, 1.0f);    // #8A8174
+    private static readonly Color TIP_COLOUR = new Color(79.0f / 255.0f, 72.0f / 255.0f, 63.0f / 255.0f, 1.0f);         // #4F483F, dark enough to read on the paper
 
 
     [MenuItem("Tools/UI/Build Animal Status Panel")]
@@ -255,7 +256,7 @@ public static class AnimalStatusPanelBuilder
         TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(TIP_FONT);
         if (font != null) text.font = font;
         text.fontSize = 18.0f;
-        text.color = FADED_COLOUR;
+        text.color = TIP_COLOUR;
         text.text = "What is bothering it";
         // a long tip wraps rather than being cut off; each is still one item in the list
         text.textWrappingMode = TextWrappingModes.Normal;
