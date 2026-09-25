@@ -35,7 +35,7 @@ public class AnimalRegistryEditor : Editor
     // MARK: actions
 
 
-    private static void GatherAllAnimals(AnimalRegistry registry)
+    internal static void GatherAllAnimals(AnimalRegistry registry)
     {
         List<Animal> found = FindAllAnimals();
 
@@ -61,7 +61,7 @@ public class AnimalRegistryEditor : Editor
     }
 
 
-    private static void AssignMissingIds(AnimalRegistry registry)
+    internal static void AssignMissingIds(AnimalRegistry registry)
     {
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("animals");
@@ -101,7 +101,7 @@ public class AnimalRegistryEditor : Editor
     }
 
 
-    private static void Validate(AnimalRegistry registry)
+    internal static int Validate(AnimalRegistry registry)
     {
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("animals");
@@ -156,6 +156,11 @@ public class AnimalRegistryEditor : Editor
 
         foreach (AnimalSpawnRule rule in FindAllRules())
         {
+            // Deliberately AssetDatabase rather than the AnimalSpawnRuleRegistry: this pass checks the
+            // rule set against project truth, so a rule asset that was never gathered still gets
+            // reported here. Reading the registry instead would make animal ordering depend on whether
+            // someone remembered to press Gather on a different asset first, and would quietly order
+            // by nothing when that registry is empty.
             if (rule.Animal != null && !registered.Contains(rule.Animal))
             {
                 Debug.LogError($"AnimalRegistry: rule '{rule.name}' spawns '{rule.Animal.name}', " +
@@ -183,6 +188,8 @@ public class AnimalRegistryEditor : Editor
         {
             Debug.LogError($"AnimalRegistry: {problems} problem(s) found", registry);
         }
+
+        return problems;
     }
 
 

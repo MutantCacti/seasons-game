@@ -39,7 +39,7 @@ public class PuzzleRegistryEditor : Editor
     // MARK: actions
 
 
-    private static void GatherAllPuzzles(PuzzleRegistry registry)
+    internal static void GatherAllPuzzles(PuzzleRegistry registry)
     {
         List<Puzzle> found = FindAllPuzzles();
 
@@ -66,7 +66,7 @@ public class PuzzleRegistryEditor : Editor
     }
 
 
-    private static void AssignMissingIds()
+    internal static void AssignMissingIds()
     {
         List<Puzzle> all = FindAllPuzzles();
         all.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
@@ -101,7 +101,7 @@ public class PuzzleRegistryEditor : Editor
     }
 
 
-    private static void Validate(PuzzleRegistry registry)
+    internal static int Validate(PuzzleRegistry registry)
     {
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("puzzles");
@@ -139,6 +139,8 @@ public class PuzzleRegistryEditor : Editor
         {
             Debug.LogError($"PuzzleRegistry: {problems} problem(s) found", registry);
         }
+
+        return problems;
     }
 
 

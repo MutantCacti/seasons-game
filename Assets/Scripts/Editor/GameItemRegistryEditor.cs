@@ -39,7 +39,7 @@ public class GameItemRegistryEditor : Editor
     // MARK: actions
 
 
-    private static void GatherAllItems(GameItemRegistry registry)
+    internal static void GatherAllItems(GameItemRegistry registry)
     {
         List<GameItem> found = FindAllItems();
 
@@ -69,7 +69,7 @@ public class GameItemRegistryEditor : Editor
     }
 
 
-    private static void AssignMissingIds(GameItemRegistry registry)
+    internal static void AssignMissingIds(GameItemRegistry registry)
     {
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("items");
@@ -109,7 +109,7 @@ public class GameItemRegistryEditor : Editor
     }
 
 
-    private static void Validate(GameItemRegistry registry)
+    internal static int Validate(GameItemRegistry registry)
     {
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("items");
@@ -167,6 +167,8 @@ public class GameItemRegistryEditor : Editor
         {
             Debug.LogError($"GameItemRegistry: {problems} problem(s) found", registry);
         }
+
+        return problems;
     }
 
 

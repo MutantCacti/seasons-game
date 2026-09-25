@@ -108,7 +108,7 @@ public class AnimalSpawnRuleRegistryEditor : Editor
     }
 
 
-    internal static void Validate(AnimalSpawnRuleRegistry registry)
+    internal static int Validate(AnimalSpawnRuleRegistry registry)
     {
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("rules");
@@ -168,6 +168,8 @@ public class AnimalSpawnRuleRegistryEditor : Editor
         {
             Debug.LogError($"AnimalSpawnRuleRegistry: {problems} problem(s) found", registry);
         }
+
+        return problems;
     }
 
 

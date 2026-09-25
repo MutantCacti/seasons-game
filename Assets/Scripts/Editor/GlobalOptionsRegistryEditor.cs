@@ -29,7 +29,7 @@ public class GlobalOptionsRegistryEditor : Editor
     // MARK: actions
 
 
-    private static void GatherAllOptions(GlobalOptionsRegistry registry)
+    internal static void GatherAllOptions(GlobalOptionsRegistry registry)
     {
         List<GlobalOption> found = FindAllOptions();
 
@@ -55,7 +55,7 @@ public class GlobalOptionsRegistryEditor : Editor
     }
 
 
-    private static void Validate(GlobalOptionsRegistry registry)
+    internal static int Validate(GlobalOptionsRegistry registry)
     {
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("options");
@@ -113,6 +113,8 @@ public class GlobalOptionsRegistryEditor : Editor
         {
             Debug.LogError($"GlobalOptionsRegistry: {problems} problem(s) found", registry);
         }
+
+        return problems;
     }
 
 
