@@ -11,6 +11,8 @@ using UnityEngine.UI;
 // edge; UI/SpriteGlow then samples the sprite's alpha around each pixel. That drawn rect and those UVs
 // are worked out exactly as Image.GenerateSimpleSprite does (GetDrawingDimensions with the sprite's
 // padding and preserveAspect, DataUtility.GetOuterUV), see com.unity.ugui Runtime/UGUI/UI/Core/Image.cs.
+// uGUI 2.0's Graphic no longer requires a CanvasRenderer (only Image, RawImage and Text do), so ask for one
+[RequireComponent(typeof(CanvasRenderer))]
 public class SpriteGlow : MaskableGraphic
 {
     [SerializeField] private Shader glowShader;
@@ -51,6 +53,10 @@ public class SpriteGlow : MaskableGraphic
         base.Awake();
 
         raycastTarget = false;
+
+        // Glows added before RequireComponent have none, and Graphic only adds one lazily from inside
+        // the canvas rebuild, which is too late to be drawn. Touching it here adds it while activating.
+        if (canvasRenderer == null) Debug.LogError("SpriteGlow: no CanvasRenderer, so the glow cannot be drawn", this);
 
         // edit mode too (Graphic is ExecuteAlways), but only play mode moves the rect, so opening
         // the prefab never dirties it
@@ -123,6 +129,14 @@ public class SpriteGlow : MaskableGraphic
         showing = true;
         color = colour;
         SetVerticesDirty();
+    }
+
+
+    // for eyeballing a glow in play mode without needing anything unseen
+    [ContextMenu("Preview Glow")]
+    private void PreviewGlow()
+    {
+        Show(new Color(237.0f / 255.0f, 196.0f / 255.0f, 59.0f / 255.0f, 1.0f));
     }
 
 
