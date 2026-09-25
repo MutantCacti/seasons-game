@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bb00c275d41975c47bbe89ff3b65e52e, type: 3}
-  m_Name: Worm Spawn 1
+  m_Name: Worm 3x3 Patch Spawn
   m_EditorClassIdentifier: Assembly-CSharp::NinePatchTileRule
   id: worm
   animal: {fileID: 11400000, guid: 35aca377dbe5c7b5fb0e1e5f3c104ad4, type: 2}
   completes: {fileID: 11400000, guid: f37ad24fc6edf73e68843a0f9611a65d, type: 2}
-  placedTile: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
-  neighbourTile: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
+  requiredTileToBePlaced: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
+  desiredNeighbouringTile: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
