@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 525635565276213337}
   - component: {fileID: 5647836908310758832}
   - component: {fileID: 1559141162426059863}
-  - component: {fileID: 8807586442287989230}
+  - component: {fileID: 1764718502199858681}
   m_Layer: 0
   m_Name: Worm
   m_TagString: Untagged
@@ -96,12 +96,12 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 340263915, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  m_Sprite: {fileID: -71970068, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.9375, y: 1}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -120,7 +120,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BillboardSprite
   targetCamera: {fileID: 0}
   yawOffset: 0
---- !u!114 &8807586442287989230
+--- !u!114 &1764718502199858681
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -129,6 +129,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 2430199224308526179}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9247e6be537a4aea08eb0177ee49170e, type: 3}
+  m_Script: {fileID: 11500000, guid: b1e7c84fc3b00d34fad25ab35e2f5642, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AnimalController
+  m_EditorClassIdentifier: Assembly-CSharp::WormController
+  forbiddenTiles:
+  - {fileID: 11400000, guid: 033db43898455b3f6abeb4007e3dc393, type: 2}
+  preferredTiles:
+  - {fileID: 11400000, guid: f5371682b1105bd29878dcdc70dd82a6, type: 2}
+  preferredWeight: 4
+  crawlSpeed: 0.08
+  stepPause: {x: 0.5, y: 2}
+  burrowRadius: 3
+  crawlDuration: {x: 10, y: 25}
+  burrowDuration: {x: 4, y: 10}
+  flipInterval: {x: 0.25, y: 0.7}
+  digDuration: 1.2
+  digFlipInterval: {x: 0.12, y: 0.2}
+  spriteRenderer: {fileID: 5647836908310758832}
+  transitionSprite: {fileID: -737745376, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  crawlSound: {fileID: 11400000, guid: 589ffede213bfb1dfa339df8ae768476, type: 2}
+  crawlSoundInterval: {x: 4, y: 9}
+  burrowSound: {fileID: 11400000, guid: c0cbd6b28de883c3c80125a0250b8ff9, type: 2}
+  surfaceSound: {fileID: 11400000, guid: c0cbd6b28de883c3c80125a0250b8ff9, type: 2}
