@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -15,6 +17,9 @@ public class InputManager : MonoBehaviour
 
 
     private PlayerInput playerInput;
+
+    // the last frame a text field had focus; see IsTypingText
+    private int typingFrame = -10;
 
 
     public void Awake()
@@ -32,6 +37,40 @@ public class InputManager : MonoBehaviour
     public void Start()
     {
         playerInput = GetComponent<PlayerInput>();
+    }
+
+
+    private void Update()
+    {
+        if (IsTextFieldFocused()) typingFrame = Time.frameCount;
+    }
+
+
+    // MARK: typing
+
+
+    // True while a text field has the keyboard, and for a frame after it lets go. The actions still
+    // fire while typing, so WASD and Escape handlers ask this first. The grace frame is for Escape:
+    // the field handles it and lets go in the same frame, and whichever of the two runs first, the
+    // pause handler must still see a field that was being typed in
+    public static bool IsTypingText
+    {
+        get
+        {
+            if (IsTextFieldFocused()) return true;
+            return instance != null && Time.frameCount - instance.typingFrame <= 1;
+        }
+    }
+
+
+    private static bool IsTextFieldFocused()
+    {
+        EventSystem eventSystem = EventSystem.current;
+        GameObject selected = eventSystem != null ? eventSystem.currentSelectedGameObject : null;
+        if (selected == null) return false;
+
+        TMP_InputField field = selected.GetComponent<TMP_InputField>();
+        return field != null && field.isFocused;
     }
 
 

@@ -12,6 +12,12 @@ public class AnimalSave
 
     // all zero in a save from before rotation was written, which reads as "use the prefab's"
     public Quaternion rotation;
+
+    // what the player named this one; empty is the species name
+    public string customName;
+
+    // starred in its status panel, which makes it glow
+    public bool highlighted;
 }
 
 

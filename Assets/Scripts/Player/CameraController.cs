@@ -225,6 +225,9 @@ public class CameraController : MonoBehaviour
 
     public void OnMovement(Vector2 newDirection)
     {
+        // letters typed into a text field are not camera moves
+        if (InputManager.IsTypingText) newDirection = Vector2.zero;
+
         direction = newDirection;
         holdingWasd = direction != Vector2.zero;
 

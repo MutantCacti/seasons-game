@@ -47,6 +47,11 @@ public class AnimalSelection : MonoBehaviour
     private bool pressIsCandidate;
     private Vector2 pressPosition;
 
+    // The camera starts a drag on the same press as a click, and the first jitter of it ends the
+    // follow. Mid click that's held here instead: a real drag ends the focus once it passes the slop,
+    // and a click decides on release, so clicking the focused animal again never flickers its panel
+    private bool pendingClear;
+
     private BookAnimator subscribedBook;
     private Camera viewCamera;
 
@@ -111,6 +116,12 @@ public class AnimalSelection : MonoBehaviour
     {
         TrackBook();
 
+        if (pendingClear && pressed && MovedPastSlop())
+        {
+            pendingClear = false;
+            Clear();
+        }
+
         // Unity-null: the animal was destroyed under us
         if (focused == null)
         {
@@ -133,7 +144,12 @@ public class AnimalSelection : MonoBehaviour
             return;
         }
 
-        if (animal == focused) return;
+        // clicked again: its follow may have ended with the press, so take it back up
+        if (animal == focused)
+        {
+            if (cameraController != null) cameraController.Follow(animal.transform);
+            return;
+        }
 
         // let go of the old one quietly, so its end doesn't read as the player breaking focus
         if (focused != null && cameraController != null) cameraController.StopFollowing(focused.transform);
@@ -165,9 +181,15 @@ public class AnimalSelection : MonoBehaviour
     }
 
 
-    // the player took the camera: a drag, WASD, or a ping's pan
+    // the player took the camera: a drag, WASD, or a ping's pan. During a click it waits, see pendingClear
     private void OnFollowEnded()
     {
+        if (pressed && pressIsCandidate)
+        {
+            pendingClear = true;
+            return;
+        }
+
         Clear();
     }
 
@@ -211,11 +233,28 @@ public class AnimalSelection : MonoBehaviour
         if (!pressed) return;
         pressed = false;
 
-        if (!pressIsCandidate) return;
-        if ((pointer - pressPosition).sqrMagnitude > clickSlop * clickSlop) return;
+        bool wasPendingClear = pendingClear;
+        pendingClear = false;
+
+        bool isClick = pressIsCandidate && (pointer - pressPosition).sqrMagnitude <= clickSlop * clickSlop;
+
+        if (!isClick)
+        {
+            if (wasPendingClear) Clear();
+            return;
+        }
 
         // on empty world this is null, which ends the focus
         Focus(PickAt(pointer));
+    }
+
+
+    private bool MovedPastSlop()
+    {
+        InputManager input = InputManager.Instance;
+        if (input == null || !input.HasPointerPosition) return false;
+
+        return (input.PointerPosition - pressPosition).sqrMagnitude > clickSlop * clickSlop;
     }
 
 

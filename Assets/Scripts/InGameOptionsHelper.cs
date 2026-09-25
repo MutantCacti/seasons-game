@@ -22,8 +22,8 @@ public class InGameOptionsHelper : MonoBehaviour {
     }
 
 
-    // Escape. It backs out of the top-most layer: modal, then menu, then book, then a focused animal,
-    // and only then pauses
+    // Escape. It backs out of the top-most layer: modal, then menu, then a text field being typed in,
+    // then book, then a focused animal, and only then pauses
     private void OnPauseKey() {
         // Escape is the pause key, and it is also the modal's cancel. The modal owns Escape while
         // it is open, so a pause can never open the options menu behind it or strand it frozen.
@@ -35,6 +35,9 @@ public class InGameOptionsHelper : MonoBehaviour {
             SetMenuOpen(false);
             return;
         }
+
+        // the field handles Escape itself (it puts the old text back and lets go), so that's all it does
+        if (InputManager.IsTypingText) return;
 
         // open is the read target, not IsReading, so Escape during the close animation opens the menu
         CompendiumUIManager compendium = CompendiumUIManager.Instance;
