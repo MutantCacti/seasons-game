@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
@@ -65,8 +66,16 @@ public class CameraController : MonoBehaviour
     private const float MIN_FORWARD_Y = 0.0001f;
     private Transform panTarget;
 
+    // a follow is a pan that never arrives: it keeps the target centred until something ends it
+    private bool following;
+
 
     public bool IsPanningToTarget { get { return panTarget != null; } }
+    public bool IsFollowing { get { return following && panTarget != null; } }
+
+
+    // a follow ended by anything but StopFollowing: a drag, WASD, a ping's pan, the target destroyed
+    public event Action FollowEnded;
 
 
     public void Start()
@@ -196,7 +205,8 @@ public class CameraController : MonoBehaviour
 
     public void OnScrollWheel(float delta)
     {
-        StopPanningToTarget();
+        // zooming keeps a follow going: it changes the height, and the follow keeps the target centred at it
+        if (!following) StopPanningToTarget();
 
         Vector3 forward = transform.forward;
         forward.Normalize();
@@ -376,13 +386,43 @@ public class CameraController : MonoBehaviour
     // the zoom is untouched. Ends on arrival, or as soon as the player drags, scrolls or uses WASD.
     public void PanToTransform(Transform target)
     {
+        EndFollow();
         panTarget = target;
+    }
+
+
+    // The same glide, but it stays locked on the target as it moves instead of ending on arrival.
+    // Zooming keeps it; dragging, WASD or another pan end it and raise FollowEnded
+    public void Follow(Transform target)
+    {
+        panTarget = target;
+        following = target != null;
+    }
+
+
+    // the owner letting go; FollowEnded is not raised
+    public void StopFollowing(Transform target)
+    {
+        if (!following || panTarget != target) return;
+
+        following = false;
+        panTarget = null;
     }
 
 
     public void StopPanningToTarget()
     {
+        EndFollow();
         panTarget = null;
+    }
+
+
+    private void EndFollow()
+    {
+        if (!following) return;
+
+        following = false;
+        FollowEnded?.Invoke();
     }
 
 
@@ -392,6 +432,7 @@ public class CameraController : MonoBehaviour
         if (panTarget == null)
         {
             panTarget = null;
+            EndFollow();
             return;
         }
 
@@ -401,6 +442,7 @@ public class CameraController : MonoBehaviour
         if (viewForward.y > -MIN_FORWARD_Y)
         {
             panTarget = null;
+            EndFollow();
             return;
         }
 
@@ -410,7 +452,7 @@ public class CameraController : MonoBehaviour
 
         targetPosition = point - viewForward * distance;
 
-        if ((currentPosition - targetPosition).sqrMagnitude < PAN_ARRIVE_SQR) panTarget = null;
+        if (!following && (currentPosition - targetPosition).sqrMagnitude < PAN_ARRIVE_SQR) panTarget = null;
     }
 
 

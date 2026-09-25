@@ -41,6 +41,7 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
         public Animal animal;
         public EntityId entityId;
         public Transform transform;
+        public AnimalController controller;
 
         // the row this animal's transform is copied into. AnimalSaveData.Sort reorders the list but
         // never replaces the rows, so this stays the one in the save
@@ -243,6 +244,16 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
 
 
     // MARK: queries
+
+
+    // every live animal, for things that look them all over (picking one under the pointer)
+    public int LiveCount { get { return live.Count; } }
+
+
+    public AnimalController LiveAt(int index)
+    {
+        return index >= 0 && index < live.Count ? live[index].controller : null;
+    }
 
 
     // true when at least one live animal of this kind exists in the world
@@ -694,7 +705,7 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
 
         entityId.Destroyed += OnAnimalDestroyed;
 
-        live.Add(new LiveAnimal { animal = animal, entityId = entityId, transform = instance.transform, save = save });
+        live.Add(new LiveAnimal { animal = animal, entityId = entityId, transform = instance.transform, controller = controller, save = save });
 
         return entityId;
     }

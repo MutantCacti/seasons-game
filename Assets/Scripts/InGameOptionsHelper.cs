@@ -22,7 +22,8 @@ public class InGameOptionsHelper : MonoBehaviour {
     }
 
 
-    // Escape. It backs out of the top-most layer: modal, then menu, then book, and only then pauses
+    // Escape. It backs out of the top-most layer: modal, then menu, then book, then a focused animal,
+    // and only then pauses
     private void OnPauseKey() {
         // Escape is the pause key, and it is also the modal's cancel. The modal owns Escape while
         // it is open, so a pause can never open the options menu behind it or strand it frozen.
@@ -39,6 +40,12 @@ public class InGameOptionsHelper : MonoBehaviour {
         CompendiumUIManager compendium = CompendiumUIManager.Instance;
         if (compendium != null && compendium.IsOpen) {
             compendium.RequestClose();
+            return;
+        }
+
+        AnimalSelection selection = AnimalSelection.Instance;
+        if (selection != null && selection.HasFocus) {
+            selection.Clear();
             return;
         }
 
