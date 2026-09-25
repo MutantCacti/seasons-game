@@ -18,6 +18,13 @@ public class SeaLevel : MonoBehaviour
     private static SeaLevel instance;
     private static int searchedFrame = -1;
 
+    private static readonly int SeaDaylightId = Shader.PropertyToID("_SeaDaylight");
+    private static readonly int SeaSkyColourId = Shader.PropertyToID("_SeaSkyColour");
+    private static readonly int SeaFloorYId = Shader.PropertyToID("_SeaFloorY");
+
+    // what the shader sees with no DayNightManager (edit mode, or a scene without one): noon
+    private static readonly Color FallbackSky = new Color(169.0f / 255.0f, 207.0f / 255.0f, 220.0f / 255.0f, 1.0f);    // #A9CFDC
+
 
     // a caller that runs before our Awake, or while we're inactive, still finds the sea. The scene
     // search runs at most once a frame, so a scene with no sea doesn't pay for it on every call
@@ -69,9 +76,21 @@ public class SeaLevel : MonoBehaviour
     }
 
 
+    private void OnEnable()
+    {
+        PushGlobals();
+    }
+
+
     private void OnDestroy()
     {
         if (instance == this) instance = null;
+    }
+
+
+    private void LateUpdate()
+    {
+        PushGlobals();
     }
 
 
@@ -88,6 +107,7 @@ public class SeaLevel : MonoBehaviour
         if (this == null) return;
 
         Apply();
+        PushGlobals();
     }
 #endif
 
@@ -111,11 +131,31 @@ public class SeaLevel : MonoBehaviour
     }
 
 
+    // MARK: shader globals
+
+
+    // globals rather than material properties, so any Seasons/Sea material dropped on the renderer
+    // just works. There is only ever one sea
+    private void PushGlobals()
+    {
+        DayNightManager dayNight = DayNightManager.Instance;
+        Shader.SetGlobalFloat(SeaDaylightId, dayNight != null ? dayNight.Daylight01 : 1.0f);
+
+        // DayNightManager already lerps the camera's clear colour between its sky colours, so the
+        // camera is the one place that always has the sky as drawn
+        Camera sky = Camera.main;
+        Shader.SetGlobalColor(SeaSkyColourId, sky != null ? sky.backgroundColor : FallbackSky);
+
+        Shader.SetGlobalFloat(SeaFloorYId, floorY);
+    }
+
+
     // MARK: bake
 
 
     public void SetFloor(float voidDepth)
     {
         floorY = voidDepth;
+        PushGlobals();
     }
 }
