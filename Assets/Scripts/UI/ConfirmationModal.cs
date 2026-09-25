@@ -5,8 +5,9 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
-// A reusable modal that asks one question and routes a confirm or a cancel. Listeners are rebound
-// each time it is shown, so one instance serves any number of callers without listeners piling up.
+// A reusable modal that asks one question and routes a confirm or a cancel. The question and the
+// button labels are authored in the prefab; only a token in the question is filled in per call.
+// Listeners are rebound each Show, so one instance serves any number of callers without piling up.
 public class ConfirmationModal : MonoBehaviour
 {
     private static ConfirmationModal instance;
@@ -15,12 +16,11 @@ public class ConfirmationModal : MonoBehaviour
 
     [SerializeField] private TextMeshProUGUI questionText;
     [SerializeField] private Button confirmButton;
-    [SerializeField] private TextMeshProUGUI confirmButtonText;
     [SerializeField] private Button cancelButton;
-    [SerializeField] private TextMeshProUGUI cancelButtonText;
     [SerializeField] private CanvasGroup canvasGroup;
     [SerializeField] private float fadeDuration = 0.15f;
 
+    private string questionTemplate;
     private Action onConfirm;
     private Action onCancel;
     private Tween fadeTween;
@@ -43,10 +43,12 @@ public class ConfirmationModal : MonoBehaviour
 
         if (questionText == null) Debug.LogError("ConfirmationModal: no question text, so the question is never shown", this);
         if (confirmButton == null) Debug.LogError("ConfirmationModal: no confirm Button, so the confirm action can never run", this);
-        if (confirmButtonText == null) Debug.LogError("ConfirmationModal: no confirm label, so the confirm button has no text", this);
         if (cancelButton == null) Debug.LogError("ConfirmationModal: no cancel Button, so the modal can never be dismissed", this);
-        if (cancelButtonText == null) Debug.LogError("ConfirmationModal: no cancel label, so the cancel button has no text", this);
         if (canvasGroup == null) Debug.LogError("ConfirmationModal: no CanvasGroup, so the modal cannot fade or block input", this);
+
+        // captured now because Show substitutes into it, so the authored template must survive
+        // repeated Shows rather than being overwritten by the first substitution
+        questionTemplate = questionText != null ? questionText.text : string.Empty;
 
         // the prefab ships active but invisible, so the singleton is set before the first Show. This
         // also re-asserts the hidden state in case a prefab override changed the serialized defaults.
@@ -70,9 +72,10 @@ public class ConfirmationModal : MonoBehaviour
     // MARK: show / hide
 
 
-    public void Show(string question, string confirmText, string cancelText, Action confirm, Action cancel = null)
+    // token, when given, is replaced by value in the authored question; a null token shows it verbatim
+    public void Show(Action confirm, Action cancel = null, string token = null, string value = null)
     {
-        if (questionText == null || confirmButton == null || confirmButtonText == null || cancelButton == null || cancelButtonText == null || canvasGroup == null)
+        if (questionText == null || confirmButton == null || cancelButton == null || canvasGroup == null)
         {
             Debug.LogError("ConfirmationModal: cannot show, a required reference is missing", this);
             return;
@@ -81,9 +84,7 @@ public class ConfirmationModal : MonoBehaviour
         onConfirm = confirm;
         onCancel = cancel;
 
-        questionText.text = question ?? string.Empty;
-        confirmButtonText.text = confirmText ?? string.Empty;
-        cancelButtonText.text = cancelText ?? string.Empty;
+        questionText.text = token == null ? questionTemplate : questionTemplate.Replace(token, value ?? string.Empty);
 
         confirmButton.onClick.RemoveAllListeners();
         confirmButton.onClick.AddListener(Confirm);

@@ -65,9 +65,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ConfirmationModal
   questionText: {fileID: 810000034}
   confirmButton: {fileID: 810000045}
-  confirmButtonText: {fileID: 810000054}
   cancelButton: {fileID: 810000065}
-  cancelButtonText: {fileID: 810000074}
   canvasGroup: {fileID: 810000003}
   fadeDuration: 0.15
 --- !u!1 &810000011
@@ -288,7 +286,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Return to when puzzle \"this puzzle\" began? \nProgress since then will
+  m_text: "Return to when puzzle \"_PUZZLE_\" began? \nProgress since then will
     be lost."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -421,7 +419,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.8235294, g: 0.34117648, b: 0.24705882, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

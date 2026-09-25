@@ -566,11 +566,7 @@ public class PuzzleTabManager : CompendiumTabManager
             return;
         }
 
-        modal.Show(
-            $"Return to when {puzzle.Name} began? Progress since then will be lost.",
-            "Confirm",
-            "Cancel",
-            () => ConfirmReset(puzzle));
+        modal.Show(() => ConfirmReset(puzzle), null, "_PUZZLE_", puzzle.Name);
     }
 
 
