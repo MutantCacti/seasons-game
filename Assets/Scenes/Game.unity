@@ -6009,6 +6009,59 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7b400023f351bf48a5f1febb09c8d33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemInventorySlot
+--- !u!1 &813318153
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 813318154}
+  - component: {fileID: 813318155}
+  m_Layer: 0
+  m_Name: AnimalSelection
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &813318154
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813318153}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1828076714}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &813318155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813318153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e060cde81c3d920a1894c04cad16f970, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AnimalSelection
+  cameraController: {fileID: 1764824873}
+  clickSlop: 8
+  pickPadding: 8
+  markerSprite: {fileID: 21300000, guid: 01e5bbf074dd5dbecb003fbe0821ebfd, type: 3}
+  markerMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  markerSize: 0.8
+  markerPulse: 0.05
+  markerPulseSpeed: 2
+  markerLift: 0.01
 --- !u!1 &822894080
 GameObject:
   m_ObjectHideFlags: 0
@@ -8977,6 +9030,7 @@ Transform:
   - {fileID: 1689511886}
   - {fileID: 1074182840}
   - {fileID: 1454950549}
+  - {fileID: 813318154}
   - {fileID: 1203589269}
   - {fileID: 1473217968}
   m_Father: {fileID: 734624}
