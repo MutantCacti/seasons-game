@@ -212,15 +212,23 @@ Shader "Seasons/Sea"
                 return lerp(_FoamColour.rgb, _FoamNightColour.rgb, Night());
             }
 
-            // vertical depth, so it means the same from every camera angle
-            float WaterDepthAt(float3 snappedWS)
+            // vertical depth, so it means the same from every camera angle. negative when the scene
+            // point behind the water is above the surface: something in front of the sea, like a
+            // sprite or the book held up to read
+            float SignedWaterDepthAt(float3 snappedWS)
             {
-                return max(0.0, snappedWS.y - SceneWorldY(ScreenUVOf(snappedWS)));
+                return snappedWS.y - SceneWorldY(ScreenUVOf(snappedWS));
             }
 
-            bool InContactFoam(float waterDepth)
+
+            // takes the signed depth: clamping it to 0 first made everything above the surface read
+            // as sitting right at the waterline, so anything in front of the sea grew a foam halo.
+            // a pixel's worth of slack keeps the foam where the water meets a wall
+            bool InContactFoam(float signedDepth)
             {
-                return waterDepth < _FoamWidth + _FoamBreathe * sin(_Time.y * _FoamBreatheSpeed);
+                if (signedDepth < -1.0 / _PixelsPerUnit) return false;
+
+                return signedDepth < _FoamWidth + _FoamBreathe * sin(_Time.y * _FoamBreatheSpeed);
             }
 
             half3 DepthBandColour(float waterDepth)
@@ -250,11 +258,12 @@ Shader "Seasons/Sea"
 
             half4 Tidepool(float3 snappedWS)
             {
-                float waterDepth = WaterDepthAt(snappedWS);
+                float signedDepth = SignedWaterDepthAt(snappedWS);
+                float waterDepth = max(0.0, signedDepth);
 
                 half3 colour = ApplyNight(DepthBandColour(waterDepth));
                 colour = ApplyGlints(colour, snappedWS);
-                if (InContactFoam(waterDepth)) colour = FoamNow();
+                if (InContactFoam(signedDepth)) colour = FoamNow();
 
                 return half4(colour, _Opacity);
             }
@@ -264,7 +273,8 @@ Shader "Seasons/Sea"
             half4 Glass(float3 snappedWS)
             {
                 float2 straightUV = ScreenUVOf(snappedWS);
-                float waterDepth = max(0.0, snappedWS.y - SceneWorldY(straightUV));
+                float signedDepth = snappedWS.y - SceneWorldY(straightUV);
+                float waterDepth = max(0.0, signedDepth);
 
                 // the wobble moves the sample by whole terrain texels, so the floor shifts like
                 // pixel art rather than smearing
@@ -297,7 +307,7 @@ Shader "Seasons/Sea"
                 colour = lerp(colour, _SeaSkyColour.rgb, _FresnelStrength * pow(1.0 - facing, _FresnelPower));
 
                 colour = ApplyGlints(colour, snappedWS);
-                if (InContactFoam(waterDepth)) colour = FoamNow();
+                if (InContactFoam(signedDepth)) colour = FoamNow();
 
                 return half4(colour, 1.0);
             }
