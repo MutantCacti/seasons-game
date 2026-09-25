@@ -20,7 +20,7 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float dragRayDistance = 1000.0f;
 
     [Header("World bounds")]
-    [SerializeField] private float boundsBuffer = 5.0f;     // how far past the world's XZ edge the view centre may settle; units
+    [SerializeField] private float boundsBuffer = 1.0f;     // how far past the world's XZ edge the view centre may settle; units
     [SerializeField] private float boundsOvershoot = 1.5f;  // extra drag stretch past the buffered bounds before the rubber band bottoms out; units
     [SerializeField] [Range(0.0f, 1.0f)] private float boundsReturnSnappiness = 0.2f;  // per-reference-frame ease when springing back inside, framerate independent
 
