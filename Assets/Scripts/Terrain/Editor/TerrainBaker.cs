@@ -236,12 +236,9 @@ public static class TerrainBaker
         meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         meshRenderer.receiveShadows = false;
 
-        // only fill an empty slot, so a material dragged onto the renderer survives a re-bake
-        if (meshRenderer.sharedMaterial == null)
-        {
-            if (settings.seaMaterial != null) meshRenderer.sharedMaterial = settings.seaMaterial;
-            else Debug.LogWarning("No sea material assigned - 'Sea Level' will render as the magenta default", settings);
-        }
+        // the bake settings own the material, same as the terrain renderers
+        if (settings.seaMaterial != null) meshRenderer.sharedMaterial = settings.seaMaterial;
+        else Debug.LogWarning("No sea material assigned - 'Sea Level' will render as the magenta default", settings);
 
         // the mesh's bounds reach down for the skirt, but the box only wants the sheet's footprint
         Bounds bounds = seaMesh.bounds;

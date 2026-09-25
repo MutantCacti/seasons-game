@@ -11,7 +11,7 @@ public class TerrainBakeSettings : MonoBehaviour
     public Texture2D wallAtlas;     // must be laid out the same as the tile atlas; slice N textures walls under tiles N
     public Material wallMaterial;
     public Material topMaterial;
-    public Material seaMaterial;    // any Seasons/Sea material; swap it on the Sea Level renderer freely
+    public Material seaMaterial;    // any Seasons/Sea material; a re-bake puts it on the Sea Level renderer
 
     public string outputFolder = "Assets/Terrain";
     public string collisionLayerName = "Terrain";
