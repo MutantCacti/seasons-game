@@ -20,3 +20,4 @@ MonoBehaviour:
     count: 1
   unlocks:
   - {fileID: 11400000, guid: f37ad24fc6edf73e68843a0f9611a65d, type: 2}
+  - {fileID: 11400000, guid: d12a47384b8df9023baaff12a1ce62c4, type: 2}

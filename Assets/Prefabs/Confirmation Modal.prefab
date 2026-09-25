@@ -211,7 +211,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 60a30a5e250f414c0b77faddd01caa88, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -286,8 +286,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Return to when puzzle \"_PUZZLE_\" began? \nProgress since then will
-    be lost."
+  m_text: "Return to when puzzle \"_PUZZLE_\" began? \nProgress since then will be
+    lost."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: e76500cb4c543e42b9e94acc9821eed7, type: 2}
   m_sharedMaterial: {fileID: 8364033027736605934, guid: e76500cb4c543e42b9e94acc9821eed7, type: 2}
@@ -426,7 +426,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 60a30a5e250f414c0b77faddd01caa88, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -684,7 +684,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 60a30a5e250f414c0b77faddd01caa88, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1

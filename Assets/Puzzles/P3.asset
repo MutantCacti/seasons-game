@@ -17,5 +17,5 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: ea6283715165ffc9db883f1b4b55721f, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: 8a411905243b1919b9f03600a40296ce, type: 2}
-    count: 1
+    count: 3
   unlocks: []

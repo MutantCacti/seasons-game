@@ -205,6 +205,9 @@ public class PlacementController : MonoBehaviour
         dragging = item;
         CreateGhost();
 
+        // the drag owns the cursor from here, so a hovered slot or button can't show the hand
+        ShowCursor(CursorType.Default);
+
         return true;
     }
 
@@ -270,7 +273,7 @@ public class PlacementController : MonoBehaviour
     {
         // Only a live drag owns the cursor. The guard matters on teardown, where this runs after the
         // CursorManager has already been destroyed and would warn about a manager nothing needed.
-        if (dragging != null) ShowCursor(CursorType.Default);
+        if (dragging != null) ReleaseCursor();
 
         ClearPreview();
 
@@ -292,7 +295,16 @@ public class PlacementController : MonoBehaviour
             return;
         }
 
-        CursorManager.Instance.SetCursor(cursorType);
+        CursorManager.Instance.SetOverride(cursorType);
+    }
+
+
+    // hands the cursor back to hover/default
+    private void ReleaseCursor()
+    {
+        if (CursorManager.Instance == null) return;
+
+        CursorManager.Instance.ClearOverride();
     }
 
 

@@ -42,6 +42,14 @@ public class SFXPlayer : MonoBehaviour
 
     public void Play(SoundObject soundObject, Vector3 worldPos)
     {
+        Play(soundObject, worldPos, 1f);
+    }
+
+
+    // pitchScale multiplies the SoundObject's own (randomised) pitch, for callers that step a pitch
+    // up through a sequence
+    public void Play(SoundObject soundObject, Vector3 worldPos, float pitchScale)
+    {
         if (soundObject == null) return;
 
         AudioClip clip = soundObject.PickRandomClip();
@@ -69,7 +77,8 @@ public class SFXPlayer : MonoBehaviour
 
         audioSource.clip = clip;
         audioSource.volume = soundObject.PickRandomVolume();
-        audioSource.pitch = soundObject.PickRandomPitch();
+        // same limits SoundObject keeps its own pitch inside
+        audioSource.pitch = Mathf.Clamp(soundObject.PickRandomPitch() * pitchScale, 0.25f, 3f);
 
         // set per play rather than once per voice, since a voice is reused for any sound
         audioSource.spatialBlend = soundObject.SpatialBlend;

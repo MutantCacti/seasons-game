@@ -90,6 +90,25 @@ public class AnimalTabManager : CompendiumTabManager
     }
 
 
+    // MARK: unseen
+
+
+    // everything here is a discovery, so the first unseen animal in range settles it
+    public override UnseenPriority HighestUnseenInPages(int firstPage, int lastPage)
+    {
+        int first = Mathf.Max(firstPage, 0) * ENTRIES_PER_PAGE;
+        int end = Mathf.Min((lastPage + 1) * ENTRIES_PER_PAGE, Count);
+
+        for (int i = first; i < end; i++)
+        {
+            if (!TryGetAnimal(i, out Animal animal)) continue;
+            if (TryGetUnseen(animal.Id, out int _)) return UnseenPriority.Discovery;
+        }
+
+        return UnseenPriority.None;
+    }
+
+
     // MARK: binding
 
 

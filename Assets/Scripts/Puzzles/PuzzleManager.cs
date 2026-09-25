@@ -7,6 +7,21 @@ using UnityEngine;
 // world scripts call Complete(puzzle, source) when they decide the condition has been met
 // This manager is the only thing allowed to say no
 
+
+// One ingredient a batch of unlocks handed out
+public readonly struct IngredientGrant
+{
+    public readonly GameItem item;
+    public readonly int count;
+
+
+    public IngredientGrant(GameItem item, int count)
+    {
+        this.item = item;
+        this.count = count;
+    }
+}
+
 public class PuzzleManager : MonoBehaviour
 {
     private static PuzzleManager instance;
@@ -26,6 +41,15 @@ public class PuzzleManager : MonoBehaviour
     public event Action<Puzzle> OnPuzzleUnlocked;
 
     public event Action<Puzzle> OnPuzzleSoftLocked;
+
+
+    // Raised once per unlock batch, after it is saved, with the entity whose completion caused it
+    // (null for the starting puzzles, or when that entity is gone) and every ingredient it granted.
+    // Static so a listener never misses the new-world seed in Start over Awake order. That also means
+    // it outlives the scene: every subscriber MUST += in OnEnable and -= in OnDisable, or a reload
+    // leaves a dead listener behind. While anyone listens, grants defer their hotbar display until the
+    // listener calls InventoryManager.ReleaseDisplay, so a listener must release everything it holds.
+    public static event Action<EntityId, IReadOnlyList<IngredientGrant>> IngredientsGranted;
 
 
     // Raised once puzzle state has been restored, which is the one safe moment for a world script to
@@ -68,6 +92,11 @@ public class PuzzleManager : MonoBehaviour
     // true while UnlockBatch is unlocking, so a completion raised from an OnPuzzleUnlocked handler
     // queues instead of landing before the batch's checkpoint is captured
     private bool batching;
+
+    // who the current GrantUnlocks is paying out for, and what the current batch has granted.
+    // both are saved and restored around nesting like batching is
+    private EntityId grantSource;
+    private List<IngredientGrant> grants;
 
     // puzzles the manager has settled on being stuck, and therefore announced
     private readonly HashSet<Puzzle> softLocked = new HashSet<Puzzle>();
@@ -335,7 +364,17 @@ public class PuzzleManager : MonoBehaviour
             candidates.Add(unlocks[i]);
         }
 
-        UnlockBatch(candidates);
+        EntityId outerSource = grantSource;
+        grantSource = TryGetCompletedBy(completedPuzzle, out EntityId source) ? source : null;
+
+        try
+        {
+            UnlockBatch(candidates);
+        }
+        finally
+        {
+            grantSource = outerSource;
+        }
     }
 
 
@@ -346,6 +385,11 @@ public class PuzzleManager : MonoBehaviour
         if (puzzles == null) return;
 
         List<Puzzle> newlyUnlocked = new List<Puzzle>();
+
+        EntityId source = grantSource;
+        List<IngredientGrant> outerGrants = grants;
+        List<IngredientGrant> batchGrants = new List<IngredientGrant>();
+        grants = batchGrants;
 
         // an OnPuzzleUnlocked handler that completes a puzzle now queues it, so the completion lands
         // after this batch's checkpoint rather than inside it
@@ -364,6 +408,7 @@ public class PuzzleManager : MonoBehaviour
         finally
         {
             batching = wasBatching;
+            grants = outerGrants;
         }
 
         if (newlyUnlocked.Count == 0)
@@ -385,6 +430,9 @@ public class PuzzleManager : MonoBehaviour
         }
 
         Save();
+
+        // after the save, so whatever the listener shows is already safe on disk
+        if (batchGrants.Count > 0) IngredientsGranted?.Invoke(source, batchGrants);
 
         // after the capture on purpose: the checkpoint still holds these as pending, so resetting to
         // it replays the completion instead of losing it
@@ -496,11 +544,17 @@ public class PuzzleManager : MonoBehaviour
                 continue;
             }
 
+            // the display only waits when something will fly the icons in and release it
+            bool deferDisplay = IngredientsGranted != null && grants != null;
+
             // A full inventory refuses here and the ingredient is lost
-            if (!inventoryManager.Add(ingredient.item, ingredient.count))
+            if (!inventoryManager.Add(ingredient.item, ingredient.count, deferDisplay))
             {
                 Debug.LogError($"PuzzleManager: could not grant {ingredient.count}x '{ingredient.item.name}' for '{puzzle.name}' (inventoryManager.Add returned false)", this);
+                continue;
             }
+
+            if (grants != null) grants.Add(new IngredientGrant(ingredient.item, ingredient.count));
         }
     }
 

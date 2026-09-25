@@ -83,6 +83,25 @@ public class GameItemTabManager : CompendiumTabManager
     }
 
 
+    // MARK: unseen
+
+
+    // everything here is a discovery, so the first unseen item in range settles it
+    public override UnseenPriority HighestUnseenInPages(int firstPage, int lastPage)
+    {
+        int first = Mathf.Max(firstPage, 0) * ENTRIES_PER_PAGE;
+        int end = Mathf.Min((lastPage + 1) * ENTRIES_PER_PAGE, Count);
+
+        for (int i = first; i < end; i++)
+        {
+            if (!TryGetItem(i, out GameItem item)) continue;
+            if (TryGetUnseen(item.Id, out int _)) return UnseenPriority.Discovery;
+        }
+
+        return UnseenPriority.None;
+    }
+
+
     // MARK: binding
 
 

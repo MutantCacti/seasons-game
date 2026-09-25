@@ -49,6 +49,9 @@ public class CompendiumUIManager : MonoBehaviour
     [Header("Tabs")]
     [SerializeField] private CompendiumTabManager[] tabs;
 
+    // multiplied into every tab but the current one, so they read as tucked behind it
+    [SerializeField] private Color behindTabTint = new Color(0.72f, 0.72f, 0.72f, 1.0f);
+
     [Header("Buttons")]
     [SerializeField] private Button turnPrevious;
     [SerializeField] private Button turnNext;
@@ -68,12 +71,16 @@ public class CompendiumUIManager : MonoBehaviour
     private Leaf parked;
 
     private int spread;
+    private int targetSpread;
     private int spreadCount;
     private int currentTabIndex;
     private bool built;
     private bool turning;
     private Coroutine openRoutine;
     private readonly List<Action> tabChangedHandlers = new List<Action>();
+
+    // each tab graphic's colour as authored, so the tint multiplies it rather than replacing it
+    private Color[] tabRestColours;
 
 
     // Where the read is heading, not whether the book is still moving: every SetRead on the book is
@@ -83,6 +90,25 @@ public class CompendiumUIManager : MonoBehaviour
 
 
     public event Action OpenChanged;
+
+
+    // Raised whenever the spread the book is heading to changes: a jump, a tab switch, or the start of
+    // a turn (not its end, so anything pointing the way updates as soon as the button is pressed)
+    public event Action SpreadChanged;
+
+
+    public int CurrentTabIndex { get { return currentTabIndex; } }
+
+
+    // the spread a turn is heading to, or the current one when nothing is turning; it shows pages
+    // TargetSpread * 2 and TargetSpread * 2 + 1
+    public int TargetSpread { get { return targetSpread; } }
+
+
+    public Button TurnPreviousButton { get { return turnPrevious; } }
+
+
+    public Button TurnNextButton { get { return turnNext; } }
 
 
     public int TabCount { get { return tabs != null ? tabs.Length : 0; } }
@@ -145,6 +171,7 @@ public class CompendiumUIManager : MonoBehaviour
                 tabChangedHandlers.Add(handler);
             }
 
+            CaptureTabRestColours();
             ApplyTabSiblingOrder();
         }
 
@@ -368,7 +395,7 @@ public class CompendiumUIManager : MonoBehaviour
         spread = target;
         spreadCount = SpreadCount;
         AssignSpreadPages(target);
-        UpdateTurnButtons();
+        SetTargetSpread(target);
         RememberSpread();
     }
 
@@ -396,7 +423,7 @@ public class CompendiumUIManager : MonoBehaviour
         int nextSpread = spread + 1;
         int revealed = nextSpread * 2 + 1;
 
-        UpdateTurnButtons(nextSpread);
+        SetTargetSpread(nextSpread);
 
         Leaf oldLeft = left;
         Leaf oldRight = right;
@@ -438,7 +465,7 @@ public class CompendiumUIManager : MonoBehaviour
         int previousSpread = spread - 1;
         int revealed = previousSpread * 2;
 
-        UpdateTurnButtons(previousSpread);
+        SetTargetSpread(previousSpread);
 
         Leaf oldLeft = left;
         Leaf oldRight = right;
@@ -654,16 +681,14 @@ public class CompendiumUIManager : MonoBehaviour
     }
 
 
-    private void UpdateTurnButtons()
+    private void SetTargetSpread(int atSpread)
     {
-        UpdateTurnButtons(spread);
-    }
+        targetSpread = atSpread;
 
-
-    private void UpdateTurnButtons(int atSpread)
-    {
         if (turnPrevious != null) turnPrevious.gameObject.SetActive(atSpread - 1 >= 0);
         if (turnNext != null) turnNext.gameObject.SetActive(atSpread + 1 < spreadCount);
+
+        if (SpreadChanged != null) SpreadChanged();
     }
 
 
@@ -838,6 +863,43 @@ public class CompendiumUIManager : MonoBehaviour
         {
             selected.TabButton.transform.SetAsLastSibling();
         }
+
+        ApplyTabTints();
+    }
+
+
+    // Only the button's own graphic: its label keeps full contrast, and the glow child is a separate
+    // Graphic with its own colour. The button's colour tint transition goes through the CanvasRenderer,
+    // so it still multiplies on top of this for hover and press.
+    private void ApplyTabTints()
+    {
+        if (tabs == null || tabRestColours == null) return;
+
+        for (int i = 0; i < tabs.Length && i < tabRestColours.Length; i++)
+        {
+            Graphic graphic = TabGraphic(tabs[i]);
+            if (graphic == null) continue;
+
+            graphic.color = i == currentTabIndex ? tabRestColours[i] : tabRestColours[i] * behindTabTint;
+        }
+    }
+
+
+    private void CaptureTabRestColours()
+    {
+        tabRestColours = new Color[tabs.Length];
+
+        for (int i = 0; i < tabs.Length; i++)
+        {
+            Graphic graphic = TabGraphic(tabs[i]);
+            tabRestColours[i] = graphic != null ? graphic.color : Color.white;
+        }
+    }
+
+
+    private static Graphic TabGraphic(CompendiumTabManager tab)
+    {
+        return tab != null && tab.TabButton != null ? tab.TabButton.targetGraphic : null;
     }
 
 
