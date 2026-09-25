@@ -59,6 +59,10 @@ public class BookAnimator : MonoBehaviour
     [SerializeField] private Camera viewCamera;
     [SerializeField] private float hoverRayDistance = 1000.0f;
 
+    // resolved on first use rather than in Awake, since a hover check can come before it. 0 means
+    // unresolved: ~GetMask can't be 0, it has every layer but Water
+    private int hoverMask;
+
     [SerializeField] private Transform yawTarget;   // the book model
 
     // Degrees of fine tuning on top of the spine base aim below
@@ -1056,8 +1060,12 @@ public class BookAnimator : MonoBehaviour
         // The UI owns a pointer that lands on it, so a menu in front of the book cannot open it through
         if (PointerRaycastManager.IsPointerOverUI(screenPosition)) return false;
 
-        // triggers included, so the volume can be switched to a trigger without changing this
-        if (!PointerRaycastManager.TryGetHit(screenPosition, ~0, hoverRayDistance, QueryTriggerInteraction.Collide, out RaycastHit hit)) return false;
+        // triggers included, so the volume can be switched to a trigger without changing this.
+        // Water is left out: the sea's trigger box spans the whole world, so a book standing on
+        // ground below the sea level would otherwise have its hover caught by the water
+        if (hoverMask == 0) hoverMask = ~LayerMask.GetMask("Water");
+
+        if (!PointerRaycastManager.TryGetHit(screenPosition, hoverMask, hoverRayDistance, QueryTriggerInteraction.Collide, out RaycastHit hit)) return false;
 
         return hit.collider == hoverTarget;
     }
