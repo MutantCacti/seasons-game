@@ -57,8 +57,10 @@ public static class SavePaths
 
 
 #if UNITY_EDITOR
-    // The folder that holds Assets/, which is the name this worktree is known by
-    private static string ProjectName
+    // The folder that holds Assets/, which is the name this worktree is known by. Public because
+    // editors in Assembly-CSharp-Editor need it too: SaveHelper keys its EditorPrefs per project the
+    // same way this keys the file names per project.
+    public static string ProjectName
     {
         get
         {
