@@ -66,6 +66,16 @@ public class InventoryManager : MonoBehaviour {
     }
 
 
+    // the slot an item is bound to, concealed or not
+    public bool TryGetSlot(GameItem item, out ItemInventorySlot slot) {
+        slot = null;
+
+        if (item == null) return false;
+
+        return slotsByItem.TryGetValue(item, out slot) && slot != null;
+    }
+
+
     // MARK: mutations
 
 
