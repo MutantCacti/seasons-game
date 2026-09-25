@@ -139,6 +139,15 @@ public class AnimalController : MonoBehaviour
     }
 
 
+    // A line for when nothing is bothering it, shown in the tips' place. Not a problem, so the bar still
+    // reads full. It should hold still while it is being read: pick once and keep it, don't re-roll
+    // every time it is asked. Null for none
+    public virtual string GetHappyLine()
+    {
+        return null;
+    }
+
+
     // MARK: reactions
 
 

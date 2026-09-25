@@ -136,6 +136,7 @@ public class AnimalStatusPanel : MonoBehaviour
     private float pollTimer;
     private readonly List<TMP_Text> tipLines = new List<TMP_Text>();
     private string[] shownTips = new string[0];
+    private readonly string[] happyTip = new string[1];
 
 
     private void Awake()
@@ -333,6 +334,13 @@ public class AnimalStatusPanel : MonoBehaviour
             else if (!Mathf.Approximately(happiness, happinessMeter.Value)) happinessMeter.SetValue(happiness, true);
         }
 
+        // nothing bothering it: its happy line goes where the tips would be
+        if ((tips == null || tips.Length == 0) && !string.IsNullOrEmpty(bound.GetHappyLine()))
+        {
+            happyTip[0] = bound.GetHappyLine();
+            tips = happyTip;
+        }
+
         ShowTips(tips);
     }
 
@@ -346,7 +354,8 @@ public class AnimalStatusPanel : MonoBehaviour
 
         if (SameTips(tips)) return;
 
-        shownTips = tips;
+        // a copy: the happy line's array is reused, and comparing it with itself would never see a change
+        shownTips = (string[])tips.Clone();
 
         while (tipLines.Count < tips.Length)
         {

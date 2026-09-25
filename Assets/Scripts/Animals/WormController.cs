@@ -87,6 +87,19 @@ public class WormController : AnimalController
     // off rearranging the world for nothing
     [SerializeField] private string offPreferredTip = "Wriggling off to find softer soil";
 
+    // one of these, picked each time it is looked at, while nothing is bothering it
+    [SerializeField] private string[] happyLines =
+    {
+        "Peristalsis is going swimmingly",
+        "Can't see a thing, and loving it",
+        "The earth here is soft as cake",
+        "Crumbly ground, perfect for tunnelling",
+        "All five hearts are content",
+        "Breathing happily through its skin",
+        "Squeezing along, one segment at a time",
+        "Doing the soil a world of good",
+    };
+
 
     [Header("Sound")]
     [SerializeField] private SoundObject crawlSound;
@@ -102,6 +115,8 @@ public class WormController : AnimalController
     private float spriteBottom;     // the sprite's lowest vertex below its pivot, in sprite units (so negative)
 
     private float renameWiggleTimer;
+
+    private int happyLineIndex = -1;    // -1 until one is picked; picked afresh each focus and after a problem
 
     private WormState state;
     private float stateTimer;       // counts down in every state but Burrowed
@@ -573,7 +588,28 @@ public class WormController : AnimalController
     {
         if (terrain == null || IsPreferred(TileUnder(feet))) return base.GetHappinessTips();
 
+        // happy again later is a new mood, so a new line
+        happyLineIndex = -1;
+
         return new[] { offPreferredTip };
+    }
+
+
+    public override string GetHappyLine()
+    {
+        if (happyLines == null || happyLines.Length == 0) return null;
+
+        if (happyLineIndex < 0 || happyLineIndex >= happyLines.Length) happyLineIndex = Random.Range(0, happyLines.Length);
+
+        return happyLines[happyLineIndex];
+    }
+
+
+    // a fresh happy line each time it is looked at
+    public override void OnFocused()
+    {
+        base.OnFocused();
+        happyLineIndex = -1;
     }
 
 
