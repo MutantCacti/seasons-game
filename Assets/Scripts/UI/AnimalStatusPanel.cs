@@ -79,6 +79,11 @@ public class AnimalStatusPanel : MonoBehaviour
     [SerializeField] private Color nameFieldColour = new Color(230.0f / 255.0f, 222.0f / 255.0f, 202.0f / 255.0f, 1.0f); // #E6DECA
     [SerializeField] private Color tipColour = new Color(79.0f / 255.0f, 72.0f / 255.0f, 63.0f / 255.0f, 1.0f);       // #4F483F
 
+    // a happy line is not a problem, so it doesn't look like one: the bar's happy green, darkened to read
+    // on the paper, and bold
+    [SerializeField] private Color happyLineColour = new Color(78.0f / 255.0f, 127.0f / 255.0f, 43.0f / 255.0f, 1.0f); // #4E7F2B
+    [SerializeField] private FontStyles happyLineStyle = FontStyles.Bold;
+
 
     [Header("Name")]
     [SerializeField] private Color editingTextColour = new Color(138.0f / 255.0f, 129.0f / 255.0f, 116.0f / 255.0f, 1.0f);   // #8A8174, pencil
@@ -137,6 +142,7 @@ public class AnimalStatusPanel : MonoBehaviour
     private readonly List<TMP_Text> tipLines = new List<TMP_Text>();
     private string[] shownTips = new string[0];
     private readonly string[] happyTip = new string[1];
+    private bool shownHappy;
 
 
     private void Awake()
@@ -334,25 +340,30 @@ public class AnimalStatusPanel : MonoBehaviour
             else if (!Mathf.Approximately(happiness, happinessMeter.Value)) happinessMeter.SetValue(happiness, true);
         }
 
-        // nothing bothering it: its happy line goes where the tips would be
+        // nothing bothering it: its happy line goes where the tips would be, styled as good news
+        bool happy = false;
+
         if ((tips == null || tips.Length == 0) && !string.IsNullOrEmpty(bound.GetHappyLine()))
         {
             happyTip[0] = bound.GetHappyLine();
             tips = happyTip;
+            happy = true;
         }
 
-        ShowTips(tips);
+        ShowTips(tips, happy);
     }
 
 
     // Only touches the lines when the tips differ, so the layout isn't rebuilt four times a second.
     // With none, the container hides and the panel shrinks to the header and bar
-    private void ShowTips(string[] tips)
+    private void ShowTips(string[] tips, bool happy)
     {
         if (tipsContainer == null || tipTemplate == null) return;
         if (tips == null) tips = new string[0];
 
-        if (SameTips(tips)) return;
+        if (happy == shownHappy && SameTips(tips)) return;
+
+        shownHappy = happy;
 
         // a copy: the happy line's array is reused, and comparing it with itself would never see a change
         shownTips = (string[])tips.Clone();
@@ -369,7 +380,11 @@ public class AnimalStatusPanel : MonoBehaviour
             bool used = i < tips.Length;
 
             tipLines[i].gameObject.SetActive(used);
-            if (used) tipLines[i].text = tips[i];
+            if (!used) continue;
+
+            tipLines[i].text = tips[i];
+            tipLines[i].color = happy ? happyLineColour : tipColour;
+            tipLines[i].fontStyle = happy ? happyLineStyle : tipTemplate.fontStyle;
         }
 
         tipsContainer.gameObject.SetActive(tips.Length > 0);
