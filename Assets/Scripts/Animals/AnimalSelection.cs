@@ -31,7 +31,7 @@ public class AnimalSelection : MonoBehaviour
 
     [Header("Marker")]
     [SerializeField] private Sprite markerSprite;           // the ring, laid flat on the ground
-    [SerializeField] private Material markerMaterial;       // an unlit sprite material, like the worm's
+    [SerializeField] private Material markerMaterial;       // the placement ghost, so the ring is see-through
     [SerializeField] private float markerWidthScale = 0.85f; // the ring's width, as a multiple of the animal's sprite's world width
     [SerializeField] private float markerPulse = 0.08f;     // fraction of the size it swells by
     [SerializeField] private float markerPulseSpeed = 4.0f; // radians per second
@@ -390,9 +390,11 @@ public class AnimalSelection : MonoBehaviour
         // lying flat, facing up
         markerTransform.rotation = Quaternion.Euler(90.0f, 0.0f, 0.0f);
 
+        // material before sprite, as PlacementController does, so a lit material (the ghost) picks the
+        // sprite's texture up
         marker = holder.AddComponent<SpriteRenderer>();
-        marker.sprite = markerSprite;
         if (markerMaterial != null) marker.sharedMaterial = markerMaterial;
+        marker.sprite = markerSprite;
         marker.enabled = false;
     }
 

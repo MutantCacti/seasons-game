@@ -2624,7 +2624,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.39215687, g: 0.39215687, b: 0.39215687, a: 1}
+  m_Color: {r: 0.5411765, g: 0.5058824, b: 0.45490196, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -4754,7 +4754,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.9254902, g: 0.89411765, b: 0.8039216, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -6510,7 +6510,7 @@ MonoBehaviour:
   clickSlop: 8
   pickPadding: 8
   markerSprite: {fileID: 21300000, guid: 808c93078d1492e58a04c3c1a0aa5251, type: 3}
-  markerMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  markerMaterial: {fileID: 2100000, guid: 7e6606b7956a4fb0a319b6aa6553dd1b, type: 2}
   markerWidthScale: 0.85
   markerPulse: 0.05
   markerPulseSpeed: 2
@@ -8093,8 +8093,8 @@ MonoBehaviour:
   starOn: {fileID: 21300000, guid: 547ee76f99c38f2a8bd025840982f80e, type: 3}
   starOff: {fileID: 21300000, guid: db0286e02319e81ffb6ec16185305f4c, type: 3}
   starOnColour: {r: 0.9098039, g: 0.72156864, b: 0.22745098, a: 1}
-  starOffColour: {r: 0.627451, g: 0.627451, b: 0.627451, a: 1}
-  offset: {x: 48, y: 24}
+  starOffColour: {r: 0.5411765, g: 0.5058824, b: 0.45490196, a: 1}
+  gap: 40
   margin: 12
   avoid: {fileID: 230018478}
 --- !u!1001 &1300665493
@@ -9715,8 +9715,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 2150773298
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 0.5}
+    rgba: 4285825418
+  m_fontColor: {r: 0.5411765, g: 0.5058824, b: 0.45490196, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -9960,7 +9960,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9490196, g: 0.9490196, b: 0.9490196, a: 1}
+  m_Color: {r: 0.8666667, g: 0.83137256, b: 0.7411765, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

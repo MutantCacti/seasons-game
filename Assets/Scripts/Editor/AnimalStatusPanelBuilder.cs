@@ -22,8 +22,11 @@ public static class AnimalStatusPanelBuilder
 
     private const float PANEL_WIDTH = 320.0f;
 
-    private static readonly Color TEXT_COLOUR = new Color(50.0f / 255.0f, 50.0f / 255.0f, 50.0f / 255.0f, 1.0f);        // #323232, as the options menu
-    private static readonly Color FIELD_COLOUR = new Color(242.0f / 255.0f, 242.0f / 255.0f, 242.0f / 255.0f, 1.0f);    // #F2F2F2
+    // the compendium's paper and inks
+    private static readonly Color PAPER_COLOUR = new Color(236.0f / 255.0f, 228.0f / 255.0f, 205.0f / 255.0f, 1.0f);    // #ECE4CD
+    private static readonly Color FIELD_COLOUR = new Color(221.0f / 255.0f, 212.0f / 255.0f, 189.0f / 255.0f, 1.0f);    // #DDD4BD, the paper a shade darker
+    private static readonly Color TEXT_COLOUR = new Color(50.0f / 255.0f, 50.0f / 255.0f, 50.0f / 255.0f, 1.0f);        // #323232
+    private static readonly Color FADED_COLOUR = new Color(138.0f / 255.0f, 129.0f / 255.0f, 116.0f / 255.0f, 1.0f);    // #8A8174
 
 
     [MenuItem("Tools/UI/Build Animal Status Panel")]
@@ -81,7 +84,7 @@ public static class AnimalStatusPanelBuilder
         Image background = Undo.AddComponent<Image>(panel.gameObject);
         background.sprite = LoadSprite(PANEL_SPRITE);
         background.type = Image.Type.Sliced;
-        background.color = Color.white;
+        background.color = PAPER_COLOUR;
 
         VerticalLayoutGroup layout = Undo.AddComponent<VerticalLayoutGroup>(panel.gameObject);
         layout.padding = new RectOffset(20, 20, 16, 16);
@@ -141,7 +144,7 @@ public static class AnimalStatusPanelBuilder
         {
             if (font != null) text.font = font;
             text.fontSize = 22.0f;
-            text.color = text.name == "Placeholder" ? new Color(TEXT_COLOUR.r, TEXT_COLOUR.g, TEXT_COLOUR.b, 0.5f) : TEXT_COLOUR;
+            text.color = text.name == "Placeholder" ? FADED_COLOUR : TEXT_COLOUR;
             if (text.name == "Placeholder") text.text = "Name";
         }
 
@@ -161,7 +164,7 @@ public static class AnimalStatusPanelBuilder
         Image image = Undo.AddComponent<Image>(rect.gameObject);
         image.sprite = sprite;
         image.preserveAspect = true;
-        image.color = sprite != null ? TEXT_COLOUR : Color.white;
+        image.color = sprite != null ? FADED_COLOUR : Color.white;
 
         Button button = Undo.AddComponent<Button>(rect.gameObject);
         button.targetGraphic = image;

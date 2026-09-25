@@ -8,8 +8,9 @@ using UnityEngine.UI;
 //
 // Screen space rather than a world canvas: the text field stays crisp and takes keyboard focus the
 // usual way, the panel is the same size at every zoom, and terrain or the book can never cover it.
-// It follows the animal's projected position each frame, clamped to the screen and kept off the
-// inventory bar; the camera centres a focused animal, so it settles beside the middle of the screen.
+// It follows the animal each frame, a fixed gap beside the edge of its sprite as drawn on screen, so
+// a bigger animal pushes the panel out by just its extra size. Clamped to the screen and kept off
+// the inventory bar; the camera centres a focused animal, so it settles beside the middle.
 //
 // Lives on an always-active, full-screen, non-raycasting rect; only the panel child is shown and
 // hidden, so this keeps running and nothing is bound while its canvas is inactive.
@@ -27,11 +28,11 @@ public class AnimalStatusPanel : MonoBehaviour
     [SerializeField] private Sprite starOn;                 // optional: without them the star is tinted instead
     [SerializeField] private Sprite starOff;
     [SerializeField] private Color starOnColour = new Color(232.0f / 255.0f, 184.0f / 255.0f, 58.0f / 255.0f, 1.0f);   // #E8B83A
-    [SerializeField] private Color starOffColour = new Color(160.0f / 255.0f, 160.0f / 255.0f, 160.0f / 255.0f, 1.0f); // #A0A0A0
+    [SerializeField] private Color starOffColour = new Color(138.0f / 255.0f, 129.0f / 255.0f, 116.0f / 255.0f, 1.0f); // #8A8174, the compendium's faded ink
 
 
     [Header("Placement")]
-    [SerializeField] private Vector2 offset = new Vector2(48.0f, 24.0f);   // canvas units from the animal to the panel's pivot
+    [SerializeField] private float gap = 40.0f;                             // canvas units between the sprite's edge and the panel
     [SerializeField] private float margin = 12.0f;                          // canvas units kept clear at the screen edge
     [SerializeField] private RectTransform avoid;                           // the inventory bar, which the panel never covers
 
@@ -42,6 +43,8 @@ public class AnimalStatusPanel : MonoBehaviour
     private AnimalSelection selection;
 
     private readonly Vector3[] corners = new Vector3[4];
+
+    private SpriteRenderer boundSprite;
 
 
     private void Awake()
@@ -120,6 +123,7 @@ public class AnimalStatusPanel : MonoBehaviour
 
         bound = animal;
         bound.StatusChanged += Refresh;
+        boundSprite = animal.GetComponentInChildren<SpriteRenderer>(true);
 
         panel.gameObject.SetActive(true);
         Refresh();
@@ -140,6 +144,7 @@ public class AnimalStatusPanel : MonoBehaviour
 
         bound.StatusChanged -= Refresh;
         bound = null;
+        boundSprite = null;
     }
 
 
@@ -195,36 +200,81 @@ public class AnimalStatusPanel : MonoBehaviour
     // MARK: placement
 
 
-    // Beside the animal, on the right unless that runs off the screen, then clamped inside the
-    // screen and lifted clear of the inventory bar
+    // Beside the sprite, gap from its right edge unless that runs off the screen (then gap from its
+    // left), vertically centred on it, then clamped inside the screen and lifted clear of the
+    // inventory bar
     private void Place()
     {
         Camera viewCamera = Camera.main;
         if (viewCamera == null || root == null) return;
 
-        Vector3 screen = viewCamera.WorldToScreenPoint(bound.transform.position);
-
-        // an overlay canvas converts with no camera
-        Camera canvasCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
-
-        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(root, screen, canvasCamera, out Vector2 animal)) return;
+        if (!TryGetSpriteRect(viewCamera, out Rect sprite)) return;
 
         Rect area = root.rect;
         Vector2 size = panel.rect.size;
         Vector2 pivot = panel.pivot;
 
         // the panel's left edge when it sits to the right, and when it has to sit to the left
-        float left = animal.x + offset.x;
-        if (left + size.x > area.xMax - margin) left = animal.x - offset.x - size.x;
+        float left = sprite.xMax + gap;
+        if (left + size.x > area.xMax - margin) left = sprite.xMin - gap - size.x;
 
         left = Mathf.Clamp(left, area.xMin + margin, Mathf.Max(area.xMin + margin, area.xMax - margin - size.x));
 
-        float bottom = animal.y + offset.y - pivot.y * size.y;
+        float bottom = sprite.center.y - size.y * 0.5f;
         bottom = Mathf.Clamp(bottom, area.yMin + margin, Mathf.Max(area.yMin + margin, area.yMax - margin - size.y));
 
         bottom = KeepOffAvoid(left, bottom, size);
 
         panel.localPosition = new Vector3(left + pivot.x * size.x, bottom + pivot.y * size.y, 0.0f);
+    }
+
+
+    // The animal's sprite as drawn, in this rect's local space. Read from the sprite rather than the
+    // renderer's bounds, so a hidden animal (a burrowed worm) still has a size and the panel doesn't
+    // jump when it goes under. An animal with no sprite is a point at its transform
+    private bool TryGetSpriteRect(Camera viewCamera, out Rect rect)
+    {
+        rect = default;
+
+        // an overlay canvas converts with no camera
+        Camera canvasCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+
+        Vector2 min = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+        Vector2 max = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+
+        Sprite sprite = boundSprite != null ? boundSprite.sprite : null;
+        int count = sprite != null ? 4 : 1;
+
+        for (int i = 0; i < count; i++)
+        {
+            Vector3 world;
+
+            if (sprite != null)
+            {
+                Bounds local = sprite.bounds;
+                Vector3 corner = new Vector3((i & 1) == 0 ? local.min.x : local.max.x, (i & 2) == 0 ? local.min.y : local.max.y, 0.0f);
+
+                // flipX mirrors the drawing through the pivot
+                if (boundSprite.flipX) corner.x = -corner.x;
+
+                world = boundSprite.transform.TransformPoint(corner);
+            }
+            else
+            {
+                world = bound.transform.position;
+            }
+
+            Vector3 screen = viewCamera.WorldToScreenPoint(world);
+            if (screen.z <= 0.0f) return false;
+
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(root, screen, canvasCamera, out Vector2 local2)) return false;
+
+            min = Vector2.Min(min, local2);
+            max = Vector2.Max(max, local2);
+        }
+
+        rect = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+        return true;
     }
 
 
