@@ -120,6 +120,25 @@ public class AnimalController : MonoBehaviour
     }
 
 
+    // MARK: happiness
+
+
+    private static readonly string[] NO_TIPS = new string[0];
+
+
+    // 0 miserable .. 1 content, worked out live from the world around it, so nothing is saved. The
+    // status panel reads it a few times a second while open. An animal that doesn't say is content
+    public virtual float Happiness { get { return 1.0f; } }
+
+
+    // What is bothering it, one line each, stated as problems rather than fixes: the player finds
+    // the fix. Empty when nothing is. Read alongside Happiness
+    public virtual string[] GetHappinessTips()
+    {
+        return NO_TIPS;
+    }
+
+
     // MARK: reactions
 
 

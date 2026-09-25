@@ -1,11 +1,14 @@
+using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 
-// The focused animal's status panel: its name (renamable) and its star, hovering beside it on the
-// screen space canvas. Opens and closes with AnimalSelection's focus.
+// The focused animal's status panel: its name (renamable), its star, how happy it is and what is
+// bothering it, hovering beside it on the screen space canvas. Opens and closes with AnimalSelection's
+// focus. Happiness and tips are read from the animal a few times a second while open; the tip lines
+// are pooled, only rebuilt when the tips change, and the panel's layout shrinks to fit them.
 //
 // Screen space rather than a world canvas: the text field stays crisp and takes keyboard focus the
 // usual way, the panel is the same size at every zoom, and terrain or the book can never cover it.
@@ -31,6 +34,13 @@ public class AnimalStatusPanel : MonoBehaviour
     [SerializeField] private Button starButton;
     [SerializeField] private Image starImage;
     [SerializeField] private Button closeButton;
+    [SerializeField] private HappinessMeter happinessMeter;
+    [SerializeField] private RectTransform tipsContainer;
+    [SerializeField] private TMP_Text tipTemplate;          // an inactive line in the container, cloned per tip
+
+
+    [Header("Happiness")]
+    [SerializeField] private float pollInterval = 0.25f;    // seconds between reads of the animal, unscaled
 
 
     [Header("Star")]
@@ -115,6 +125,11 @@ public class AnimalStatusPanel : MonoBehaviour
 
     private Transform listener;
 
+    // happiness
+    private float pollTimer;
+    private readonly List<TMP_Text> tipLines = new List<TMP_Text>();
+    private string[] shownTips = new string[0];
+
 
     private void Awake()
     {
@@ -150,6 +165,14 @@ public class AnimalStatusPanel : MonoBehaviour
             closeButton.onClick.AddListener(OnCloseClicked);
             GetOrAddFeel(closeButton.gameObject);
         }
+
+        if (happinessMeter == null) Debug.LogWarning("AnimalStatusPanel: no happinessMeter, so happiness is not shown", this);
+        if (tipsContainer == null || tipTemplate == null) Debug.LogWarning("AnimalStatusPanel: no tipsContainer or tipTemplate, so happiness tips are not shown", this);
+
+        if (tipTemplate != null) tipTemplate.gameObject.SetActive(false);
+
+        // matches shownTips being empty, so a content animal never shows an empty tips block
+        if (tipsContainer != null) tipsContainer.gameObject.SetActive(false);
 
         if (panel != null) panel.gameObject.SetActive(false);
     }
@@ -197,7 +220,18 @@ public class AnimalStatusPanel : MonoBehaviour
     {
         if (panel == null || !panel.gameObject.activeSelf) return;
 
-        if (bound != null) Place();
+        if (bound != null)
+        {
+            pollTimer -= Time.unscaledDeltaTime;
+
+            if (pollTimer <= 0.0f)
+            {
+                pollTimer = pollInterval;
+                ReadHappiness(false);
+            }
+
+            Place();
+        }
 
         panel.localScale = new Vector3(presence, presence, 1.0f);
     }
@@ -225,6 +259,10 @@ public class AnimalStatusPanel : MonoBehaviour
         boundSprite = animal.GetComponentInChildren<SpriteRenderer>(true);
 
         Refresh();
+
+        // the bar fills up from empty as it opens, and the tips are in place before it lays out
+        ReadHappiness(true);
+        pollTimer = pollInterval;
 
         if (switching) Bounce();
         else Open();
@@ -260,6 +298,70 @@ public class AnimalStatusPanel : MonoBehaviour
 
             starImage.color = on ? starOnColour : starOffColour;
         }
+    }
+
+
+    // MARK: happiness
+
+
+    private void ReadHappiness(bool fromEmpty)
+    {
+        if (bound == null) return;
+
+        if (happinessMeter != null)
+        {
+            float happiness = bound.Happiness;
+
+            if (fromEmpty) happinessMeter.SetValue(happiness, true, 0.0f);
+            else if (!Mathf.Approximately(happiness, happinessMeter.Value)) happinessMeter.SetValue(happiness, true);
+        }
+
+        ShowTips(bound.GetHappinessTips());
+    }
+
+
+    // Only touches the lines when the tips differ, so the layout isn't rebuilt four times a second.
+    // With none, the container hides and the panel shrinks to the header and bar
+    private void ShowTips(string[] tips)
+    {
+        if (tipsContainer == null || tipTemplate == null) return;
+        if (tips == null) tips = new string[0];
+
+        if (SameTips(tips)) return;
+
+        shownTips = tips;
+
+        while (tipLines.Count < tips.Length)
+        {
+            TMP_Text line = Instantiate(tipTemplate, tipsContainer);
+            line.name = "Tip";
+            tipLines.Add(line);
+        }
+
+        for (int i = 0; i < tipLines.Count; i++)
+        {
+            bool used = i < tips.Length;
+
+            tipLines[i].gameObject.SetActive(used);
+            if (used) tipLines[i].text = tips[i];
+        }
+
+        tipsContainer.gameObject.SetActive(tips.Length > 0);
+
+        if (panel != null) LayoutRebuilder.ForceRebuildLayoutImmediate(panel);
+    }
+
+
+    private bool SameTips(string[] tips)
+    {
+        if (tips.Length != shownTips.Length) return false;
+
+        for (int i = 0; i < tips.Length; i++)
+        {
+            if (tips[i] != shownTips[i]) return false;
+        }
+
+        return true;
     }
 
 

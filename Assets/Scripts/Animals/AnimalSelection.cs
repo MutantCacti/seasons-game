@@ -19,6 +19,10 @@ using UnityEngine;
 // Feel: the animal under the pointer grows a little and shows the hand cursor, so animals read as
 // clickable before they are clicked (the same rect test, every frame; there are only a handful). A
 // focused animal hops, the ring pops in under it and shrinks away when focus ends.
+//
+// It also keeps every starred animal glowing (AnimalGlow), bursting when the star is switched on.
+// The glow is drawn even for a hidden animal, and counts as something it draws, so a starred worm
+// can be clicked while it is burrowed and an unstarred one can't.
 public class AnimalSelection : MonoBehaviour
 {
     private static AnimalSelection instance;
@@ -50,6 +54,18 @@ public class AnimalSelection : MonoBehaviour
     [SerializeField] private SoundObject focusSound;         // optional, played at the animal as it is focused
 
 
+    [Header("Highlight Glow")]
+    [SerializeField] private Shader glowShader;              // Seasons/SpriteGlow; referenced here so builds include it
+    [SerializeField] private Color glowColour = new Color(240.0f / 255.0f, 205.0f / 255.0f, 110.0f / 255.0f, 1.0f);   // #F0CD6E, the star's gold
+    [SerializeField] private float glowRadius = 0.15f;       // world units the halo reaches past the sprite
+    [SerializeField] private float glowWidth = 0.04f;        // world units the bright core pulses out to
+    [SerializeField] private float glowIntensity = 0.8f;
+    [SerializeField] private float glowPulseSpeed = 8.0f;    // as the book's and the tabs' glows, so everything pulses together
+    [SerializeField] [Range(0.0f, 1.0f)] private float glowHiddenFill = 0.55f;
+    [SerializeField] private float glowBurstWidth = 0.12f;   // world units the core bursts out by when starred
+    [SerializeField] private float glowBurstDuration = 0.6f;
+
+
     private AnimalController focused;
     private float markerWidth;      // world units across, measured from the focused animal when focus lands
     private Transform markerTransform;
@@ -74,6 +90,11 @@ public class AnimalSelection : MonoBehaviour
 
     private AnimalController hovered;
     private bool ownsCursor;
+
+    // the highlight each animal had when last looked at, so only a change made in play bursts
+    private readonly Dictionary<AnimalController, bool> knownHighlights = new Dictionary<AnimalController, bool>();
+    private readonly List<AnimalController> scratchForget = new List<AnimalController>();
+    private bool warnedAboutGlowShader;
 
 
     public AnimalController Focused { get { return focused; } }
@@ -146,6 +167,7 @@ public class AnimalSelection : MonoBehaviour
         // Unity-null: the animal was destroyed under us
         if (focused == null && !ReferenceEquals(focused, null)) Clear();
 
+        UpdateGlows();
         UpdateHover();
         UpdateMarker();
     }
@@ -229,6 +251,90 @@ public class AnimalSelection : MonoBehaviour
         if (subscribedBook != null) subscribedBook.Opened -= OnBookOpened;
         subscribedBook = book;
         if (subscribedBook != null) subscribedBook.Opened += OnBookOpened;
+    }
+
+
+    // MARK: glows
+
+
+    // A glow for every starred animal, off for every other. First sight of an animal (a load) shows
+    // its glow quietly; a change after that is the player starring it, which bursts
+    private void UpdateGlows()
+    {
+        AnimalManager animals = AnimalManager.Instance;
+        if (animals == null) return;
+
+        for (int i = 0; i < animals.LiveCount; i++)
+        {
+            AnimalController animal = animals.LiveAt(i);
+            if (animal == null) continue;
+
+            bool on = animal.Highlighted;
+            bool seen = knownHighlights.TryGetValue(animal, out bool was);
+
+            if (seen && was == on) continue;
+
+            knownHighlights[animal] = on;
+
+            AnimalGlow glow = animal.GetComponent<AnimalGlow>();
+
+            if (!on)
+            {
+                if (glow != null) glow.Hide();
+                continue;
+            }
+
+            if (glow == null) glow = AddGlow(animal);
+            if (glow != null) glow.Show(seen);
+        }
+
+        // animals that have gone away
+        if (knownHighlights.Count <= animals.LiveCount) return;
+
+        scratchForget.Clear();
+        foreach (AnimalController known in knownHighlights.Keys)
+        {
+            if (known == null) scratchForget.Add(known);
+        }
+
+        for (int i = 0; i < scratchForget.Count; i++) knownHighlights.Remove(scratchForget[i]);
+    }
+
+
+    private AnimalGlow AddGlow(AnimalController animal)
+    {
+        Shader shader = glowShader != null ? glowShader : Shader.Find("Seasons/SpriteGlow");
+
+        if (shader == null)
+        {
+            if (!warnedAboutGlowShader)
+            {
+                warnedAboutGlowShader = true;
+                Debug.LogError("AnimalSelection: no glowShader, so starred animals cannot glow", this);
+            }
+
+            return null;
+        }
+
+        AnimalGlow glow = animal.gameObject.AddComponent<AnimalGlow>();
+
+        AnimalGlow.Settings settings = new AnimalGlow.Settings
+        {
+            shader = shader,
+            colour = glowColour,
+            radius = glowRadius,
+            width = glowWidth,
+            intensity = glowIntensity,
+            pulseSpeed = glowPulseSpeed,
+            hiddenFill = glowHiddenFill,
+            flareWidth = glowBurstWidth,
+            flareDuration = glowBurstDuration,
+        };
+
+        if (glow.Init(settings)) return glow;
+
+        Destroy(glow);
+        return null;
     }
 
 
@@ -372,8 +478,8 @@ public class AnimalSelection : MonoBehaviour
     }
 
 
-    // The screen rect of everything the animal draws right now. An animal drawing nothing (a burrowed
-    // worm) has no rect and can't be clicked
+    // The screen rect of everything the animal draws right now, its glow included. An animal drawing
+    // nothing (an unstarred burrowed worm) has no rect and can't be clicked
     private bool TryGetScreenRect(AnimalController animal, out Rect rect)
     {
         rect = default;

@@ -79,6 +79,15 @@ public class WormController : AnimalController
     [SerializeField] private Sprite transitionSprite;   // shown going into and coming out of a burrow
 
 
+    [Header("Happiness")]
+    [SerializeField] [Min(1)] private int happinessRadius = 2;          // cells looked at around it, each way
+    [SerializeField] [Range(0.0f, 1.0f)] private float baseHappiness = 0.6f;   // worms are almost always pretty happy
+    [SerializeField] private string hardSoilTip = "The soil here is too hard to wriggle through";
+    [SerializeField] private string noVegetationTip = "Missing vegetation";
+    [SerializeField] private string fewPlantsTip = "Missing the earthy smell of decomposing plants";
+    [SerializeField] private string dryTip = "The ground is not moist enough";
+
+
     [Header("Sound")]
     [SerializeField] private SoundObject crawlSound;
     [SerializeField] private Vector2 crawlSoundInterval = new Vector2(4.0f, 9.0f);
@@ -528,6 +537,81 @@ public class WormController : AnimalController
             x + Random.Range(CELL_MARGIN, 1.0f - CELL_MARGIN),
             terrain.GetLevelHeight(onLevel),
             z + Random.Range(CELL_MARGIN, 1.0f - CELL_MARGIN));
+    }
+
+
+    // MARK: happiness
+
+
+    // base plus the rest for the share of preferred tiles around it: always fairly happy, happiest
+    // somewhere lush
+    public override float Happiness
+    {
+        get
+        {
+            if (terrain == null) return 1.0f;
+
+            SurveyNeighbourhood(out float share, out int _);
+            return Mathf.Clamp01(baseHappiness + (1.0f - baseHappiness) * share);
+        }
+    }
+
+
+    public override string[] GetHappinessTips()
+    {
+        if (terrain == null) return base.GetHappinessTips();
+
+        SurveyNeighbourhood(out float share, out int closePreferred);
+
+        bool hardSoil = !IsPreferred(TileUnder(feet));
+        bool noVegetation = share <= 0.0f;
+        bool fewPlants = !noVegetation && share < 0.5f;
+        bool dry = !noVegetation && closePreferred < 4;
+
+        int count = (hardSoil ? 1 : 0) + (noVegetation ? 1 : 0) + (fewPlants ? 1 : 0) + (dry ? 1 : 0);
+
+        string[] tips = new string[count];
+        int next = 0;
+
+        if (hardSoil) tips[next++] = hardSoilTip;
+        if (noVegetation) tips[next++] = noVegetationTip;
+        if (fewPlants) tips[next++] = fewPlantsTip;
+        if (dry) tips[next++] = dryTip;
+
+        return tips;
+    }
+
+
+    // The share of columns within happinessRadius whose top is a preferred tile, and how many of the
+    // 8 right around it are. A (2r+1)^2 look, only while its panel is open and asking
+    private void SurveyNeighbourhood(out float share, out int closePreferred)
+    {
+        int x = Mathf.FloorToInt(feet.x);
+        int z = Mathf.FloorToInt(feet.z);
+
+        int total = 0;
+        int preferred = 0;
+        closePreferred = 0;
+
+        for (int dz = -happinessRadius; dz <= happinessRadius; dz++)
+        {
+            for (int dx = -happinessRadius; dx <= happinessRadius; dx++)
+            {
+                int top = terrain.GetTopLevel(x + dx, z + dz);
+                if (top < 0) continue;
+
+                total++;
+
+                if (!IsPreferred(terrain.GetTile(new Vector3Int(x + dx, top, z + dz)))) continue;
+
+                preferred++;
+
+                bool close = Mathf.Abs(dx) <= 1 && Mathf.Abs(dz) <= 1 && (dx != 0 || dz != 0);
+                if (close) closePreferred++;
+            }
+        }
+
+        share = total > 0 ? (float)preferred / total : 0.0f;
     }
 
 

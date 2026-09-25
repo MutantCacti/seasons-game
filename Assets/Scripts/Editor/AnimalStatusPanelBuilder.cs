@@ -19,6 +19,7 @@ public static class AnimalStatusPanelBuilder
     private const string PANEL_SPRITE = "Assets/Art/UI/outline.png";
     private const string CLOSE_SPRITE = "Assets/Art/UI/close-icon.png";
     private const string FONT = "Assets/TextMesh Pro/Resources/Fonts & Materials/Nunito SDF.asset";
+    private const string TIP_FONT = "Assets/TextMesh Pro/Resources/Fonts & Materials/Nunito-Italic SDF.asset";
 
     private const float PANEL_WIDTH = 320.0f;
 
@@ -53,12 +54,18 @@ public static class AnimalStatusPanelBuilder
         Button star = BuildIconButton(header, "Star", null, 32.0f);
         Button close = BuildIconButton(header, "Close", LoadSprite(CLOSE_SPRITE), 24.0f);
 
+        HappinessMeter meter = BuildMeter(panel);
+        RectTransform tips = BuildTips(panel, out TMP_Text tipTemplate);
+
         SerializedObject serialized = new SerializedObject(component);
         SetIfEmpty(serialized, "panel", panel);
         SetIfEmpty(serialized, "nameField", nameField);
         SetIfEmpty(serialized, "starButton", star);
         SetIfEmpty(serialized, "starImage", star.GetComponent<Image>());
         SetIfEmpty(serialized, "closeButton", close);
+        SetIfEmpty(serialized, "happinessMeter", meter);
+        SetIfEmpty(serialized, "tipsContainer", tips);
+        SetIfEmpty(serialized, "tipTemplate", tipTemplate);
         serialized.ApplyModifiedProperties();
 
         EditorSceneManager.MarkSceneDirty(root.gameObject.scene);
@@ -174,6 +181,91 @@ public static class AnimalStatusPanelBuilder
         element.preferredHeight = size;
 
         return button;
+    }
+
+
+    // A bar: a darker paper background, and the fill the meter draws its gradient into, inset a little.
+    // Swap the background for the real art and add a frame image on top if it has one
+    private static HappinessMeter BuildMeter(RectTransform panel)
+    {
+        RectTransform meterRect = FindOrCreate(panel, "Happiness", out bool created);
+        HappinessMeter meter = meterRect.GetComponent<HappinessMeter>();
+        if (!created && meter != null) return meter;
+
+        LayoutElement element = Undo.AddComponent<LayoutElement>(meterRect.gameObject);
+        element.preferredHeight = 16.0f;
+        element.minHeight = 16.0f;
+
+        RectTransform background = FindOrCreate(meterRect, "Background");
+        Stretch(background);
+
+        Image backgroundImage = Undo.AddComponent<Image>(background.gameObject);
+        backgroundImage.sprite = LoadSprite(PANEL_SPRITE);
+        backgroundImage.type = Image.Type.Sliced;
+        backgroundImage.pixelsPerUnitMultiplier = 6.0f;   // the panel art's 48px corners, shrunk to suit a thin bar
+        backgroundImage.color = FIELD_COLOUR;
+        backgroundImage.raycastTarget = false;
+
+        RectTransform fill = FindOrCreate(meterRect, "Fill");
+        Stretch(fill);
+        fill.offsetMin = new Vector2(3.0f, 3.0f);
+        fill.offsetMax = new Vector2(-3.0f, -3.0f);
+
+        Image fillImage = Undo.AddComponent<Image>(fill.gameObject);
+        fillImage.raycastTarget = false;
+
+        meter = Undo.AddComponent<HappinessMeter>(meterRect.gameObject);
+
+        SerializedObject serialized = new SerializedObject(meter);
+        serialized.FindProperty("fill").objectReferenceValue = fillImage;
+        serialized.ApplyModifiedProperties();
+
+        return meter;
+    }
+
+
+    // a column of one line tips, with an inactive template line the panel clones
+    private static RectTransform BuildTips(RectTransform panel, out TMP_Text template)
+    {
+        RectTransform tips = FindOrCreate(panel, "Tips", out bool created);
+
+        if (created)
+        {
+            VerticalLayoutGroup layout = Undo.AddComponent<VerticalLayoutGroup>(tips.gameObject);
+            layout.spacing = 2.0f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+        }
+
+        Transform existing = tips.Find("Tip");
+
+        if (existing != null)
+        {
+            template = existing.GetComponent<TMP_Text>();
+            return tips;
+        }
+
+        GameObject line = new GameObject("Tip", typeof(RectTransform));
+        Undo.RegisterCreatedObjectUndo(line, "Build Animal Status Panel");
+        line.transform.SetParent(tips, false);
+
+        TextMeshProUGUI text = line.AddComponent<TextMeshProUGUI>();
+        TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(TIP_FONT);
+        if (font != null) text.font = font;
+        text.fontSize = 18.0f;
+        text.color = FADED_COLOUR;
+        text.text = "What is bothering it";
+        // a long tip wraps rather than being cut off; each is still one item in the list
+        text.textWrappingMode = TextWrappingModes.Normal;
+        text.overflowMode = TextOverflowModes.Overflow;
+        text.raycastTarget = false;
+
+        line.SetActive(false);
+
+        template = text;
+        return tips;
     }
 
 
