@@ -180,15 +180,42 @@ public class PuzzleTabManager : CompendiumTabManager
     // MARK: requested page
 
 
-    // The book opens on the first soft locked puzzle, in registry order
+    // One shot: the next open goes to this puzzle's page instead, e.g. the one whose fail ping was
+    // clicked. Static because the ping asks before the book's canvas has ever been bound.
+    private static string requestedPuzzleId;
+
+
+    public static void RequestPuzzle(string puzzleId)
+    {
+        requestedPuzzleId = puzzleId;
+    }
+
+
+    // The book opens on the requested puzzle if it is still soft locked, else on the first soft locked
+    // puzzle, in registry order
     public override bool TryGetRequestedPage(out int pageIndex)
     {
         pageIndex = 0;
+
+        string requested = requestedPuzzleId;
+        requestedPuzzleId = null;
 
         PuzzleManager manager = PuzzleManager.Instance;
         if (manager == null || !manager.IsLoaded) return false;
 
         int count = Count;
+
+        if (!string.IsNullOrEmpty(requested) && manager.Registry != null && manager.Registry.TryGetById(requested, out Puzzle wanted)
+            && manager.IsSoftLocked(wanted))
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (!TryGetPuzzle(i, out Puzzle puzzle) || puzzle != wanted) continue;
+
+                pageIndex = i / RowsPerPage;
+                return true;
+            }
+        }
 
         for (int i = 0; i < count; i++)
         {

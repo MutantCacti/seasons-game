@@ -606,7 +606,15 @@ public class PuzzleManager : MonoBehaviour
             // a puzzle completed during the grace period was never stuck
             if (!IsActive(puzzle)) continue;
             if (IsPending(puzzle)) continue;
-            if (!ledger.IsExhausted(puzzle)) continue;
+
+            // Not stuck, so any saved fail notification is left over from a save that disagrees with
+            // the ledger. A fail ping cannot be dismissed, so without this it would stay forever.
+            if (!ledger.IsExhausted(puzzle))
+            {
+                if (NotificationManager.Instance != null) NotificationManager.Instance.Withdraw(NotificationType.FailPuzzle, puzzle);
+                continue;
+            }
+
             if (!softLocked.Add(puzzle)) continue;
 
             Debug.LogWarning($"PuzzleManager: '{puzzle.name}' has spent every ingredient it was given " +
