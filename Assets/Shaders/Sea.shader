@@ -2,7 +2,8 @@
 // the Style dropdown, so swapping looks is dragging a different material onto the renderer:
 //   Tidepool  flat toon bands by water depth, breathing contact foam, twinkling glints
 //   Glass     clear shallows: the seafloor refracted through a whole-texel wobble, a stepped tint by
-//             depth, a sky-coloured sheen, and the same contact foam
+//             depth, a sky-coloured sheen that mirrors the world when SeaReflection is on, and the
+//             same contact foam
 // Everything snaps to the terrain's 1/32 world grid so the water steps like the pixel art. Night,
 // the sky and the skirt's floor are globals pushed by SeaLevel, so no material needs wiring.
 //
@@ -62,6 +63,10 @@ Shader "Seasons/Sea"
         _FresnelStrength ("Fresnel Strength", Range(0, 1)) = 1
         _FresnelPower ("Fresnel Power", Float) = 2
 
+        [Header(Reflection)]
+        _ReflectionStrength ("Reflection Strength", Range(0, 1)) = 0.6
+        _ReflectionBase ("Reflection Base", Range(0, 1)) = 0.25
+
         [Header(Skirt)]
         _SkirtLip ("Skirt Lip", Float) = 0.07
         _SkirtBands ("Skirt Bands", Float) = 4
@@ -114,6 +119,8 @@ Shader "Seasons/Sea"
         half _TintBase;
         half _FresnelStrength;
         float _FresnelPower;
+        half _ReflectionStrength;
+        half _ReflectionBase;
         float _SkirtLip;
         float _SkirtBands;
         float _SkirtBandHeight;
@@ -125,6 +132,12 @@ Shader "Seasons/Sea"
         float _SeaDaylight;     // 0 night .. 1 noon
         float4 _SeaSkyColour;   // the camera's clear colour, as drawn (already in the active colour space)
         float _SeaFloorY;       // world y the skirt drops to
+
+        // set by SeaReflection: the world mirrored in the sea, alpha where the mirror saw anything.
+        // On only for the camera it was rendered from
+        TEXTURE2D(_SeaReflectionTex);
+        SAMPLER(sampler_SeaReflectionTex);
+        float _SeaReflectionOn;
         ENDHLSL
 
         Pass
@@ -269,6 +282,30 @@ Shader "Seasons/Sea"
             }
 
 
+            // The sky sheen and the mirror are one reflection. Where the mirror saw nothing it reflects
+            // the sky exactly as the sheen always has; where it saw something that shows instead, and
+            // as strongly as a fresnel with a base reflectance, so it is still faintly there looking
+            // straight down. Strength 0 (or no SeaReflection) is the plain sky sheen.
+            // The uv is the snapped, wobbled point's, so the mirror steps and wobbles like the floor
+            half3 MirrorSheen(half3 colour, half fresnel, float2 uv)
+            {
+                half3 reflected = _SeaSkyColour.rgb;
+                half weight = fresnel;
+
+                if (_SeaReflectionOn > 0.5)
+                {
+                    // rendered with its projection flipped vertically, see SeaReflection.Place
+                    half4 mirror = SAMPLE_TEXTURE2D(_SeaReflectionTex, sampler_SeaReflectionTex, float2(uv.x, 1.0 - uv.y));
+                    half seen = saturate(mirror.a) * _ReflectionStrength;
+
+                    reflected = lerp(reflected, mirror.rgb, seen);
+                    weight = lerp(fresnel, _ReflectionBase + (1.0 - _ReflectionBase) * fresnel, seen);
+                }
+
+                return lerp(colour, reflected, weight);
+            }
+
+
             // opaque over the camera's opaque copy: the water composites the floor itself
             half4 Glass(float3 snappedWS)
             {
@@ -281,12 +318,13 @@ Shader "Seasons/Sea"
                 float time = _Time.y * _WobbleSpeed;
                 float2 wobble = float2(sin(snappedWS.z * _WobbleFrequency + time),
                                        cos(snappedWS.x * _WobbleFrequency + time * 0.8));
-                float3 refractedWS = snappedWS;
-                refractedWS.xz += round(wobble * _RefractionPixels) / _PixelsPerUnit;
+                float3 wobbledWS = snappedWS;
+                wobbledWS.xz += round(wobble * _RefractionPixels) / _PixelsPerUnit;
+                float2 wobbledUV = ScreenUVOf(wobbledWS);
 
                 // a sample that lands on something standing out of the water (a shore, an item) would
                 // drag it into the water, so fall back to looking straight down
-                float2 uv = ScreenUVOf(refractedWS);
+                float2 uv = wobbledUV;
                 float floorY = SceneWorldY(uv);
                 if (floorY > snappedWS.y)
                 {
@@ -302,9 +340,10 @@ Shader "Seasons/Sea"
                 half3 tint = ApplyNight(lerp(_ShallowColour.rgb, _MidColour.rgb, absorb));
                 half3 colour = lerp(SampleSceneColor(uv), tint, _TintBase + absorb * (1.0 - _TintBase));
 
-                // the sky is a flat clear colour, so reflecting it is just that colour
+                // one reflection: the flat sky colour, or the world where the mirror saw it
                 half facing = saturate(GetWorldSpaceNormalizeViewDir(snappedWS).y);
-                colour = lerp(colour, _SeaSkyColour.rgb, _FresnelStrength * pow(1.0 - facing, _FresnelPower));
+                half fresnel = _FresnelStrength * pow(1.0 - facing, _FresnelPower);
+                colour = MirrorSheen(colour, fresnel, wobbledUV);
 
                 colour = ApplyGlints(colour, snappedWS);
                 if (InContactFoam(signedDepth)) colour = FoamNow();
