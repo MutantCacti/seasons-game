@@ -49,6 +49,9 @@ public class CompendiumUIManager : MonoBehaviour
     [Header("Tabs")]
     [SerializeField] private CompendiumTabManager[] tabs;
 
+    // multiplied into every tab but the current one, so they read as tucked behind it
+    [SerializeField] private Color behindTabTint = new Color(0.72f, 0.72f, 0.72f, 1.0f);
+
     [Header("Buttons")]
     [SerializeField] private Button turnPrevious;
     [SerializeField] private Button turnNext;
@@ -75,6 +78,9 @@ public class CompendiumUIManager : MonoBehaviour
     private bool turning;
     private Coroutine openRoutine;
     private readonly List<Action> tabChangedHandlers = new List<Action>();
+
+    // each tab graphic's colour as authored, so the tint multiplies it rather than replacing it
+    private Color[] tabRestColours;
 
 
     // Where the read is heading, not whether the book is still moving: every SetRead on the book is
@@ -165,6 +171,7 @@ public class CompendiumUIManager : MonoBehaviour
                 tabChangedHandlers.Add(handler);
             }
 
+            CaptureTabRestColours();
             ApplyTabSiblingOrder();
         }
 
@@ -856,6 +863,43 @@ public class CompendiumUIManager : MonoBehaviour
         {
             selected.TabButton.transform.SetAsLastSibling();
         }
+
+        ApplyTabTints();
+    }
+
+
+    // Only the button's own graphic: its label keeps full contrast, and the glow child is a separate
+    // Graphic with its own colour. The button's colour tint transition goes through the CanvasRenderer,
+    // so it still multiplies on top of this for hover and press.
+    private void ApplyTabTints()
+    {
+        if (tabs == null || tabRestColours == null) return;
+
+        for (int i = 0; i < tabs.Length && i < tabRestColours.Length; i++)
+        {
+            Graphic graphic = TabGraphic(tabs[i]);
+            if (graphic == null) continue;
+
+            graphic.color = i == currentTabIndex ? tabRestColours[i] : tabRestColours[i] * behindTabTint;
+        }
+    }
+
+
+    private void CaptureTabRestColours()
+    {
+        tabRestColours = new Color[tabs.Length];
+
+        for (int i = 0; i < tabs.Length; i++)
+        {
+            Graphic graphic = TabGraphic(tabs[i]);
+            tabRestColours[i] = graphic != null ? graphic.color : Color.white;
+        }
+    }
+
+
+    private static Graphic TabGraphic(CompendiumTabManager tab)
+    {
+        return tab != null && tab.TabButton != null ? tab.TabButton.targetGraphic : null;
     }
 
 
