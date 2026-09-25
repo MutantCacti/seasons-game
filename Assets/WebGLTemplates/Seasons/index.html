@@ -15,7 +15,9 @@
     </style>
   </head>
   <body>
-    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <!-- width/height only give itch's "auto-detect size" something to read: the CSS above still
+         stretches the canvas to fill the frame, and Unity resizes its render to match -->
+    <canvas id="unity-canvas" width={{{ WIDTH }}} height={{{ HEIGHT }}} tabindex="-1"></canvas>
     <div id="loading"><div id="loading-fill"></div></div>
     <script src="Build/{{{ LOADER_FILENAME }}}"></script>
     <script>
