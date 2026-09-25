@@ -62,8 +62,12 @@ public class WormController : AnimalController
     [Header("Timing")]
     [SerializeField] private Vector2 crawlDuration = new Vector2(10.0f, 25.0f);
     [SerializeField] private Vector2 burrowDuration = new Vector2(4.0f, 10.0f);
-    [SerializeField] private float transitionDuration = 0.4f;
     [SerializeField] private Vector2 flipInterval = new Vector2(0.25f, 0.7f);
+
+    // going into and coming out of a burrow, each: the transition sprite mirrors left to right every
+    // digFlipInterval, faster than the crawl wiggle, so it reads as digging
+    [SerializeField] private float digDuration = 1.2f;
+    [SerializeField] private Vector2 digFlipInterval = new Vector2(0.12f, 0.2f);
 
 
     [Header("Look")]
@@ -86,7 +90,7 @@ public class WormController : AnimalController
 
     private WormState state;
     private float stateTimer;       // counts down in every state but Burrowed
-    private float flipTimer;
+    private float flipTimer;        // the crawl wiggle, or the dig flips while going down or coming up
     private float soundTimer;
 
     // crawling
@@ -209,7 +213,8 @@ public class WormController : AnimalController
     private void BeginEnterBurrow()
     {
         state = WormState.EnterBurrow;
-        stateTimer = transitionDuration;
+        stateTimer = digDuration;
+        flipTimer = RandomIn(digFlipInterval);
 
         if (transitionSprite != null) SetSprite(transitionSprite);
         PlaySound(burrowSound);
@@ -218,6 +223,8 @@ public class WormController : AnimalController
 
     private void UpdateEnterBurrow(float dt)
     {
+        Dig(dt);
+
         stateTimer -= dt;
         if (stateTimer > 0.0f) return;
 
@@ -244,7 +251,8 @@ public class WormController : AnimalController
         level = LevelAt(burrowTo);
 
         state = WormState.LeaveBurrow;
-        stateTimer = transitionDuration;
+        stateTimer = digDuration;
+        flipTimer = RandomIn(digFlipInterval);
 
         if (transitionSprite != null) SetSprite(transitionSprite);
         SetVisible(true);
@@ -254,8 +262,21 @@ public class WormController : AnimalController
 
     private void UpdateLeaveBurrow(float dt)
     {
+        Dig(dt);
+
         stateTimer -= dt;
         if (stateTimer <= 0.0f) BeginCrawling();
+    }
+
+
+    // mirrored back and forth, a few times, while the worm goes into or comes out of the ground
+    private void Dig(float dt)
+    {
+        flipTimer -= dt;
+        if (flipTimer > 0.0f) return;
+
+        flipTimer = RandomIn(digFlipInterval);
+        if (spriteRenderer != null) spriteRenderer.flipX = !spriteRenderer.flipX;
     }
 
 
