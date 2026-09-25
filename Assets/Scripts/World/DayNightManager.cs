@@ -25,6 +25,14 @@ public class DayNightManager : MonoBehaviour
     [SerializeField] private float nightDuration = 2f;
 
 
+    // the camera clears to a solid colour, which follows the sun's light from night to day. the
+    // defaults match the clock's dial, so the sky and the clock agree
+    [Header("Sky")]
+    [SerializeField] private Camera skyCamera;  // falls back to Camera.main
+    [SerializeField] private Color skyDayColour = new Color(169.0f / 255.0f, 207.0f / 255.0f, 220.0f / 255.0f, 1.0f);    // #A9CFDC
+    [SerializeField] private Color skyNightColour = new Color(60.0f / 255.0f, 65.0f / 255.0f, 112.0f / 255.0f, 1.0f);    // #3C4170
+
+
     // MARK: public time API
 
 
@@ -96,6 +104,9 @@ public class DayNightManager : MonoBehaviour
             enabled = false;
             return;
         }
+
+        if (skyCamera == null) skyCamera = Camera.main;
+        if (skyCamera == null) Debug.LogWarning("DayNightManager: no sky camera and no Camera.main, so the sky colour stays as it is", this);
 
         ResolveWorld();
 
@@ -214,12 +225,14 @@ public class DayNightManager : MonoBehaviour
                 float e = EaseOutSine(dayProgress / 0.5f);
                 sunTransform.localEulerAngles = LerpEuler(sunRiseRotation, sunNoonRotation, e);
                 sunLight.intensity = Mathf.Lerp(nightIntensity, noonIntensity, e);
+                ApplySky(e);
             }
             else
             {
                 float e = EaseInSine((dayProgress - 0.5f) / 0.5f);
                 sunTransform.localEulerAngles = LerpEuler(sunNoonRotation, sunSetRotation, e);
                 sunLight.intensity = Mathf.Lerp(noonIntensity, nightIntensity, e);
+                ApplySky(1f - e);
             }
         }
         else
@@ -227,7 +240,17 @@ public class DayNightManager : MonoBehaviour
             float e = EaseInOutQuad((cycleTime - dayDuration) / nightDuration);
             sunTransform.localEulerAngles = LerpEuler(sunSetRotation, sunRiseRotation, e);
             sunLight.intensity = nightIntensity;
+            ApplySky(0f);
         }
+    }
+
+
+    // daylight is 0 at night and 1 at noon, on the same eased curve as the sun's intensity
+    private void ApplySky(float daylight)
+    {
+        if (skyCamera == null) return;
+
+        skyCamera.backgroundColor = Color.Lerp(skyNightColour, skyDayColour, daylight);
     }
 
 
