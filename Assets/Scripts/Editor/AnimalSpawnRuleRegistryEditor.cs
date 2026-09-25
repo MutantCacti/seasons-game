@@ -36,6 +36,12 @@ public class AnimalSpawnRuleRegistryEditor : Editor
 
     internal static void GatherAllRules(AnimalSpawnRuleRegistry registry)
     {
+        if (registry == null)
+        {
+            Debug.LogError("AnimalSpawnRuleRegistryEditor: no registry to gather into, so nothing was gathered");
+            return;
+        }
+
         List<AnimalSpawnRule> found = AnimalRegistryEditor.FindAllRules();
 
         // idempotent: a plain A->Z sort by asset name, so gathering twice changes nothing. Ordering by
@@ -110,6 +116,14 @@ public class AnimalSpawnRuleRegistryEditor : Editor
 
     internal static int Validate(AnimalSpawnRuleRegistry registry)
     {
+        if (registry == null)
+        {
+            // every Validate below logs the registry as its context, and a SerializedObject/Undo call
+            // on null throws, so a missing asset has to be reported rather than passed down
+            Debug.LogError("AnimalSpawnRuleRegistryEditor: no registry to validate, so nothing was validated");
+            return 1;
+        }
+
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("rules");
 

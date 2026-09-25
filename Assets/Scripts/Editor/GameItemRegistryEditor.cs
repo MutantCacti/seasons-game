@@ -41,6 +41,12 @@ public class GameItemRegistryEditor : Editor
 
     internal static void GatherAllItems(GameItemRegistry registry)
     {
+        if (registry == null)
+        {
+            Debug.LogError("GameItemRegistryEditor: no registry to gather into, so nothing was gathered");
+            return;
+        }
+
         List<GameItem> found = FindAllItems();
 
         int compendiumCount;
@@ -111,6 +117,12 @@ public class GameItemRegistryEditor : Editor
 
     internal static int Validate(GameItemRegistry registry)
     {
+        if (registry == null)
+        {
+            Debug.LogError("GameItemRegistryEditor: no registry to validate, so nothing was validated");
+            return 1;
+        }
+
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("items");
 

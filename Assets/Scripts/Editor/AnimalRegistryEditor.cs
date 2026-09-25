@@ -37,6 +37,12 @@ public class AnimalRegistryEditor : Editor
 
     internal static void GatherAllAnimals(AnimalRegistry registry)
     {
+        if (registry == null)
+        {
+            Debug.LogError("AnimalRegistryEditor: no registry to gather into, so nothing was gathered");
+            return;
+        }
+
         List<Animal> found = FindAllAnimals();
 
         List<Animal> ordered = OrderAnimals(registry, found, out int unrankedCount);
@@ -103,6 +109,12 @@ public class AnimalRegistryEditor : Editor
 
     internal static int Validate(AnimalRegistry registry)
     {
+        if (registry == null)
+        {
+            Debug.LogError("AnimalRegistryEditor: no registry to validate, so nothing was validated");
+            return 1;
+        }
+
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("animals");
 
