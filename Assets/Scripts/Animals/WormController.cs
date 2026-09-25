@@ -67,6 +67,10 @@ public class WormController : AnimalController
     // going into and coming out of a burrow, each: the transition sprite mirrors left to right every
     // digFlipInterval, faster than the crawl wiggle, so it reads as digging
     [SerializeField] private float digDuration = 1.2f;
+
+    // renamed: a quick burst of the wiggle, as if it heard its new name
+    [SerializeField] private float renameWiggleDuration = 0.6f;
+    [SerializeField] private Vector2 renameWiggleInterval = new Vector2(0.05f, 0.08f);
     [SerializeField] private Vector2 digFlipInterval = new Vector2(0.12f, 0.2f);
 
 
@@ -85,8 +89,10 @@ public class WormController : AnimalController
     private TerrainManager terrain;
     private Sprite crawlSprite;
 
-    private Vector3 feet;   // on the top surface; the transform is this plus lift
-    private float lift;     // world units from the sprite's lowest vertex up to its pivot
+    private Vector3 feet;           // on the top surface; the transform is this plus the lift
+    private float spriteBottom;     // the sprite's lowest vertex below its pivot, in sprite units (so negative)
+
+    private float renameWiggleTimer;
 
     private WormState state;
     private float stateTimer;       // counts down in every state but Burrowed
@@ -187,10 +193,11 @@ public class WormController : AnimalController
     private void UpdateCrawling(float dt)
     {
         flipTimer -= dt;
+        renameWiggleTimer -= dt;
 
         if (flipTimer <= 0.0f)
         {
-            flipTimer = RandomIn(flipInterval);
+            flipTimer = RandomIn(renameWiggleTimer > 0.0f ? renameWiggleInterval : flipInterval);
             if (spriteRenderer != null) spriteRenderer.flipX = !spriteRenderer.flipX;
         }
 
@@ -460,17 +467,33 @@ public class WormController : AnimalController
     }
 
 
+    // measured per call rather than cached, so the lift follows the hover grow and the sprite still
+    // stands on the ground while it is bigger
     private void ApplyPosition()
     {
-        transform.position = feet + Vector3.up * lift;
+        float lift = -spriteBottom * transform.lossyScale.y;
+        transform.position = feet + Vector3.up * lift + ReactionOffset;
     }
 
 
-    // The sprite's lowest vertex relative to its pivot, scaled to the world. Vertices rather than
-    // bounds, so a tight sprite mesh stands on its visible bottom instead of its rect's
+    public override void OnRenamed()
+    {
+        base.OnRenamed();
+
+        // only a crawling worm is on show to wiggle
+        if (state != WormState.Crawling) return;
+
+        renameWiggleTimer = renameWiggleDuration;
+        flipTimer = 0.0f;
+    }
+
+
+    // The sprite's lowest vertex relative to its pivot. Vertices rather than bounds, so a tight sprite
+    // mesh stands on its visible bottom instead of its rect's. Kept in sprite units: ApplyPosition
+    // scales it, so it stays right while the worm is grown under the pointer
     private void MeasureLift()
     {
-        lift = 0.0f;
+        spriteBottom = 0.0f;
 
         Sprite sprite = spriteRenderer != null ? spriteRenderer.sprite : null;
         if (sprite == null) return;
@@ -481,7 +504,7 @@ public class WormController : AnimalController
         float lowest = vertices[0].y;
         for (int i = 1; i < vertices.Length; i++) lowest = Mathf.Min(lowest, vertices[i].y);
 
-        lift = -lowest * transform.lossyScale.y;
+        spriteBottom = lowest;
     }
 
 

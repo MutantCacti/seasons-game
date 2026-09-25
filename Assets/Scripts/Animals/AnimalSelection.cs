@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 
@@ -14,6 +15,10 @@ using UnityEngine;
 //
 // Focus ends on a camera drag or WASD (the follow ends), clicking empty world, Escape, the book
 // opening, or the animal going away. Clicking another animal moves the focus to it.
+//
+// Feel: the animal under the pointer grows a little and shows the hand cursor, so animals read as
+// clickable before they are clicked (the same rect test, every frame; there are only a handful). A
+// focused animal hops, the ring pops in under it and shrinks away when focus ends.
 public class AnimalSelection : MonoBehaviour
 {
     private static AnimalSelection instance;
@@ -36,6 +41,13 @@ public class AnimalSelection : MonoBehaviour
     [SerializeField] private float markerPulse = 0.08f;     // fraction of the size it swells by
     [SerializeField] private float markerPulseSpeed = 4.0f; // radians per second
     [SerializeField] private float markerLift = 0.01f;      // world units above the ground, so it never z-fights it
+    [SerializeField] private float markerPopOvershoot = 1.15f;
+    [SerializeField] private float markerPopDuration = 0.22f;
+    [SerializeField] private float markerHideDuration = 0.14f;
+
+
+    [Header("Sound")]
+    [SerializeField] private SoundObject focusSound;         // optional, played at the animal as it is focused
 
 
     private AnimalController focused;
@@ -56,6 +68,12 @@ public class AnimalSelection : MonoBehaviour
     private Camera viewCamera;
 
     private readonly List<Renderer> scratchRenderers = new List<Renderer>();
+
+    private float markerPresence;
+    private Tween markerTween;
+
+    private AnimalController hovered;
+    private bool ownsCursor;
 
 
     public AnimalController Focused { get { return focused; } }
@@ -107,6 +125,9 @@ public class AnimalSelection : MonoBehaviour
         if (subscribedBook != null) subscribedBook.Opened -= OnBookOpened;
 
         if (markerTransform != null) Destroy(markerTransform.gameObject);
+        if (markerTween != null) markerTween.Kill();
+
+        ReleaseCursor();
 
         if (instance == this) instance = null;
     }
@@ -123,12 +144,9 @@ public class AnimalSelection : MonoBehaviour
         }
 
         // Unity-null: the animal was destroyed under us
-        if (focused == null)
-        {
-            if (!ReferenceEquals(focused, null)) Clear();
-            return;
-        }
+        if (focused == null && !ReferenceEquals(focused, null)) Clear();
 
+        UpdateHover();
         UpdateMarker();
     }
 
@@ -159,9 +177,11 @@ public class AnimalSelection : MonoBehaviour
         if (cameraController != null) cameraController.Follow(animal.transform);
 
         markerWidth = markerWidthScale * SpriteWorldWidth(animal);
+        ShowMarker();
 
-        if (marker != null) marker.enabled = true;
-        UpdateMarker();
+        animal.OnFocused();
+
+        if (focusSound != null && AudioManager.Instance != null) AudioManager.Instance.PlaySFX(focusSound, animal.transform.position);
 
         FocusChanged?.Invoke(focused);
     }
@@ -175,7 +195,7 @@ public class AnimalSelection : MonoBehaviour
 
         focused = null;
 
-        if (marker != null) marker.enabled = false;
+        HideMarker();
 
         FocusChanged?.Invoke(null);
     }
@@ -209,6 +229,53 @@ public class AnimalSelection : MonoBehaviour
         if (subscribedBook != null) subscribedBook.Opened -= OnBookOpened;
         subscribedBook = book;
         if (subscribedBook != null) subscribedBook.Opened += OnBookOpened;
+    }
+
+
+    // MARK: hover
+
+
+    // Only while nothing else could be going on: no button held (a drag, a placement), not over UI,
+    // not on the book, not paused. The cursor is only overridden while this set it, so a placement's
+    // own cursor is never trampled
+    private void UpdateHover()
+    {
+        AnimalController under = null;
+
+        InputManager input = InputManager.Instance;
+
+        // pressed covers every press, a slot drag's included, and a drag is not a hover
+        if (input != null && input.HasPointerPosition && !pressed && IsClickCandidate(input.PointerPosition))
+        {
+            under = PickAt(input.PointerPosition);
+        }
+
+        if (under == hovered) return;
+
+        if (hovered != null) hovered.SetHovered(false);
+        hovered = under;
+        if (hovered != null) hovered.SetHovered(true);
+
+        if (hovered != null) TakeCursor();
+        else ReleaseCursor();
+    }
+
+
+    private void TakeCursor()
+    {
+        if (CursorManager.Instance == null) return;
+
+        CursorManager.Instance.SetOverride(CursorType.Pointer);
+        ownsCursor = true;
+    }
+
+
+    private void ReleaseCursor()
+    {
+        if (!ownsCursor) return;
+
+        ownsCursor = false;
+        if (CursorManager.Instance != null) CursorManager.Instance.ClearOverride();
     }
 
 
@@ -399,10 +466,49 @@ public class AnimalSelection : MonoBehaviour
     }
 
 
-    // on the top surface of the column the animal is over: under a crawling worm, above a burrowed one
+    // pops in with an overshoot; a new focus while it is still showing pops it again from where it is
+    private void ShowMarker()
+    {
+        if (marker == null) return;
+
+        marker.enabled = true;
+
+        if (markerTween != null) markerTween.Kill();
+
+        Sequence pop = DOTween.Sequence();
+        pop.Append(DOTween.To(() => markerPresence, value => markerPresence = value, markerPopOvershoot, markerPopDuration * 0.6f).SetEase(Ease.OutQuad));
+        pop.Append(DOTween.To(() => markerPresence, value => markerPresence = value, 1.0f, markerPopDuration * 0.4f).SetEase(Ease.InOutQuad));
+        pop.SetLink(gameObject);
+
+        markerTween = pop;
+    }
+
+
+    // shrinks away where it last was, then hides
+    private void HideMarker()
+    {
+        if (marker == null || !marker.enabled) return;
+
+        if (markerTween != null) markerTween.Kill();
+
+        markerTween = DOTween.To(() => markerPresence, value => markerPresence = value, 0.0f, markerHideDuration)
+            .SetEase(Ease.InBack)
+            .OnComplete(() => { if (marker != null) marker.enabled = false; })
+            .SetLink(gameObject);
+    }
+
+
+    // on the top surface of the column the animal is over: under a crawling worm, above a burrowed one.
+    // With no focus it stays where it was, shrinking away
     private void UpdateMarker()
     {
-        if (marker == null || focused == null) return;
+        if (marker == null || !marker.enabled) return;
+
+        if (focused == null)
+        {
+            ScaleMarker();
+            return;
+        }
 
         Vector3 position = focused.transform.position;
         float groundY = position.y;
@@ -417,11 +523,17 @@ public class AnimalSelection : MonoBehaviour
 
         markerTransform.position = new Vector3(position.x, groundY + markerLift, position.z);
 
+        ScaleMarker();
+    }
+
+
+    private void ScaleMarker()
+    {
         float spriteWidth = markerSprite != null ? markerSprite.bounds.size.x : 1.0f;
         if (spriteWidth <= 0.0f) spriteWidth = 1.0f;
 
         float pulse = 1.0f + markerPulse * Mathf.Sin(Time.time * markerPulseSpeed);
-        float scale = markerWidth / spriteWidth * pulse;
+        float scale = markerWidth / spriteWidth * pulse * markerPresence;
 
         markerTransform.localScale = new Vector3(scale, scale, scale);
     }
