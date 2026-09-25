@@ -82,6 +82,14 @@ public abstract class CompendiumTabManager : MonoBehaviour
     }
 
 
+    // The loudest thing unseen on pages firstPage..lastPage, inclusive; an empty range is None. The base
+    // cannot tell which page an id lands on, so it points nowhere; tabs that lay out ids override it.
+    public virtual UnseenPriority HighestUnseenInPages(int firstPage, int lastPage)
+    {
+        return UnseenPriority.None;
+    }
+
+
     // MARK: saved state
 
 

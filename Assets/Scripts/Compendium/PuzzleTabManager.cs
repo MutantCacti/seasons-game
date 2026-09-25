@@ -406,6 +406,30 @@ public class PuzzleTabManager : CompendiumTabManager
     }
 
 
+    // Same ranking, over just the puzzles laid out on those pages
+    public override UnseenPriority HighestUnseenInPages(int firstPage, int lastPage)
+    {
+        int rows = RowsPerPage;
+        int first = Mathf.Max(firstPage, 0) * rows;
+        int end = Mathf.Min((lastPage + 1) * rows, Count);
+
+        UnseenPriority highest = UnseenPriority.None;
+
+        for (int i = first; i < end; i++)
+        {
+            if (!TryGetPuzzle(i, out Puzzle puzzle)) continue;
+            if (!TryGetUnseen(puzzle.Id, out int kind)) continue;
+
+            UnseenPriority priority = PriorityOf((UnseenKind)kind);
+
+            if (priority == UnseenPriority.SoftLock) return priority;
+            if (priority > highest) highest = priority;
+        }
+
+        return highest;
+    }
+
+
     private static UnseenPriority PriorityOf(UnseenKind kind)
     {
         switch (kind)
