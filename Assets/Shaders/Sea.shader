@@ -8,9 +8,12 @@
 //
 // The skirt: the mesh always has quads around its edge (uv1.x = 1, bottom edge uv1.y = 1). With Skirt
 // off every skirt vertex sits on the sheet's edge, so the quads have no area and draw nothing; with it
-// on the bottom edge drops to the void (_SeaFloorY) and the world reads as a cut-away diorama.
+// on the bottom edge drops to the void (_SeaFloorY) and the world reads as a cut-away diorama whose
+// mass fades up out of the sky: sky at the floor, solid deep water, clearer bands, clear at the top.
 // Skirt sorting comes from the mesh: skirts are first in the index buffer, and blending follows
-// primitive order within a draw, so the sheet always blends over the skirt behind it.
+// primitive order within a draw, so the sheet always blends over the skirt behind it. The camera is
+// always above the sea, so the sheet is never behind a skirt; the terrain walls behind the skirt are
+// opaque, so they are in the buffer before any of this draws.
 // The skirt lies exactly on the terrain's outer walls, so the pass is depth offset towards the camera
 // (the ShaderLab Offset docs' decal case) to win that tie instead of z-fighting it.
 Shader "Seasons/Sea"
@@ -60,9 +63,11 @@ Shader "Seasons/Sea"
         _FresnelPower ("Fresnel Power", Float) = 2
 
         [Header(Skirt)]
-        _SkirtBandHeight ("Skirt Band Height", Float) = 1.1
         _SkirtLip ("Skirt Lip", Float) = 0.07
-        _SkirtOpacity ("Skirt Opacity", Range(0, 1)) = 0.6
+        _SkirtBands ("Skirt Bands", Float) = 4
+        _SkirtBandHeight ("Skirt Band Height", Float) = 0.5
+        _SkirtAbsorption ("Skirt Absorption", Float) = 1.7
+        _SkyFadeSteps ("Sky Fade Steps", Float) = 8
         _DepthOffsetFactor ("Depth Offset Factor", Float) = -1
         _DepthOffsetUnits ("Depth Offset Units", Float) = -1
     }
@@ -109,14 +114,16 @@ Shader "Seasons/Sea"
         half _TintBase;
         half _FresnelStrength;
         float _FresnelPower;
-        float _SkirtBandHeight;
         float _SkirtLip;
-        half _SkirtOpacity;
+        float _SkirtBands;
+        float _SkirtBandHeight;
+        float _SkirtAbsorption;
+        float _SkyFadeSteps;
         CBUFFER_END
 
         // set by SeaLevel
         float _SeaDaylight;     // 0 night .. 1 noon
-        float4 _SeaSkyColour;   // the camera's clear colour, as drawn
+        float4 _SeaSkyColour;   // the camera's clear colour, as drawn (already in the active colour space)
         float _SeaFloorY;       // world y the skirt drops to
         ENDHLSL
 
@@ -298,28 +305,47 @@ Shader "Seasons/Sea"
 
             // MARK: skirt
 
-            // the side of the water slab: bands getting deeper every _SkirtBandHeight, with a foam lip
-            // where it meets the sheet. The same in every style, tinted by the style's colours
-            half4 Skirt(float3 positionWS, float surfaceY)
+            // clear at the top, the colour of Glass's tint, down to the deepest blue in the last band
+            half3 SkirtBandColour(int band)
             {
-                float depth = surfaceY - positionWS.y;
-                depth = floor(depth * _PixelsPerUnit) / _PixelsPerUnit;
+                float t = band / max(_SkirtBands - 1.0, 1.0);
+                half3 clear = lerp(_ShallowColour.rgb, _MidColour.rgb, 0.5);
 
-                int band = min(3, (int)(depth / _SkirtBandHeight));
-                half3 colour = band == 0 ? _ShallowColour.rgb
-                    : band == 1 ? _MidColour.rgb
-                    : band == 2 ? _DeepColour.rgb
-                    : _DeeperColour.rgb;
-                half alpha = saturate(_SkirtOpacity + 0.1 * band);
+                if (t < 0.5) return lerp(clear, _DeepColour.rgb, t * 2.0);
+                return lerp(_DeepColour.rgb, _DeeperColour.rgb, t * 2.0 - 1.0);
+            }
 
-                colour = ApplyNight(colour);
-                if (depth < _SkirtLip)
-                {
-                    colour = FoamNow();
-                    alpha = 1.0;
-                }
+            // the side of the water slab. Read upwards: the sky, the water fading into being out of
+            // it, solid deep water, clearer bands, then a foam lip under the sheet. Everything steps
+            // on 1/32 world rows. The same in both styles
+            float4 Skirt(float3 positionWS, float surfaceY)
+            {
+                float rowY = floor(positionWS.y * _PixelsPerUnit) / _PixelsPerUnit;
+                float depth = surfaceY - rowY;
 
-                return half4(colour, alpha);
+                if (depth < _SkirtLip) return float4(FoamNow(), 1.0);
+
+                // the sky fade: from where the bands run out (or halfway down a short skirt) to the
+                // floor, eased so the mass appears slowly, gathers, then settles into the water, and
+                // stepped so it reads as pixel art. Measured up from the floor so the bottom row is
+                // exactly 1
+                float skirtHeight = max(surfaceY - _SeaFloorY, 1.0 / _PixelsPerUnit);
+                float fadeHeight = skirtHeight - min(_SkirtBands * _SkirtBandHeight, 0.5 * skirtHeight);
+                float heightAboveFloor = max(0.0, rowY - _SeaFloorY);
+                float fade = smoothstep(0.0, 1.0, 1.0 - saturate(heightAboveFloor / fadeHeight));
+                fade = round(fade * _SkyFadeSteps) / _SkyFadeSteps;
+
+                // returned as is, not lerped, so it is bit for bit the clear colour and opaque: the
+                // skirt's bottom meets the background with no seam
+                if (fade >= 1.0) return float4(_SeaSkyColour.rgb, 1.0);
+
+                // each band down absorbs more (1 - e^-kd), so the top is a see-through cross-section
+                // with the walls showing through, and the water gets denser as it goes down
+                int band = min((int)_SkirtBands - 1, (int)(depth / _SkirtBandHeight));
+                float absorbed = 1.0 - exp(-_SkirtAbsorption * (band + 0.5) * _SkirtBandHeight);
+                float3 water = ApplyNight(SkirtBandColour(band));
+
+                return float4(lerp(water, _SeaSkyColour.rgb, fade), lerp(absorbed, 1.0, fade));
             }
 
 
@@ -345,7 +371,7 @@ Shader "Seasons/Sea"
                 return output;
             }
 
-            half4 frag(Varyings input) : SV_Target
+            float4 frag(Varyings input) : SV_Target
             {
                 if (input.skirt > 0.5) return Skirt(input.positionWS, input.surfaceY);
 
