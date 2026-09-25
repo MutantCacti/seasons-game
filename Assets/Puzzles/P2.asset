@@ -18,4 +18,5 @@ MonoBehaviour:
   ingredients:
   - item: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
     count: 1
-  unlocks: []
+  unlocks:
+  - {fileID: 11400000, guid: f37ad24fc6edf73e68843a0f9611a65d, type: 2}
