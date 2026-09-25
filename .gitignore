@@ -82,3 +82,6 @@ crashlytics-build.properties
 
 # generated from docs/progression-tree.json by tools/progression-tree.py render
 docs/progression-tree.mmd
+
+# written into Assets/Resources by the Performance Testing package on every build
+/[Aa]ssets/[Rr]esources/PerformanceTestRun*
