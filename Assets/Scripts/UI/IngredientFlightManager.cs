@@ -4,15 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
-// Flies granted ingredients into the hotbar, Islanders style: each unit's icon is tossed up out of the
-// entity that caused the unlock, grows as it arcs down, and lands in its slot. The inventory data has
-// already changed by then; the slot's shown count is held back (InventoryManager.Add deferDisplay) and
-// released here one landing at a time, so a save, a drag or a reload mid-flight can never lose or
-// double anything, only skip the show.
-//
-// Sits on a full-screen "Flight Layer" under the Screen Space - Overlay canvas, drawn after the hotbar.
-// In an overlay canvas a RectTransform's world position is its screen position, so everything here
-// is worked out in screen pixels.
+
+// Sits on a full-screen "Flight Layer" under the Screen Space - Overlay canvas, drawn after the hotbar
+// In an overlay canvas a RectTransform's world position is its screen position, so everything
+// is in screen pixels
 public class IngredientFlightManager : MonoBehaviour
 {
     private static IngredientFlightManager instance;
