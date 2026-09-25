@@ -6515,6 +6515,10 @@ MonoBehaviour:
   markerPulse: 0.05
   markerPulseSpeed: 2
   markerLift: 0.01
+  markerPopOvershoot: 1.15
+  markerPopDuration: 0.22
+  markerHideDuration: 0.14
+  focusSound: {fileID: 11400000, guid: c79a50547a455065db328b49210e1a89, type: 2}
 --- !u!1 &822894080
 GameObject:
   m_ObjectHideFlags: 0
@@ -8097,6 +8101,34 @@ MonoBehaviour:
   gap: 40
   margin: 12
   avoid: {fileID: 230018478}
+  snappiness: 0.2
+  openOvershoot: 1.08
+  openDuration: 0.22
+  openSlide: 6
+  closeSwell: 1.04
+  closeDuration: 0.14
+  switchSquash: 0.94
+  switchDuration: 0.18
+  switchPitch: 1.12
+  starOnPunch: 1.35
+  starOnWobble: 12
+  starOnDuration: 0.3
+  starOffSquash: 0.8
+  starOffDuration: 0.2
+  editingTextColour: {r: 0.5411765, g: 0.5058824, b: 0.45490196, a: 1}
+  editingFieldColour: {r: 0.9137255, g: 0.8862745, b: 0.8117647, a: 1}
+  savedFlashColour: {r: 0.9411765, g: 0.8039216, b: 0.43137255, a: 1}
+  savedPop: 1.12
+  savedDuration: 0.35
+  revertShake: 6
+  revertDuration: 0.25
+  inkDuration: 0.12
+  openSound: {fileID: 11400000, guid: d85b65951865640d690d6a535234d29c, type: 2}
+  closeSound: {fileID: 11400000, guid: e3adb7ac48a858173a84df14cd9df5ac, type: 2}
+  starOnSound: {fileID: 11400000, guid: ff9a34557a366244281768af314bfd77, type: 2}
+  starOffSound: {fileID: 11400000, guid: 4c9350b89d70bda8891bcf219c6f1ae6, type: 2}
+  renameSound: {fileID: 0}
+  revertSound: {fileID: 0}
 --- !u!1001 &1300665493
 PrefabInstance:
   m_ObjectHideFlags: 0
