@@ -1,7 +1,8 @@
 // The sea sheet baked by TerrainBaker ("Sea Level"). One shader, two looks picked per material with
 // the Style dropdown, so swapping looks is dragging a different material onto the renderer:
 //   Tidepool  flat toon bands by water depth, breathing contact foam, twinkling glints
-//   Glass     (to come)
+//   Glass     clear shallows: the seafloor refracted through a whole-texel wobble, a stepped tint by
+//             depth, a sky-coloured sheen, and the same contact foam
 // Everything snaps to the terrain's 1/32 world grid so the water steps like the pixel art. Night,
 // the sky and the skirt's floor are globals pushed by SeaLevel, so no material needs wiring.
 //
@@ -46,6 +47,16 @@ Shader "Seasons/Sea"
         _GlintDensity ("Glint Density", Range(0, 0.05)) = 0.008
         _GlintSpeed ("Glint Speed", Float) = 0.6
 
+        [Header(Glass)]
+        _RefractionPixels ("Refraction Pixels", Float) = 1.5
+        _WobbleFrequency ("Wobble Frequency", Float) = 4
+        _WobbleSpeed ("Wobble Speed", Float) = 1
+        _Absorption ("Absorption", Float) = 3
+        _AbsorptionSteps ("Absorption Steps", Float) = 4
+        _TintBase ("Tint Base", Range(0, 1)) = 0.25
+        _FresnelStrength ("Fresnel Strength", Range(0, 1)) = 1
+        _FresnelPower ("Fresnel Power", Float) = 2
+
         [Header(Skirt)]
         _SkirtBandHeight ("Skirt Band Height", Float) = 1.1
         _SkirtLip ("Skirt Lip", Float) = 0.07
@@ -65,6 +76,7 @@ Shader "Seasons/Sea"
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
         float _Skirt;
@@ -85,6 +97,14 @@ Shader "Seasons/Sea"
         float _FoamBreatheSpeed;
         float _GlintDensity;
         float _GlintSpeed;
+        float _RefractionPixels;
+        float _WobbleFrequency;
+        float _WobbleSpeed;
+        float _Absorption;
+        float _AbsorptionSteps;
+        half _TintBase;
+        half _FresnelStrength;
+        float _FresnelPower;
         float _SkirtBandHeight;
         float _SkirtLip;
         half _SkirtOpacity;
@@ -228,6 +248,49 @@ Shader "Seasons/Sea"
             }
 
 
+            // opaque over the camera's opaque copy: the water composites the floor itself
+            half4 Glass(float3 snappedWS)
+            {
+                float2 straightUV = ScreenUVOf(snappedWS);
+                float waterDepth = max(0.0, snappedWS.y - SceneWorldY(straightUV));
+
+                // the wobble moves the sample by whole terrain texels, so the floor shifts like
+                // pixel art rather than smearing
+                float time = _Time.y * _WobbleSpeed;
+                float2 wobble = float2(sin(snappedWS.z * _WobbleFrequency + time),
+                                       cos(snappedWS.x * _WobbleFrequency + time * 0.8));
+                float3 refractedWS = snappedWS;
+                refractedWS.xz += round(wobble * _RefractionPixels) / _PixelsPerUnit;
+
+                // a sample that lands on something standing out of the water (a shore, an item) would
+                // drag it into the water, so fall back to looking straight down
+                float2 uv = ScreenUVOf(refractedWS);
+                float floorY = SceneWorldY(uv);
+                if (floorY > snappedWS.y)
+                {
+                    uv = straightUV;
+                    floorY = snappedWS.y - waterDepth;
+                }
+
+                float absorb = 1.0 - exp(-(snappedWS.y - floorY) * _Absorption);
+                absorb = floor(absorb * _AbsorptionSteps) / _AbsorptionSteps;
+
+                // the floor is already lit (and darkened at night) by the scene, so only the tint
+                // takes the night tint
+                half3 tint = ApplyNight(lerp(_ShallowColour.rgb, _MidColour.rgb, absorb));
+                half3 colour = lerp(SampleSceneColor(uv), tint, _TintBase + absorb * (1.0 - _TintBase));
+
+                // the sky is a flat clear colour, so reflecting it is just that colour
+                half facing = saturate(GetWorldSpaceNormalizeViewDir(snappedWS).y);
+                colour = lerp(colour, _SeaSkyColour.rgb, _FresnelStrength * pow(1.0 - facing, _FresnelPower));
+
+                colour = ApplyGlints(colour, snappedWS);
+                if (InContactFoam(waterDepth)) colour = FoamNow();
+
+                return half4(colour, 1.0);
+            }
+
+
             // MARK: skirt
 
             // the side of the water slab: bands getting deeper every _SkirtBandHeight, with a foam lip
@@ -284,7 +347,11 @@ Shader "Seasons/Sea"
                 float3 snappedWS = SnapToGrid(input.positionWS);
                 snappedWS.y = input.surfaceY;
 
+            #if defined(_STYLE_GLASS)
+                return Glass(snappedWS);
+            #else
                 return Tidepool(snappedWS);
+            #endif
             }
             ENDHLSL
         }
