@@ -132,6 +132,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1e7c84fc3b00d34fad25ab35e2f5642, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WormController
+  hoverGrow: 1.05
+  hoverDuration: 0.12
+  focusHopHeight: 0.08
+  focusHopDuration: 0.22
+  renameHopHeight: 0.14
+  renameHopDuration: 0.3
   forbiddenTiles:
   - {fileID: 11400000, guid: 033db43898455b3f6abeb4007e3dc393, type: 2}
   preferredTiles:
@@ -144,9 +150,20 @@ MonoBehaviour:
   burrowDuration: {x: 4, y: 10}
   flipInterval: {x: 0.25, y: 0.7}
   digDuration: 1.2
+  renameWiggleDuration: 0.6
+  renameWiggleInterval: {x: 0.05, y: 0.08}
   digFlipInterval: {x: 0.12, y: 0.2}
   spriteRenderer: {fileID: 5647836908310758832}
   transitionSprite: {fileID: -737745376, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  happinessRadius: 2
+  baseHappiness: 0.6
+  offPreferredTip: Wriggling off to find softer soil
+  happyLines:
+  - Peristalsis is going swimmingly
+  - Can't see a thing... this is nice
+  - The earth here is soft like a sponge cake
+  - All ten of my hearts are content
+  - Breathing happily through my skin
   crawlSound: {fileID: 11400000, guid: 589ffede213bfb1dfa339df8ae768476, type: 2}
   crawlSoundInterval: {x: 4, y: 9}
   burrowSound: {fileID: 11400000, guid: c0cbd6b28de883c3c80125a0250b8ff9, type: 2}
