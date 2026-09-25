@@ -21,6 +21,10 @@ public enum WormState
 // Crawling never changes level: a sprite sliding up a cliff face reads wrong. A burrow may come up
 // on any level within burrowRadius, which is how worms get past cliffs.
 //
+// Everything below works on the worm's feet, a point on the top surface. The transform stands above
+// them by the sprite's lowest vertex, so the sprite sits on the ground whatever its pivot, and is
+// re-measured whenever the sprite changes.
+//
 // Nothing here is saved. AnimalManager writes the position through every LateUpdate, and a loaded
 // worm snaps back onto the surface and starts crawling again.
 [RequireComponent(typeof(SpriteRenderer))]
@@ -77,6 +81,9 @@ public class WormController : AnimalController
     private TerrainManager terrain;
     private Sprite crawlSprite;
 
+    private Vector3 feet;   // on the top surface; the transform is this plus lift
+    private float lift;     // world units from the sprite's lowest vertex up to its pivot
+
     private WormState state;
     private float stateTimer;       // counts down in every state but Burrowed
     private float flipTimer;
@@ -118,6 +125,8 @@ public class WormController : AnimalController
 
         if (spriteRenderer == null) Debug.LogError("WormController: no SpriteRenderer, so the worm cannot wiggle, hide or show its burrow sprite", this);
         else crawlSprite = spriteRenderer.sprite;
+
+        MeasureLift();
     }
 
 
@@ -149,6 +158,8 @@ public class WormController : AnimalController
             case WormState.Burrowed: UpdateBurrowed(dt); break;
             case WormState.LeaveBurrow: UpdateLeaveBurrow(dt); break;
         }
+
+        ApplyPosition();
     }
 
 
@@ -191,7 +202,7 @@ public class WormController : AnimalController
 
         // a burrow only starts from a preferred tile; anywhere else it keeps crawling until it's on one
         stateTimer -= dt;
-        if (stateTimer <= 0.0f && IsPreferred(TileUnder(transform.position))) BeginEnterBurrow();
+        if (stateTimer <= 0.0f && IsPreferred(TileUnder(feet))) BeginEnterBurrow();
     }
 
 
@@ -213,7 +224,7 @@ public class WormController : AnimalController
         state = WormState.Burrowed;
         SetVisible(false);
 
-        burrowFrom = transform.position;
+        burrowFrom = feet;
         burrowTo = PickResurfacePoint(burrowFrom);
         burrowElapsed = 0.0f;
         burrowTime = Mathf.Max(0.01f, RandomIn(burrowDuration));
@@ -226,7 +237,7 @@ public class WormController : AnimalController
         burrowElapsed += dt;
 
         float t = Mathf.Clamp01(burrowElapsed / burrowTime);
-        transform.position = Vector3.Lerp(burrowFrom, burrowTo, t);
+        feet = Vector3.Lerp(burrowFrom, burrowTo, t);
 
         if (t < 1.0f) return;
 
@@ -268,10 +279,9 @@ public class WormController : AnimalController
             }
         }
 
-        Vector3 next = Vector3.MoveTowards(transform.position, target, crawlSpeed * dt);
-        transform.position = next;
+        feet = Vector3.MoveTowards(feet, target, crawlSpeed * dt);
 
-        if ((next - target).sqrMagnitude > 0.000001f) return;
+        if ((feet - target).sqrMagnitude > 0.000001f) return;
 
         hasTarget = false;
         pauseTimer = RandomIn(stepPause);
@@ -285,9 +295,8 @@ public class WormController : AnimalController
     {
         picked = default;
 
-        Vector3 position = transform.position;
-        int x = Mathf.FloorToInt(position.x);
-        int z = Mathf.FloorToInt(position.z);
+        int x = Mathf.FloorToInt(feet.x);
+        int z = Mathf.FloorToInt(feet.z);
 
         int count = 0;
         float total = 0.0f;
@@ -407,6 +416,8 @@ public class WormController : AnimalController
 
     // A worm saved mid-burrow can be saved between levels, so it goes back onto the top of the column
     // it is over. If that column is forbidden it may still crawl off it, it just won't choose one
+    //
+    // the transform may already be lifted (a saved worm), so the height comes from the terrain alone
     private void SnapToSurface()
     {
         Vector3 position = transform.position;
@@ -417,11 +428,39 @@ public class WormController : AnimalController
         {
             Debug.LogWarning("WormController: the worm is not over the terrain, so it stays where it is", this);
             level = LevelAt(position);
+            feet = position;
             return;
         }
 
         level = top;
-        transform.position = new Vector3(position.x, terrain.GetLevelHeight(top), position.z);
+        feet = new Vector3(position.x, terrain.GetLevelHeight(top), position.z);
+
+        ApplyPosition();
+    }
+
+
+    private void ApplyPosition()
+    {
+        transform.position = feet + Vector3.up * lift;
+    }
+
+
+    // The sprite's lowest vertex relative to its pivot, scaled to the world. Vertices rather than
+    // bounds, so a tight sprite mesh stands on its visible bottom instead of its rect's
+    private void MeasureLift()
+    {
+        lift = 0.0f;
+
+        Sprite sprite = spriteRenderer != null ? spriteRenderer.sprite : null;
+        if (sprite == null) return;
+
+        Vector2[] vertices = sprite.vertices;
+        if (vertices == null || vertices.Length == 0) return;
+
+        float lowest = vertices[0].y;
+        for (int i = 1; i < vertices.Length; i++) lowest = Mathf.Min(lowest, vertices[i].y);
+
+        lift = -lowest * transform.lossyScale.y;
     }
 
 
@@ -479,6 +518,8 @@ public class WormController : AnimalController
     private void SetSprite(Sprite sprite)
     {
         if (spriteRenderer != null && sprite != null) spriteRenderer.sprite = sprite;
+
+        MeasureLift();
     }
 
 
