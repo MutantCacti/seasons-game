@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- generated from clock-frame.svg: the border ring only (the grey shapes minus the white inset). White so Unity can tint it (Clock.cs) -->
+<svg width="512" height="256" viewBox="0 0 135.46666 67.733332" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <mask id="inset" maskUnits="userSpaceOnUse" x="0" y="0" width="135.46666" height="67.733332">
+      <rect x="0" y="0" width="135.46666" height="67.733332" style="fill:#ffffff" />
+      <path
+       id="rect6-0"
+       style="fill:#000000;fill-opacity:1"
+       d="m 49.710386,12.99404 h 81.674664 a 7.9626977,7.9626977 45 0 1 7.9627,7.962698 v 25.878768 a 7.9626977,7.9626977 135 0 1 -7.9627,7.962698 H 49.710386 A 7.9626977,7.9626977 45 0 1 41.747688,46.835506 V 20.956738 a 7.9626977,7.9626977 135 0 1 7.962698,-7.962698 z"
+      
+      
+       transform="matrix(0.79746837,0,0,0.7974684,20.085501,6.8650355)"
+       />
+      <circle
+       style="fill:#000000;fill-opacity:1"
+       id="path2"
+       cx="33.866665"
+       cy="33.866665"
+       r="29.633333" />
+    </mask>
+  </defs>
+  <g mask="url(#inset)">
+    <path
+       id="rect6"
+       style="fill:#ffffff;fill-opacity:1"
+       d="m 57.633701,12.99404 h 69.366289 a 8.4666662,8.4666662 45 0 1 8.46667,8.466666 v 24.870832 a 8.4666662,8.4666662 135 0 1 -8.46667,8.466666 H 57.633701 A 8.4666662,8.4666662 45 0 1 49.167034,46.331538 V 21.460706 a 8.4666662,8.4666662 135 0 1 8.466667,-8.466666 z"
+      
+      
+       />
+    <circle
+       style="fill:#ffffff;fill-opacity:1"
+       id="path1"
+       cx="33.866665"
+       cy="33.866665"
+       r="33.866665" />
+  </g>
+</svg>
