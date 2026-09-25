@@ -39,6 +39,17 @@ public class Clock : MonoBehaviour
     [SerializeField] [Range(0.0f, 1.0f)] private float borderSwitchAt = 0.5f;
     [SerializeField] [Range(0.01f, 1.0f)] private float borderSwitchWidth = 0.2f;
 
+    // where "Day N" sits: the visible part of the pill, as anchors on the frame (bottom-left origin).
+    // measured from clock-frame-fill.svg: the pill's inset spans x 0.394-0.969 and y 0.253-0.746,
+    // and the window circle covers it up to x 0.469, so this is that area with a little padding
+    [SerializeField] private Vector2 dayTextAnchorMin = new Vector2(0.49f, 0.30f);
+    [SerializeField] private Vector2 dayTextAnchorMax = new Vector2(0.95f, 0.70f);
+
+    // auto-size picks the largest size that fits the area, so "Day 1" fills the pill's height and a
+    // longer number shrinks to fit its width instead of spilling out
+    [SerializeField] private float dayTextMinSize = 8.0f;
+    [SerializeField] private float dayTextMaxSize = 200.0f;
+
     // the sun and moon sprites, as a fraction of the frame height. the sun art fills almost its
     // whole canvas, so at 1 it covered the entire window
     [SerializeField] [Range(0.1f, 1.0f)] private float celestialSize = 0.4f;
@@ -168,6 +179,29 @@ public class Clock : MonoBehaviour
             moon.rectTransform.sizeDelta = new Vector2(celestial, celestial);
             moon.rectTransform.anchoredPosition = new Vector2(0f, -sunMoonOffset);
         }
+
+        LayoutDayText();
+    }
+
+
+    // anchored to the pill rather than sized from h, so it follows the frame however it's scaled
+    private void LayoutDayText()
+    {
+        if (dayText == null) return;
+
+        RectTransform rt = dayText.rectTransform;
+        rt.anchorMin = dayTextAnchorMin;
+        rt.anchorMax = dayTextAnchorMax;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        dayText.margin = Vector4.zero;
+        dayText.alignment = TextAlignmentOptions.Center;
+        dayText.textWrappingMode = TextWrappingModes.NoWrap;
+        dayText.enableAutoSizing = true;
+        dayText.fontSizeMin = dayTextMinSize;
+        dayText.fontSizeMax = dayTextMaxSize;
     }
 
 
