@@ -129,10 +129,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Entry Name Text
       objectReference: {fileID: 0}
-    - target: {fileID: 3570745722041222356, guid: 0ec4a41f3c8df7e4a864a079dfe1e9af, type: 3}
-      propertyPath: m_fontColor32.rgba
-      value: 4280364600
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -234,10 +230,6 @@ PrefabInstance:
     - target: {fileID: 3001659248935941501, guid: 3159f9e68d2ae104dbd8abcf005b4d3e, type: 3}
       propertyPath: m_Name
       value: Entry Description Text
-      objectReference: {fileID: 0}
-    - target: {fileID: 3570745722041222356, guid: 3159f9e68d2ae104dbd8abcf005b4d3e, type: 3}
-      propertyPath: m_fontColor32.rgba
-      value: 4280364600
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
