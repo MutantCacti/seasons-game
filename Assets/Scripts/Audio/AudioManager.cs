@@ -48,6 +48,12 @@ public class AudioManager : MonoBehaviour
     }
 
 
+    public void PlaySFX(SoundObject sfxObject, Vector3 worldPos, float pitchScale)
+    {
+        sfxPlayer.Play(sfxObject, worldPos, pitchScale);
+    }
+
+
     public void StopAllSFX()
     {
         sfxPlayer.StopAll();
