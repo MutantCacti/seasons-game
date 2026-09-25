@@ -9,6 +9,8 @@ using UnityEngine.UI;
 public class Clock : MonoBehaviour
 {
     [SerializeField] private RectTransform frame;   // falls back to this transform when null
+    [SerializeField] private Image frameFill;       // the white inset, falls back to the frame's own Image
+    [SerializeField] private Image border;          // the ring around the frame, drawn above the window
     [SerializeField] private RectTransform window;  // the Mask that clips the dial to the circle
     [SerializeField] private RectTransform dial;
     [SerializeField] private Image daylight;
@@ -27,6 +29,16 @@ public class Clock : MonoBehaviour
     [SerializeField] private Color moonColour = new Color(243.0f / 255.0f, 236.0f / 255.0f, 214.0f / 255.0f, 1.0f);      // #F3ECD6
     [SerializeField] private Color textColour = new Color(50.0f / 255.0f, 50.0f / 255.0f, 50.0f / 255.0f, 1.0f);         // #323232
 
+    [SerializeField] private Color fillColour = Color.white;
+
+    // the border flips between these as the sky passes its midpoint, so it always contrasts with it.
+    // the flip is centred on borderSwitchAt of DayNightManager.Daylight01 and takes borderSwitchWidth
+    // of it, which is a couple of seconds of the sky's much slower blend
+    [SerializeField] private Color borderDayColour = new Color(50.0f / 255.0f, 50.0f / 255.0f, 50.0f / 255.0f, 1.0f);      // #323232
+    [SerializeField] private Color borderNightColour = new Color(242.0f / 255.0f, 242.0f / 255.0f, 242.0f / 255.0f, 1.0f);  // #F2F2F2
+    [SerializeField] [Range(0.0f, 1.0f)] private float borderSwitchAt = 0.5f;
+    [SerializeField] [Range(0.01f, 1.0f)] private float borderSwitchWidth = 0.2f;
+
     // the sun and moon sprites, as a fraction of the frame height. the sun art fills almost its
     // whole canvas, so at 1 it covered the entire window
     [SerializeField] [Range(0.1f, 1.0f)] private float celestialSize = 0.4f;
@@ -38,6 +50,8 @@ public class Clock : MonoBehaviour
 
     private void Awake()
     {
+        if (frameFill == null) frameFill = GetComponent<Image>();
+
         ValidateHierarchy();
         ApplyLayout();
     }
@@ -87,6 +101,19 @@ public class Clock : MonoBehaviour
 
         // positive Z is counter-clockwise in screen space
         dial.localRotation = Quaternion.Euler(0f, 0f, dayNight.DialAngleDegrees);
+
+        ApplyBorderColour();
+    }
+
+
+    private void ApplyBorderColour()
+    {
+        if (border == null) return;
+
+        float half = borderSwitchWidth * 0.5f;
+        float t = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(borderSwitchAt - half, borderSwitchAt + half, dayNight.Daylight01));
+
+        border.color = Color.Lerp(borderNightColour, borderDayColour, t);
     }
 
 
@@ -149,6 +176,11 @@ public class Clock : MonoBehaviour
         if (validationLogged) return;
         validationLogged = true;
 
+        if (border == null)
+        {
+            Debug.LogError("Clock: no Border image, so the frame has no outline", this);
+        }
+
         if (window == null)
         {
             Debug.LogError("Clock: no Window referenced, so the dial is not masked to the circle", this);
@@ -169,6 +201,8 @@ public class Clock : MonoBehaviour
 
     private void ApplyColours()
     {
+        if (frameFill != null) frameFill.color = fillColour;
+        ApplyBorderColour();
         if (daylight != null) daylight.color = daylightColour;
         if (nightMask != null) nightMask.color = nightColour;
         if (starsClouds != null) starsClouds.color = starsColour;

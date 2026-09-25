@@ -47,6 +47,11 @@ public class DayNightManager : MonoBehaviour
     public float DialAngleDegrees { get; private set; }
 
 
+    // How much daylight there is: 0 at night, 1 at noon, on the same eased curve as the sun's
+    // intensity. The sky colour follows it directly; the clock's border switches on it.
+    public float Daylight01 { get; private set; }
+
+
     // Raised each time the cycle wraps into a new day (a new sunrise).
     public event Action DayStarted;
 
@@ -248,6 +253,8 @@ public class DayNightManager : MonoBehaviour
     // daylight is 0 at night and 1 at noon, on the same eased curve as the sun's intensity
     private void ApplySky(float daylight)
     {
+        Daylight01 = daylight;
+
         if (skyCamera == null) return;
 
         skyCamera.backgroundColor = Color.Lerp(skyNightColour, skyDayColour, daylight);
