@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
   id: water
   description: THIS LIQUID IS HELPFUL
-  icon: {fileID: -1771100560, guid: 0e688ad67d680fb819b235f53b641ed0, type: 3}
+  icon: {fileID: 1296638262, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
   prefab: {fileID: 0}
   placeSound: {fileID: 0}
