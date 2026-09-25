@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 
 public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler,
-    IBeginDragHandler, IDragHandler, IEndDragHandler
+    IBeginDragHandler, IDragHandler, IEndDragHandler, ICursorHoverTarget
 {
     [SerializeField] private Image iconImage;
 
@@ -19,6 +19,10 @@ public class ItemInventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerEx
 
     private TextMeshProUGUI tooltipText;
     private bool validated;
+
+
+    // an empty or hidden slot is nothing to drag, so it gets no hand cursor
+    public bool WantsPointer => item != null && isActiveAndEnabled;
 
 
     // PlacementController subscribes to these
