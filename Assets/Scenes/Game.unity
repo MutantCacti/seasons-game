@@ -8317,6 +8317,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a6fa0ce2ecf7bc3d82fd0229463d26b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
+  movementBoundsX: {x: -25, y: 25}
+  movementBoundsZ: {x: -25, y: 25}
   movementSpeed: 0.004
   keyboardMovementSpeed: 8
   zoomSpeed: 1.5

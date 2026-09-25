@@ -2,6 +2,9 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
+    [SerializeField] private Vector2 movementBoundsX = new Vector2(10.0f, 20.0f);
+    [SerializeField] private Vector2 movementBoundsZ = new Vector2(-20.0f, -10.0f);
+
     [SerializeField] private float movementSpeed = 0.004f;  // camera movement speed; units per pointer delta pixel
     [SerializeField] private float keyboardMovementSpeed = 8.0f;  // camera movement speed; units per second
     [SerializeField] private float zoomSpeed = 1.5f;        // camera zoom in/out speed; units per scroll
@@ -346,5 +349,8 @@ public class CameraController : MonoBehaviour
         Vector3 movement = (right * delta.x + forward * delta.y) * zoomScaledMovementSpeed;
 
         targetPosition += movement;
+
+        targetPosition.x = Mathf.Clamp(targetPosition.x, movementBoundsX.x, movementBoundsX.y);
+        targetPosition.z = Mathf.Clamp(targetPosition.z, movementBoundsZ.x, movementBoundsZ.y);
     }
 }
