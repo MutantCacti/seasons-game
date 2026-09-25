@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Animal
   id: worm
   description: A charming and slimy mimizu buddy.
-  icon: {fileID: 844349043, guid: 0e688ad67d680fb819b235f53b641ed0, type: 3}
+  icon: {fileID: -737745376, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   prefab: {fileID: 2430199224308526179, guid: b75db0be2ef214bf7939a46be242c830, type: 3}
