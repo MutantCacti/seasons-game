@@ -68,6 +68,7 @@ public class CompendiumUIManager : MonoBehaviour
     private Leaf parked;
 
     private int spread;
+    private int targetSpread;
     private int spreadCount;
     private int currentTabIndex;
     private bool built;
@@ -83,6 +84,25 @@ public class CompendiumUIManager : MonoBehaviour
 
 
     public event Action OpenChanged;
+
+
+    // Raised whenever the spread the book is heading to changes: a jump, a tab switch, or the start of
+    // a turn (not its end, so anything pointing the way updates as soon as the button is pressed)
+    public event Action SpreadChanged;
+
+
+    public int CurrentTabIndex { get { return currentTabIndex; } }
+
+
+    // the spread a turn is heading to, or the current one when nothing is turning; it shows pages
+    // TargetSpread * 2 and TargetSpread * 2 + 1
+    public int TargetSpread { get { return targetSpread; } }
+
+
+    public Button TurnPreviousButton { get { return turnPrevious; } }
+
+
+    public Button TurnNextButton { get { return turnNext; } }
 
 
     public int TabCount { get { return tabs != null ? tabs.Length : 0; } }
@@ -368,7 +388,7 @@ public class CompendiumUIManager : MonoBehaviour
         spread = target;
         spreadCount = SpreadCount;
         AssignSpreadPages(target);
-        UpdateTurnButtons();
+        SetTargetSpread(target);
         RememberSpread();
     }
 
@@ -396,7 +416,7 @@ public class CompendiumUIManager : MonoBehaviour
         int nextSpread = spread + 1;
         int revealed = nextSpread * 2 + 1;
 
-        UpdateTurnButtons(nextSpread);
+        SetTargetSpread(nextSpread);
 
         Leaf oldLeft = left;
         Leaf oldRight = right;
@@ -438,7 +458,7 @@ public class CompendiumUIManager : MonoBehaviour
         int previousSpread = spread - 1;
         int revealed = previousSpread * 2;
 
-        UpdateTurnButtons(previousSpread);
+        SetTargetSpread(previousSpread);
 
         Leaf oldLeft = left;
         Leaf oldRight = right;
@@ -654,16 +674,14 @@ public class CompendiumUIManager : MonoBehaviour
     }
 
 
-    private void UpdateTurnButtons()
+    private void SetTargetSpread(int atSpread)
     {
-        UpdateTurnButtons(spread);
-    }
+        targetSpread = atSpread;
 
-
-    private void UpdateTurnButtons(int atSpread)
-    {
         if (turnPrevious != null) turnPrevious.gameObject.SetActive(atSpread - 1 >= 0);
         if (turnNext != null) turnNext.gameObject.SetActive(atSpread + 1 < spreadCount);
+
+        if (SpreadChanged != null) SpreadChanged();
     }
 
 
