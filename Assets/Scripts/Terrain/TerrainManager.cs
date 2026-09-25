@@ -299,6 +299,19 @@ public partial class TerrainManager : MonoBehaviour
     }
 
 
+    // MARK: bounds
+
+
+    // The map's XZ footprint in world space, straight from the cell bounds. Cells are exactly
+    // one unit square and the grid maps cell x/z onto world x/z with no transform, so the cell
+    // bounds are the world bounds. The map never changes shape at runtime, so callers may cache.
+    public void GetWorldXZBounds(out Vector2 min, out Vector2 max)
+    {
+        min = new Vector2(state.originX, state.originZ);
+        max = new Vector2(state.originX + state.width, state.originZ + state.depth);
+    }
+
+
     // MARK: queries
 
 

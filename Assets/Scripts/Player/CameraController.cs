@@ -19,6 +19,11 @@ public class CameraController : MonoBehaviour
     [SerializeField] private LayerMask dragSurfaceMask;
     [SerializeField] private float dragRayDistance = 1000.0f;
 
+    [Header("World bounds")]
+    [SerializeField] private float boundsBuffer = 5.0f;     // how far past the world's XZ edge the view centre may settle; units
+    [SerializeField] private float boundsOvershoot = 1.5f;  // extra drag stretch past the buffered bounds before the rubber band bottoms out; units
+    [SerializeField] [Range(0.0f, 1.0f)] private float boundsReturnSnappiness = 0.2f;  // per-reference-frame ease when springing back inside, framerate independent
+
     [Header("Audio listener")]
     [SerializeField] private Transform audioListener;
     [SerializeField] private float listenerDistance = 5.0f;
@@ -39,6 +44,13 @@ public class CameraController : MonoBehaviour
     private bool dragStartedOnWorld = false;
     private Camera viewCamera;
     private bool warnedAboutMissingPointerPosition = false;
+
+    // world bounds, resolved once from TerrainManager; the map never changes shape at runtime
+    private bool worldBoundsResolved = false;
+    private Vector2 worldBoundsMin;
+    private Vector2 worldBoundsMax;
+    private float groundPlaneY = 0.0f;
+
 
     // shake state; elapsed starts past any duration, which is what "not shaking" looks like here
     private const float SHAKE_HZ = 26.0f;
@@ -222,8 +234,125 @@ public class CameraController : MonoBehaviour
 
         TickPanToTarget();
 
+        ClampToWorldBounds();
+
         currentPosition = Vector3.Lerp(currentPosition, targetPosition, frameSnappiness);
         transform.position = currentPosition + TickShake();
+    }
+
+
+    // MARK: world bounds
+
+
+    private bool IsDragging { get { return leftClickDown && dragStartedOnWorld; } }
+
+
+    // Resolves the world's XZ footprint and the ground plane once; the map never changes shape.
+    private bool ResolveWorldBounds()
+    {
+        if (worldBoundsResolved) return true;
+
+        TerrainManager terrain = TerrainManager.Instance;
+        if (terrain == null) return false;
+
+        terrain.GetWorldXZBounds(out worldBoundsMin, out worldBoundsMax);
+
+        // the lowest terrain level is the ground plane; 0 is just the field's default fallback
+        groundPlaneY = terrain.LevelCount > 0 ? terrain.GetLevelHeight(0) : 0.0f;
+
+        worldBoundsResolved = true;
+        return true;
+    }
+
+
+    private void GetBufferedBounds(out float minX, out float maxX, out float minZ, out float maxZ)
+    {
+        minX = worldBoundsMin.x - boundsBuffer;
+        maxX = worldBoundsMax.x + boundsBuffer;
+        minZ = worldBoundsMin.y - boundsBuffer;
+        maxZ = worldBoundsMax.y + boundsBuffer;
+    }
+
+
+    // The ground point under the view centre: where the view ray meets the ground plane. Only the
+    // XZ matters for the bounds, so the height is dropped.
+    private bool TryGetGroundPoint(out Vector2 ground)
+    {
+        Vector3 viewForward = transform.forward;
+
+        // a level or upward view never brings the ray down onto the ground
+        if (viewForward.y > -MIN_FORWARD_Y)
+        {
+            ground = Vector2.zero;
+            return false;
+        }
+
+        float distance = (groundPlaneY - targetPosition.y) / viewForward.y;
+        ground = new Vector2(targetPosition.x + viewForward.x * distance, targetPosition.z + viewForward.z * distance);
+        return true;
+    }
+
+
+    // Eases the view centre back inside the buffered bounds whenever nothing is dragging it out.
+    // Rebuilds targetPosition at the same height, so the zoom is untouched.
+    private void ClampToWorldBounds()
+    {
+        // the rubber band owns the edge while dragging; this only handles release/keys/zoom/pings
+        if (IsDragging) return;
+
+        if (!ResolveWorldBounds()) return;
+        if (!TryGetGroundPoint(out Vector2 ground)) return;
+
+        GetBufferedBounds(out float minX, out float maxX, out float minZ, out float maxZ);
+
+        Vector2 clamped = new Vector2(Mathf.Clamp(ground.x, minX, maxX), Mathf.Clamp(ground.y, minZ, maxZ));
+
+        // inside the buffered bounds: leave targetPosition alone, so there's zero drift and zero change
+        if (ground == clamped) return;
+
+        // framerate-independent ease, the same decay shape as the camera lerp
+        float t = 1.0f - Mathf.Pow(1.0f - boundsReturnSnappiness, Time.deltaTime * REFERENCE_FRAMERATE);
+        Vector2 eased = Vector2.Lerp(ground, clamped, t);
+
+        Vector3 viewForward = transform.forward;
+        float distance = (groundPlaneY - targetPosition.y) / viewForward.y;
+        targetPosition.x = eased.x - viewForward.x * distance;
+        targetPosition.z = eased.y - viewForward.z * distance;
+    }
+
+
+    // Rubber-band the drag: once the view centre is past the buffered bounds, shrink the part of
+    // the move that pushes it further out, bottoming out at the overshoot. Applied to the delta
+    // rather than re-clamping the accumulated position, so the resistance never compounds.
+    private Vector3 ApplyDragResistance(Vector3 movement)
+    {
+        if (!ResolveWorldBounds()) return movement;
+        if (!TryGetGroundPoint(out Vector2 ground)) return movement;
+
+        GetBufferedBounds(out float minX, out float maxX, out float minZ, out float maxZ);
+
+        movement.x *= AxisResistance(ground.x, minX, maxX, movement.x);
+        movement.z *= AxisResistance(ground.y, minZ, maxZ, movement.z);
+
+        return movement;
+    }
+
+
+    private float AxisResistance(float position, float min, float max, float delta)
+    {
+        if (delta < 0.0f && position < min)
+        {
+            float past = min - position;
+            return boundsOvershoot > 0.0f ? Mathf.Clamp01(1.0f - past / boundsOvershoot) : 0.0f;
+        }
+
+        if (delta > 0.0f && position > max)
+        {
+            float past = position - max;
+            return boundsOvershoot > 0.0f ? Mathf.Clamp01(1.0f - past / boundsOvershoot) : 0.0f;
+        }
+
+        return 1.0f;
     }
 
 
@@ -347,6 +476,10 @@ public class CameraController : MonoBehaviour
         float zoomScaledMovementSpeed = speed * Mathf.Lerp(zoomMovementSpeedFactor, 1.0f / zoomMovementSpeedFactor, normalizedZoomOffset);
 
         Vector3 movement = (right * delta.x + forward * delta.y) * zoomScaledMovementSpeed;
+
+        // while dragging, resist the outward part of the move so the view centre stretches past
+        // the buffered bounds like a rubber band instead of sliding off
+        if (IsDragging) movement = ApplyDragResistance(movement);
 
         targetPosition += movement;
 
