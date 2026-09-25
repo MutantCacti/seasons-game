@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -52,15 +53,43 @@ public class CursorManager : MonoBehaviour
             { CursorType.Disabled, disabledHotSpot }
         };
 
-        SetCursor(CursorType.Default);
+        // enough for the editor and standalone. web resets it right after, see Start
+        Apply(CursorType.Default, false);
     }
 
 
-    // Only submits a cursor change when the type actuall changes, so cheap
+    // on web the cursor is a css cursor on the canvas, and the engine's own startup calls
+    // JS_Cursor_SetShow, which overwrites it with plain "default" (see WebGLSupport lib/Cursor.js).
+    // the guard in Apply would then skip every later call with the same type, so re-submit
+    // once things have settled
+    private IEnumerator Start()
+    {
+        Apply(current, true);
+
+        yield return null;
+
+        Apply(current, true);
+    }
+
+
+    // the browser can drop the canvas cursor across focus changes too
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (hasFocus && applied) Apply(current, true);
+    }
+
+
+    // Only submits a cursor change when the type actually changes, so cheap
     // and can be called every frame
     public void SetCursor(CursorType cursorType)
     {
-        if (applied && current == cursorType) return;
+        Apply(cursorType, false);
+    }
+
+
+    private void Apply(CursorType cursorType, bool force)
+    {
+        if (!force && applied && current == cursorType) return;
 
         current = cursorType;
         applied = true;
