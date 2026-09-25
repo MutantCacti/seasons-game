@@ -79,10 +79,13 @@ public class AnimalStatusPanel : MonoBehaviour
     [SerializeField] private Color nameFieldColour = new Color(230.0f / 255.0f, 222.0f / 255.0f, 202.0f / 255.0f, 1.0f); // #E6DECA
     [SerializeField] private Color tipColour = new Color(79.0f / 255.0f, 72.0f / 255.0f, 63.0f / 255.0f, 1.0f);       // #4F483F
 
+    // every line is the regular face; empty uses the name's font
+    [SerializeField] private TMP_FontAsset tipFont;
+
     // a happy line is not a problem, so it doesn't look like one: the bar's happy green, darkened to read
-    // on the paper, and bold
+    // on the paper
     [SerializeField] private Color happyLineColour = new Color(78.0f / 255.0f, 127.0f / 255.0f, 43.0f / 255.0f, 1.0f); // #4E7F2B
-    [SerializeField] private FontStyles happyLineStyle = FontStyles.Bold;
+    [SerializeField] private FontStyles happyLineStyle = FontStyles.Normal;
 
 
     [Header("Name")]
@@ -188,6 +191,10 @@ public class AnimalStatusPanel : MonoBehaviour
 
         if (tipTemplate != null)
         {
+            TMP_FontAsset regular = tipFont != null ? tipFont : nameField != null && nameField.textComponent != null ? nameField.textComponent.font : null;
+            if (regular != null) tipTemplate.font = regular;
+
+            tipTemplate.fontStyle = FontStyles.Normal;
             tipTemplate.color = tipColour;
             tipTemplate.gameObject.SetActive(false);
         }

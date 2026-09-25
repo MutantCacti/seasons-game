@@ -19,7 +19,6 @@ public static class AnimalStatusPanelBuilder
     private const string PANEL_SPRITE = "Assets/Art/UI/outline.png";
     private const string CLOSE_SPRITE = "Assets/Art/UI/close-icon.png";
     private const string FONT = "Assets/TextMesh Pro/Resources/Fonts & Materials/Nunito SDF.asset";
-    private const string TIP_FONT = "Assets/TextMesh Pro/Resources/Fonts & Materials/Nunito-Italic SDF.asset";
 
     private const float PANEL_WIDTH = 320.0f;
 
@@ -253,7 +252,7 @@ public static class AnimalStatusPanelBuilder
         line.transform.SetParent(tips, false);
 
         TextMeshProUGUI text = line.AddComponent<TextMeshProUGUI>();
-        TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(TIP_FONT);
+        TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT);
         if (font != null) text.font = font;
         text.fontSize = 18.0f;
         text.color = TIP_COLOUR;
