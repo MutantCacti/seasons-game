@@ -311,7 +311,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
             if (inFront)
             {
                 float shrink = onScreen ? 0.0f : HOVER_HYSTERESIS;
-                wantHover = FitsHover(tipScreen, hoverPixels, hoverPixels * aspect, shrink);
+                wantHover = FitsHover(tipScreen, shrink);
             }
 
             // behind the camera the projection is mirrored, so mirror it back through the centre
@@ -424,22 +424,25 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     // The tip is inside the usable area with room above it for the body, and the body is clear of the
     // inventory bar
-    private bool FitsHover(Vector3 tipScreen, float pixels, float width, float shrink)
+    // Only the tip has to be visible: it sits right over the target, so if the tip is on screen the
+    // thing is too, and the ping should point at it even if its body gets cut off at the edge.
+    // Requiring the whole body to fit sent pings to the edge, pointing away from targets that were
+    // plainly in view.
+    private bool FitsHover(Vector3 tipScreen, float shrink)
     {
         Rect usable = manager.UsableArea;
 
-        float halfWidth = width * 0.5f;
-
-        if (tipScreen.x < usable.xMin + halfWidth + shrink) return false;
-        if (tipScreen.x > usable.xMax - halfWidth - shrink) return false;
+        if (tipScreen.x < usable.xMin + shrink) return false;
+        if (tipScreen.x > usable.xMax - shrink) return false;
         if (tipScreen.y < usable.yMin + shrink) return false;
-        if (tipScreen.y > usable.yMax - pixels - shrink) return false;
+        if (tipScreen.y > usable.yMax - shrink) return false;
 
         if (!manager.HasInventoryRect) return true;
 
-        Rect footprint = new Rect(tipScreen.x - halfWidth - shrink, tipScreen.y - shrink, width + shrink * 2.0f, pixels + shrink * 2.0f);
+        Rect inventory = manager.InventoryRect;
+        Rect padded = new Rect(inventory.xMin - shrink, inventory.yMin - shrink, inventory.width + shrink * 2.0f, inventory.height + shrink * 2.0f);
 
-        return !footprint.Overlaps(manager.InventoryRect);
+        return !padded.Contains(tipScreen);
     }
 
 
