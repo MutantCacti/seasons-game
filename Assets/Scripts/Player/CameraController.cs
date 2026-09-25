@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
+    // hard limits on the camera's own position, the outermost backstop. the soft world bounds below
+    // keep the view centre on the island first, so these only bite at extreme zoom-outs
     [SerializeField] private Vector2 movementBoundsX = new Vector2(10.0f, 20.0f);
     [SerializeField] private Vector2 movementBoundsZ = new Vector2(-20.0f, -10.0f);
 
@@ -235,6 +237,7 @@ public class CameraController : MonoBehaviour
         TickPanToTarget();
 
         ClampToWorldBounds();
+        ClampToMovementBounds();
 
         currentPosition = Vector3.Lerp(currentPosition, targetPosition, frameSnappiness);
         transform.position = currentPosition + TickShake();
@@ -242,6 +245,16 @@ public class CameraController : MonoBehaviour
 
 
     // MARK: world bounds
+
+
+    // Runs after ClampToWorldBounds in Update, so it covers every way the camera moves (drag, keys,
+    // zoom, ping pans) and always has the last word
+    private void ClampToMovementBounds()
+    {
+        targetPosition.x = Mathf.Clamp(targetPosition.x, movementBoundsX.x, movementBoundsX.y);
+        targetPosition.z = Mathf.Clamp(targetPosition.z, movementBoundsZ.x, movementBoundsZ.y);
+    }
+
 
 
     private bool IsDragging { get { return leftClickDown && dragStartedOnWorld; } }
@@ -482,8 +495,5 @@ public class CameraController : MonoBehaviour
         if (IsDragging) movement = ApplyDragResistance(movement);
 
         targetPosition += movement;
-
-        targetPosition.x = Mathf.Clamp(targetPosition.x, movementBoundsX.x, movementBoundsX.y);
-        targetPosition.z = Mathf.Clamp(targetPosition.z, movementBoundsZ.x, movementBoundsZ.y);
     }
 }
