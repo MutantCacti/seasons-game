@@ -13,8 +13,12 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
 
 
     [SerializeField] private AnimalRegistry registry;
+
+    // the rules live in a registry asset rather than on this component, so an editor can gather and
+    // validate them the way every other id-keyed list in the project is gathered and validated
+    [SerializeField] private AnimalSpawnRuleRegistry ruleRegistry;
+
     [SerializeField] private TerrainManager terrainManager;
-    [SerializeField] private List<AnimalSpawnRule> rules = new List<AnimalSpawnRule>();
 
     // if this is null, AnimalManager creates a new empty at the scene root
     [SerializeField] private Transform animalParent;
@@ -65,6 +69,11 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
         if (registry == null)
         {
             Debug.LogError("AnimalManager: no AnimalRegistry, so no animal can be spawned, saved or loaded", this);
+        }
+
+        if (ruleRegistry == null)
+        {
+            Debug.LogError("AnimalManager: no AnimalSpawnRuleRegistry, so no spawn rule can ever fire", this);
         }
 
         if (animalParent == null) animalParent = new GameObject("Animals").transform;
@@ -177,8 +186,28 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
     // MARK: rules
 
 
+    // registry.Entries is an IReadOnlyList, which has no Contains, so this is the plain loop
+    private bool IsRegistered(AnimalSpawnRule rule)
+    {
+        if (rule == null || ruleRegistry == null) return false;
+
+        IReadOnlyList<AnimalSpawnRule> rules = ruleRegistry.Entries;
+
+        for (int i = 0; i < rules.Count; i++)
+        {
+            if (rules[i] == rule) return true;
+        }
+
+        return false;
+    }
+
+
     private void OnItemPlaced(GameItem item, Vector3Int cell, GameObject instance)
     {
+        if (ruleRegistry == null) return;
+
+        IReadOnlyList<AnimalSpawnRule> rules = ruleRegistry.Entries;
+
         for (int i = 0; i < rules.Count; i++)
         {
             AnimalSpawnRule rule = rules[i];
@@ -198,7 +227,7 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
     {
         if (rule == null) return false;
 
-        if (!rules.Contains(rule))
+        if (!IsRegistered(rule))
         {
             Debug.LogError($"AnimalManager: '{rule.name}' tried to spawn but is not in the rules list", rule);
             return false;

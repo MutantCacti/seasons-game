@@ -284,7 +284,9 @@ public class AnimalRegistryEditor : Editor
     }
 
 
-    private static List<AnimalSpawnRule> FindAllRules()
+    // internal rather than private so AnimalSpawnRuleRegistryEditor and the Tools > Registries menu can
+    // ask the same question without a second copy of the scan drifting from this one
+    internal static List<AnimalSpawnRule> FindAllRules()
     {
         List<AnimalSpawnRule> found = new List<AnimalSpawnRule>();
 
