@@ -13,6 +13,10 @@ public class MusicPlayer : MonoBehaviour
     private List<AudioSource> audioSources = new List<AudioSource>();
     private List<SoundObject> soundObjects = new List<SoundObject>();
 
+    // how long after regaining focus finished voices are left alone, see Update
+    private const float FOCUS_GRACE_SECONDS = 0.5f;
+    private float cleanupResumesAt;
+
 
     public void Play(SoundObject soundObject)
     {
@@ -64,13 +68,31 @@ public class MusicPlayer : MonoBehaviour
 
     public void Update()
     {
+        // losing focus pauses all audio (runInBackground is off), and a paused voice reports
+        // isPlaying false, so a voice is only treated as finished while the window has focus and
+        // has had it for a moment: the audio system can resume a frame or two after Update does
+        if (!Application.isFocused || Time.realtimeSinceStartup < cleanupResumesAt) return;
+
         // destroy voices when their clip is over
         for (int i = audioSources.Count - 1; i >= 0; i--)
         {
-            if (audioSources[i].isPlaying) continue;
+            // a looping voice never finishes by itself, it only ends through Stop
+            if (audioSources[i].isPlaying || audioSources[i].loop) continue;
 
             RemoveVoice(i);
         }
+    }
+
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (hasFocus) cleanupResumesAt = Time.realtimeSinceStartup + FOCUS_GRACE_SECONDS;
+    }
+
+
+    private void OnApplicationPause(bool paused)
+    {
+        if (!paused) cleanupResumesAt = Time.realtimeSinceStartup + FOCUS_GRACE_SECONDS;
     }
 
 
