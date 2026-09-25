@@ -348,6 +348,9 @@ MonoBehaviour:
   iconImage: {fileID: 133334389450208410}
   tooltipGO: {fileID: 1894237365012947381}
   countText: {fileID: 5936746975027061266}
+  popDuration: 0.35
+  pulseStrength: 0.18
+  pulseDuration: 0.25
 --- !u!1 &7382852633763902515
 GameObject:
   m_ObjectHideFlags: 0
@@ -522,7 +525,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 1024
   m_textAlignment: 65535
