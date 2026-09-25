@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -29,8 +28,8 @@ public class SeaReflection : MonoBehaviour
 
 
     [Header("Reflection")]
-    // what the mirror shows. Untick Terrain to compare entities only. Water, UI and BookGlow are
-    // always left out, and so is the book, whatever layer its parts are on
+    // what the mirror shows. Untick Terrain to compare entities only. Water and UI are always left
+    // out, so the book is mirrored but its world space pages are not
     [SerializeField] private LayerMask reflectedLayers = ~0;
 
     [SerializeField, Range(0.1f, 1.0f)] private float resolutionScale = 0.5f;
@@ -38,8 +37,9 @@ public class SeaReflection : MonoBehaviour
     // world units the mirror's near plane sits above the water, so the waterline doesn't flicker
     [SerializeField] private float clipPlaneOffset = 0.01f;
 
-    // -1 for the pipeline's default renderer. A bare renderer with no features skips the SSAO and
-    // book glow passes the default one would also run for this camera
+    // -1 for the pipeline's default renderer, whose SSAO and book glow passes run for this camera
+    // too, so the glow outline is mirrored along with the book. A bare renderer with no features
+    // skips both
     [SerializeField] private int rendererIndex = -1;
 
     [SerializeField] private bool renderShadows = false;
@@ -48,11 +48,6 @@ public class SeaReflection : MonoBehaviour
     private Camera reflectionCamera;
     private RenderTexture target;
     private readonly UniversalRenderPipeline.SingleCameraRequest request = new UniversalRenderPipeline.SingleCameraRequest();
-
-    // the book is on Default like every entity, so it is hidden by renderer rather than by layer
-    private BookAnimator excludedBook;
-    private readonly List<Renderer> bookRenderers = new List<Renderer>();
-    private readonly List<bool> bookWasForcedOff = new List<bool>();
 
     private bool warnedAboutMissingCamera;
     private bool warnedAboutUnsupported;
@@ -128,17 +123,7 @@ public class SeaReflection : MonoBehaviour
         // the sheet sits at the transform's y, which is what the shader measures from too
         Place(source, sea.transform.position.y);
 
-        HideBook(true);
-
-        try
-        {
-            RenderPipeline.SubmitRenderRequest(reflectionCamera, request);
-        }
-        finally
-        {
-            // a book left hidden would vanish from the real view too
-            HideBook(false);
-        }
+        RenderPipeline.SubmitRenderRequest(reflectionCamera, request);
 
         Shader.SetGlobalTexture(SeaReflectionTexId, target);
     }
@@ -207,7 +192,6 @@ public class SeaReflection : MonoBehaviour
 
         mask &= ~LayerBit("Water");
         mask &= ~LayerBit("UI");
-        mask &= ~LayerBit("BookGlow");
 
         return mask;
     }
@@ -237,48 +221,6 @@ public class SeaReflection : MonoBehaviour
         Vector3 cameraNormal = worldToCamera.MultiplyVector(normal).normalized;
 
         return new Vector4(cameraNormal.x, cameraNormal.y, cameraNormal.z, -Vector3.Dot(cameraPoint, cameraNormal));
-    }
-
-
-    // MARK: book
-
-
-    // The book is held up to the camera to read, and its mirror image would hang in the sea
-    private void HideBook(bool hide)
-    {
-        if (hide)
-        {
-            BookAnimator book = BookAnimator.Instance;
-
-            if (book != excludedBook)
-            {
-                excludedBook = book;
-                bookRenderers.Clear();
-
-                if (book != null)
-                {
-                    EntityId root = book.GetComponentInParent<EntityId>();
-                    (root != null ? root.gameObject : book.gameObject).GetComponentsInChildren(true, bookRenderers);
-                }
-            }
-
-            bookWasForcedOff.Clear();
-
-            for (int i = 0; i < bookRenderers.Count; i++)
-            {
-                Renderer part = bookRenderers[i];
-                bookWasForcedOff.Add(part != null && part.forceRenderingOff);
-
-                if (part != null) part.forceRenderingOff = true;
-            }
-
-            return;
-        }
-
-        for (int i = 0; i < bookRenderers.Count && i < bookWasForcedOff.Count; i++)
-        {
-            if (bookRenderers[i] != null) bookRenderers[i].forceRenderingOff = bookWasForcedOff[i];
-        }
     }
 
 
