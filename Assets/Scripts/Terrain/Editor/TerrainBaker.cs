@@ -11,7 +11,10 @@ public static class TerrainBaker
     private const string TOPS_SUFFIX = "_Tops";
     private const string WALLS_SUFFIX = "_Walls";
     private const string COLLISION_SUFFIX = "_Collision";
+    private const string SEA_SUFFIX = "_Sea";
     private const string QUAD_MAP_SUFFIX = "_Quads";
+
+    private const float SEA_BOX_THICKNESS = 0.1f;
 
 
     public static void Bake(TerrainBakeSettings settings)
@@ -71,6 +74,12 @@ public static class TerrainBaker
             mesh => TerrainCollisionMeshBuilder.Fill(mesh, raster, collision)
         );
 
+        Mesh seaMesh = LoadOrCreateMesh(
+            MeshPath(settings, sceneName, SEA_SUFFIX),
+            sceneName + SEA_SUFFIX,
+            mesh => TerrainSeaMeshBuilder.Fill(mesh, raster, settings.voidDepth)
+        );
+
         // one stamp for both maps: they share the map's occupancy and sprites, and it is what a load
         // compares against the scene's tilemaps to catch a map that was edited, or whose tiles were
         // re-sliced or reassigned, without re-baking
@@ -97,6 +106,7 @@ public static class TerrainBaker
         MeshRenderer topRenderer = WireRenderMesh(settings, "Terrain Tops", topMesh, settings.topMaterial, showBaked);
         MeshRenderer wallRenderer = WireRenderMesh(settings, "Terrain Walls", wallMesh, settings.wallMaterial, showBaked);
         WireCollision(settings, collisionMesh);
+        WireSea(settings, seaMesh, settings.voidDepth);
         WireRuntimeVisibility(settings, new MeshRenderer[] { topRenderer, wallRenderer });
         WireQuadMaps(settings, new TerrainQuadMap[] { topQuadMap, wallQuadMap });
 
@@ -104,7 +114,7 @@ public static class TerrainBaker
         EditorSceneManager.MarkSceneDirty(settings.gameObject.scene);
 
         Debug.Log($"Terrain baked successfully (render: {topMesh.vertexCount + wallMesh.vertexCount} vertices, " +
-            $"collision: {collisionMesh.vertexCount} vertices, quad maps: " +
+            $"collision: {collisionMesh.vertexCount} vertices, sea: {seaMesh.vertexCount} vertices, quad maps: " +
             $"{topQuadMap.CellCount + wallQuadMap.CellCount} cells / {topQuadMap.QuadCount + wallQuadMap.QuadCount} quads)\n");
     }
 
@@ -205,6 +215,58 @@ public static class TerrainBaker
         {
             holder.gameObject.layer = layer;
         }
+    }
+
+
+    // the sea is rendering only, but gets a trigger so it can be found. A trigger MeshCollider has
+    // to be convex, and a hull of the silhouette would be about its bounding box anyway, so a thin
+    // box over the bounds is the honest version. It covers the holes too, see SeaLevel
+    private static void WireSea(TerrainBakeSettings settings, Mesh seaMesh, float voidDepth)
+    {
+        Transform holder = GetOrCreateChild(settings.transform, "Sea Level");
+
+        MeshFilter filter = GetOrAddComponent<MeshFilter>(holder.gameObject);
+        MeshRenderer meshRenderer = GetOrAddComponent<MeshRenderer>(holder.gameObject);
+        BoxCollider box = GetOrAddComponent<BoxCollider>(holder.gameObject);
+        SeaLevel sea = GetOrAddComponent<SeaLevel>(holder.gameObject);
+
+        filter.sharedMesh = seaMesh;
+
+        Undo.RecordObject(meshRenderer, "Bake Terrain");
+        meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        meshRenderer.receiveShadows = false;
+
+        // only fill an empty slot, so a material dragged onto the renderer survives a re-bake
+        if (meshRenderer.sharedMaterial == null)
+        {
+            if (settings.seaMaterial != null) meshRenderer.sharedMaterial = settings.seaMaterial;
+            else Debug.LogWarning("No sea material assigned - 'Sea Level' will render as the magenta default", settings);
+        }
+
+        // the mesh's bounds reach down for the skirt, but the box only wants the sheet's footprint
+        Bounds bounds = seaMesh.bounds;
+        Undo.RecordObject(box, "Bake Terrain");
+        box.isTrigger = true;
+        box.center = new Vector3(bounds.center.x, 0.0f, bounds.center.z);
+        box.size = new Vector3(bounds.size.x, SEA_BOX_THICKNESS, bounds.size.z);
+
+        int layer = LayerMask.NameToLayer(settings.seaLayerName);
+        if (layer < 0)
+        {
+            Debug.LogWarning($"Layer '{settings.seaLayerName}' does not exist - add it in Tags and Layers", settings);
+        }
+        else
+        {
+            holder.gameObject.layer = layer;
+        }
+
+        // GetOrCreateChild just put the transform back at y = 0, so put it back at the designer's
+        // level. The level itself is never written here, a re-bake keeps it
+        Undo.RecordObject(sea, "Bake Terrain");
+        Undo.RecordObject(holder, "Bake Terrain");
+        sea.SetFloor(voidDepth);
+        sea.Apply();
+        EditorUtility.SetDirty(sea);
     }
 
 
