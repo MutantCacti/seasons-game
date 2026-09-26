@@ -59,8 +59,10 @@ public class AnimalTabManager : CompendiumTabManager
 
         // A new world discovers an animal present from the start like any other, so it is unseen. A
         // save from before discovery was remembered is seeded quietly from what is present now
-        if (baselineEmpty) RecomputePresence();
-        else if (!DiscoverySeeded) SeedDiscovery();
+        if (!baselineEmpty && !DiscoverySeeded) SeedDiscovery();
+
+        // anything present but never discovered is a discovery
+        RecomputePresence();
 
         PruneSavedUnseen();
     }

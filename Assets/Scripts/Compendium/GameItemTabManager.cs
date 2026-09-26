@@ -53,8 +53,11 @@ public class GameItemTabManager : CompendiumTabManager
         // A new world discovers what the player begins with like anything else, so it is all unseen.
         // A save from before discovery was remembered is seeded quietly from what is present now,
         // so nothing on show goes dark
-        if (baselineEmpty) RecomputePresence();
-        else if (!DiscoverySeeded) SeedDiscovery();
+        if (!baselineEmpty && !DiscoverySeeded) SeedDiscovery();
+
+        // anything present but never discovered is a discovery, which also catches what a load's
+        // growth catch-up placed before this tab was listening
+        RecomputePresence();
 
         PruneSavedUnseen();
     }
