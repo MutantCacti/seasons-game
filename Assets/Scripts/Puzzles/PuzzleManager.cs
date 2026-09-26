@@ -22,6 +22,44 @@ public readonly struct IngredientGrant
     }
 }
 
+
+// Where a batch of granted ingredients flies from: what completed the puzzle that unlocked them. An
+// entity is read where it is when the fliers launch, so a moving animal is followed; a credited cell
+// is a fixed point. None for the starting puzzles, which nothing completed
+public readonly struct GrantOrigin
+{
+    public readonly EntityId entity;
+    public readonly bool hasPoint;
+    public readonly Vector3 point;
+
+
+    private GrantOrigin(EntityId entity, bool hasPoint, Vector3 point)
+    {
+        this.entity = entity;
+        this.hasPoint = hasPoint;
+        this.point = point;
+    }
+
+
+    public static GrantOrigin None { get { return default; } }
+    public static GrantOrigin Entity(EntityId entity) { return new GrantOrigin(entity, false, default); }
+    public static GrantOrigin Point(Vector3 point) { return new GrantOrigin(null, true, point); }
+
+
+    // false for none, and for an entity that has since gone
+    public bool TryGetPosition(out Vector3 position)
+    {
+        if (entity != null)
+        {
+            position = entity.transform.position;
+            return true;
+        }
+
+        position = point;
+        return hasPoint;
+    }
+}
+
 public class PuzzleManager : MonoBehaviour
 {
     private static PuzzleManager instance;
@@ -31,6 +69,8 @@ public class PuzzleManager : MonoBehaviour
     [SerializeField] private PuzzleRegistry registry;
 
     [SerializeField] private InventoryManager inventoryManager;
+
+    [SerializeField] private PlacementController placementController;
 
     // How long the manager waits after the last consumption before deciding a puzzle is stuck
     [SerializeField] private float softLockGraceSeconds = 0.5f;
@@ -49,7 +89,7 @@ public class PuzzleManager : MonoBehaviour
     // it outlives the scene: every subscriber MUST += in OnEnable and -= in OnDisable, or a reload
     // leaves a dead listener behind. While anyone listens, grants defer their hotbar display until the
     // listener calls InventoryManager.ReleaseDisplay, so a listener must release everything it holds.
-    public static event Action<EntityId, IReadOnlyList<IngredientGrant>> IngredientsGranted;
+    public static event Action<GrantOrigin, IReadOnlyList<IngredientGrant>> IngredientsGranted;
 
 
     // Raised once puzzle state has been restored, which is the one safe moment for a world script to
@@ -95,7 +135,7 @@ public class PuzzleManager : MonoBehaviour
 
     // who the current GrantUnlocks is paying out for, and what the current batch has granted.
     // both are saved and restored around nesting like batching is
-    private EntityId grantSource;
+    private GrantOrigin grantSource;
     private List<IngredientGrant> grants;
 
     // puzzles the manager has settled on being stuck, and therefore announced
@@ -107,6 +147,12 @@ public class PuzzleManager : MonoBehaviour
     private readonly PuzzleLedger ledger = new PuzzleLedger();
 
     private readonly List<Puzzle> charged = new List<Puzzle>();
+
+    // scratch for the growth-pending scan
+    private readonly List<EntityManager.LiveEntity> scratchLive = new List<EntityManager.LiveEntity>();
+
+    // a guard against a growsInto cycle, which the item registry's validation reports
+    private const int MAX_GROWTH_CHAIN = 32;
 
     private bool completionEnabled = true;
 
@@ -155,6 +201,18 @@ public class PuzzleManager : MonoBehaviour
             inventoryManager.ItemConsumed += OnItemConsumed;
         }
 
+        if (placementController == null) placementController = PlacementController.Instance;
+
+        if (placementController == null)
+        {
+            Debug.LogError("PuzzleManager: no PlacementController, so a soft-lock judgement cannot wait for a " +
+                "tile transition to finish and may fail a puzzle that is still growing", this);
+        }
+        else
+        {
+            placementController.ItemShown += OnPlacementShown;
+        }
+
         LoadFromSave();
     }
 
@@ -162,6 +220,7 @@ public class PuzzleManager : MonoBehaviour
     private void OnDestroy()
     {
         if (inventoryManager != null) inventoryManager.ItemConsumed -= OnItemConsumed;
+        if (placementController != null) placementController.ItemShown -= OnPlacementShown;
 
         if (instance == this) instance = null;
     }
@@ -240,6 +299,15 @@ public class PuzzleManager : MonoBehaviour
         if (EntityManager.Instance == null) return false;
 
         return EntityManager.Instance.TryGetEntity(guid, out entity);
+    }
+
+
+    // the fliers for what a completion unlocks come from whatever completed it, entity or cell
+    private GrantOrigin CreditOrigin(Puzzle puzzle)
+    {
+        if (!TryGetCreditTarget(puzzle, out EntityId entity, out Vector3 point)) return GrantOrigin.None;
+
+        return entity != null ? GrantOrigin.Entity(entity) : GrantOrigin.Point(point);
     }
 
 
@@ -402,8 +470,8 @@ public class PuzzleManager : MonoBehaviour
             candidates.Add(unlocks[i]);
         }
 
-        EntityId outerSource = grantSource;
-        grantSource = TryGetCompletedBy(completedPuzzle, out EntityId source) ? source : null;
+        GrantOrigin outerSource = grantSource;
+        grantSource = CreditOrigin(completedPuzzle);
 
         try
         {
@@ -424,7 +492,7 @@ public class PuzzleManager : MonoBehaviour
 
         List<Puzzle> newlyUnlocked = new List<Puzzle>();
 
-        EntityId source = grantSource;
+        GrantOrigin source = grantSource;
         List<IngredientGrant> outerGrants = grants;
         List<IngredientGrant> batchGrants = new List<IngredientGrant>();
         grants = batchGrants;
@@ -615,9 +683,18 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
+    // The ground has settled after a placement, so a puzzle held back while its tile grew is judged
+    // now, against the world the player can finally see
+    private void OnPlacementShown(GameItem item, Vector3Int cell)
+    {
+        ScheduleSoftLockCheck();
+    }
+
+
     // Queues every active puzzle to be judged once the world has settled. Re-queueing one that is
-    // already flagged is harmless, because the flag is only raised on the transition.
-    private void ScheduleSoftLockCheck()
+    // already flagged is harmless, because the flag is only raised on the transition. Public so growth
+    // can have a puzzle that was waiting on it judged again once the grown things exist
+    public void ScheduleSoftLockCheck()
     {
         pendingSoftLockChecks.Clear();
 
@@ -654,6 +731,15 @@ public class PuzzleManager : MonoBehaviour
                 continue;
             }
 
+            // Spent, but some of it is still growing into what the puzzle may want, so it isn't judged
+            // yet. GrowthManager asks again once anything grows. An existing flag or ping is left alone
+            if (IsGrowthPending(puzzle)) continue;
+
+            // Spent, but the ground under it is still changing, so the thing that completes it may not
+            // have appeared yet. ItemShown asks again once the world has settled. An existing flag or
+            // ping is left alone
+            if (IsPresenting()) continue;
+
             if (!softLocked.Add(puzzle)) continue;
 
             Debug.LogWarning($"PuzzleManager: '{puzzle.name}' has spent every ingredient it was given " +
@@ -674,6 +760,60 @@ public class PuzzleManager : MonoBehaviour
         }
 
         pendingSoftLockChecks.Clear();
+    }
+
+
+    // True while a placement's tile transition is still growing the ground a puzzle stands on
+    private bool IsPresenting()
+    {
+        return placementController != null && placementController.IsPresenting;
+    }
+
+
+    // True while any live entity is one of the puzzle's ingredients, or anything one grows into,
+    // that will still grow: a seed, or the sapling it became on its way to a tree
+    private bool IsGrowthPending(Puzzle puzzle)
+    {
+        IReadOnlyList<Ingredient> ingredients = puzzle.Ingredients;
+        if (ingredients == null || ingredients.Count == 0) return false;
+
+        EntityManager entities = EntityManager.Instance;
+        if (entities == null) return false;
+
+        entities.CollectLive(scratchLive);
+
+        bool pending = false;
+
+        for (int i = 0; i < scratchLive.Count && !pending; i++)
+        {
+            GameItem item = scratchLive[i].item;
+            if (item == null || item.GrowsInto == null) continue;
+
+            pending = GrowsFromIngredient(item, ingredients);
+        }
+
+        scratchLive.Clear();
+
+        return pending;
+    }
+
+
+    // whether item is an ingredient or somewhere down an ingredient's growsInto chain
+    private static bool GrowsFromIngredient(GameItem item, IReadOnlyList<Ingredient> ingredients)
+    {
+        for (int i = 0; i < ingredients.Count; i++)
+        {
+            GameItem step = ingredients[i].item;
+
+            for (int depth = 0; step != null && depth < MAX_GROWTH_CHAIN; depth++)
+            {
+                if (step == item) return true;
+
+                step = step.GrowsInto;
+            }
+        }
+
+        return false;
     }
 
 

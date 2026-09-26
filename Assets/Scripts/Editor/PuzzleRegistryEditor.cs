@@ -141,6 +141,7 @@ public class PuzzleRegistryEditor : Editor
         }
 
         problems += ValidateReachability(registry, byId);
+        problems += ValidateResetTargets(byId);
 
         if (problems == 0)
         {
@@ -343,6 +344,82 @@ public class PuzzleRegistryEditor : Editor
         }
 
         return problems;
+    }
+
+
+    // A reset target has to be an earlier checkpoint than the puzzle's own, which means an ancestor in
+    // the unlock chain. Itself is an error; anything else that isn't an ancestor is only a warning, since
+    // the reset still falls back to the puzzle's own checkpoint when the target has none
+    private static int ValidateResetTargets(Dictionary<string, Puzzle> byId)
+    {
+        int problems = 0;
+
+        // who unlocks each puzzle, so the chain can be walked backwards
+        Dictionary<Puzzle, List<Puzzle>> parents = new Dictionary<Puzzle, List<Puzzle>>();
+
+        foreach (Puzzle puzzle in byId.Values)
+        {
+            IReadOnlyList<Puzzle> unlocks = puzzle.Unlocks;
+            if (unlocks == null) continue;
+
+            for (int i = 0; i < unlocks.Count; i++)
+            {
+                Puzzle child = unlocks[i];
+                if (child == null) continue;
+
+                if (!parents.TryGetValue(child, out List<Puzzle> list))
+                {
+                    list = new List<Puzzle>();
+                    parents.Add(child, list);
+                }
+
+                list.Add(puzzle);
+            }
+        }
+
+        foreach (Puzzle puzzle in byId.Values)
+        {
+            Puzzle target = new SerializedObject(puzzle).FindProperty("resetsTo").objectReferenceValue as Puzzle;
+            if (target == null) continue;
+
+            if (target == puzzle)
+            {
+                Debug.LogError($"PuzzleRegistry: '{puzzle.name}' resets to itself; leave Resets To empty for that", puzzle);
+                problems++;
+                continue;
+            }
+
+            if (IsAncestor(target, puzzle, parents)) continue;
+
+            Debug.LogWarning($"PuzzleRegistry: '{puzzle.name}' resets to '{target.name}', which doesn't unlock " +
+                $"it, directly or further up, so its checkpoint may not be an earlier one (or may not exist)", puzzle);
+        }
+
+        return problems;
+    }
+
+
+    private static bool IsAncestor(Puzzle candidate, Puzzle puzzle, Dictionary<Puzzle, List<Puzzle>> parents)
+    {
+        HashSet<Puzzle> visited = new HashSet<Puzzle>();
+        Queue<Puzzle> open = new Queue<Puzzle>();
+
+        open.Enqueue(puzzle);
+
+        while (open.Count > 0)
+        {
+            if (!parents.TryGetValue(open.Dequeue(), out List<Puzzle> list)) continue;
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                Puzzle parent = list[i];
+                if (parent == candidate) return true;
+
+                if (visited.Add(parent)) open.Enqueue(parent);
+            }
+        }
+
+        return false;
     }
 
 

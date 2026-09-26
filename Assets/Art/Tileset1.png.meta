@@ -9396,6 +9396,50 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: Tileset1_422
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 1120
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 16400da6e819ee0f90e81660874a281e
+      internalID: 68045519
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Tileset1_423
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 1120
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6351c7cbf0a3e0d69c1e6e3dc65fade9
+      internalID: -1151170416
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -9772,6 +9816,8 @@ TextureImporter:
       Tileset1_42: 1703227950
       Tileset1_420: -2034497980
       Tileset1_421: -95613471
+      Tileset1_422: 68045519
+      Tileset1_423: -1151170416
       Tileset1_43: 1488165979
       Tileset1_44: 306749311
       Tileset1_45: 292742164

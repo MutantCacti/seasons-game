@@ -607,19 +607,38 @@ public class PuzzleTabManager : CompendiumTabManager
 
 
     // Asks before resetting. A missing modal logs and falls back to the old straight-through reset,
-    // so a broken or missing prefab can never take the reset button away entirely.
+    // so a broken or missing prefab can never take the reset button away entirely. The modal names the
+    // puzzle it goes back to, which can be an earlier one than the puzzle that failed
     private void ResetPuzzle(Puzzle puzzle)
     {
+        Puzzle target = ResolveResetTarget(puzzle);
+
         ConfirmationModal modal = ConfirmationModal.Instance;
 
         if (modal == null)
         {
             Debug.LogWarning("PuzzleTabManager: no ConfirmationModal, so the reset is not confirmed", this);
-            ConfirmReset(puzzle);
+            ConfirmReset(target);
             return;
         }
 
-        modal.Show(() => ConfirmReset(puzzle), null, "_PUZZLE_", puzzle.Name);
+        modal.Show(() => ConfirmReset(target), null, "_PUZZLE_", target.Name);
+    }
+
+
+    // The puzzle's reset target, or the puzzle itself when the target has no checkpoint (never
+    // unlocked in this world, say), so the player is never left without a reset
+    private Puzzle ResolveResetTarget(Puzzle puzzle)
+    {
+        Puzzle target = puzzle.ResetTarget;
+        if (target == puzzle) return puzzle;
+
+        if (CheckpointManager.Instance != null && CheckpointManager.Instance.HasCheckpoint(target)) return target;
+
+        Debug.LogWarning($"PuzzleTabManager: '{puzzle.name}' resets to '{target.name}', which has no checkpoint, " +
+            $"so it resets to its own instead", puzzle);
+
+        return puzzle;
     }
 
 

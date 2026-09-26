@@ -11,7 +11,7 @@ using UnityEngine;
 // starts or ends each one is wired in code as the game grows. DayNightManager only draws the clock.
 //
 // Two kinds of event:
-//   moments  - DayStarted, Sunrise, Noon, Sunset, Midnight. Not sticky: a script subscribing at 3pm
+//   moments  - DayStarted, MomentReached, Sunrise, Noon, Sunset, Midnight. Not sticky: a script subscribing at 3pm
 //              must not hear "noon". CurrentDayPart says which moment was passed last.
 //   states   - Loaded, SeasonChanged, ConditionChanged. Sticky: a late subscriber is told the current
 //              state straight away, so its handlers must cope with hearing the same state twice.
@@ -68,6 +68,40 @@ public class WorldStateManager : MonoBehaviour
     public event Action Noon;
     public event Action Sunset;
     public event Action Midnight;
+
+
+    // Every moment, exactly once, raised just before the named one (after DayStarted on a new day)
+    // with the clock already standing on it. For world simulation like growth, which the named
+    // moments' listeners should see as already done
+    public event Action<DayPart> MomentReached;
+
+
+    // MARK: moment maths
+
+
+    public const int MOMENTS_PER_DAY = 4;
+
+
+    // How many moments the clock had stood on by (day, cycleTime), counting day 1's sunrise as 0.
+    // The difference between two of these is the number of moments crossed between them, whatever
+    // the day and night lengths are
+    public int MomentIndex(int day, float cycleTime)
+    {
+        return (Mathf.Max(1, day) - 1) * MOMENTS_PER_DAY + (int)PartAt(WrapCycleTime(cycleTime));
+    }
+
+
+    public int CurrentMomentIndex { get { return MomentIndex(Day, cycleTime); } }
+
+
+    // The clock reading of the moment with this index, i.e. the inverse of MomentIndex
+    public void MomentToTime(int momentIndex, out int day, out float momentCycleTime)
+    {
+        momentIndex = Mathf.Max(0, momentIndex);
+
+        day = momentIndex / MOMENTS_PER_DAY + 1;
+        momentCycleTime = MomentTime((DayPart)(momentIndex % MOMENTS_PER_DAY));
+    }
 
 
     // MARK: state API
@@ -236,6 +270,12 @@ public class WorldStateManager : MonoBehaviour
 
     private void LateUpdate()
     {
+        WriteTime();
+    }
+
+
+    private void WriteTime()
+    {
         world.time.day = Day;
         world.time.elapsedInCycle = cycleTime;
     }
@@ -261,14 +301,21 @@ public class WorldStateManager : MonoBehaviour
             dt -= step;
             cycleTime = next;
 
-            if (cycleTime >= total)
+            bool newDay = cycleTime >= total;
+
+            if (newDay)
             {
                 cycleTime = 0f;
                 Day++;
-                DayStarted?.Invoke();
             }
 
+            // written before anything hears about it, so a save or checkpoint taken inside any of
+            // these events has the clock standing on this moment rather than last frame's
+            WriteTime();
             RefreshTimeApi();
+
+            if (newDay) DayStarted?.Invoke();
+
             RaiseMoment(PartAt(cycleTime));
         }
     }
@@ -287,6 +334,27 @@ public class WorldStateManager : MonoBehaviour
     }
 
 
+    private float MomentTime(DayPart part)
+    {
+        switch (part)
+        {
+            case DayPart.Noon: return dayDuration * 0.5f;
+            case DayPart.Sunset: return dayDuration;
+            case DayPart.Midnight: return dayDuration + nightDuration * 0.5f;
+            default: return 0f;
+        }
+    }
+
+
+    // a saved reading can be anything, e.g. from before the day length was changed
+    private float WrapCycleTime(float t)
+    {
+        if (float.IsNaN(t) || t < 0f) return 0f;
+
+        return t % (dayDuration + nightDuration);
+    }
+
+
     private DayPart PartAt(float t)
     {
         if (t < dayDuration * 0.5f) return DayPart.Sunrise;
@@ -298,6 +366,9 @@ public class WorldStateManager : MonoBehaviour
 
     private void RaiseMoment(DayPart part)
     {
+        // first, so everything hearing the named moment sees the world already simulated for it
+        MomentReached?.Invoke(part);
+
         switch (part)
         {
             case DayPart.Sunrise: Sunrise?.Invoke(); break;
@@ -426,4 +497,7 @@ public class WorldStateManager : MonoBehaviour
 
     [ContextMenu("End Bears Hibernating")]
     private void DebugEndBears() { if (Application.isPlaying) EndCondition(WorldCondition.BearsHibernating); }
+
+    [ContextMenu("Start Sea Risen")]
+    private void DebugStartSea() { if (Application.isPlaying) StartCondition(WorldCondition.SeaRisen); }
 }

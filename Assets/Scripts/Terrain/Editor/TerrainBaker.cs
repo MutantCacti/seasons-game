@@ -106,7 +106,7 @@ public static class TerrainBaker
         MeshRenderer topRenderer = WireRenderMesh(settings, "Terrain Tops", topMesh, settings.topMaterial, showBaked);
         MeshRenderer wallRenderer = WireRenderMesh(settings, "Terrain Walls", wallMesh, settings.wallMaterial, showBaked);
         WireCollision(settings, collisionMesh);
-        WireSea(settings, seaMesh, settings.voidDepth);
+        WireSea(settings, seaMesh, settings.voidDepth, lowestLevel, settings.pixelsPerTile);
         WireRuntimeVisibility(settings, new MeshRenderer[] { topRenderer, wallRenderer });
         WireQuadMaps(settings, new TerrainQuadMap[] { topQuadMap, wallQuadMap });
 
@@ -221,7 +221,8 @@ public static class TerrainBaker
     // the sea is rendering only, but gets a trigger so it can be found. A trigger MeshCollider has
     // to be convex, and a hull of the silhouette would be about its bounding box anyway, so a thin
     // box over the bounds is the honest version. It covers the holes too, see SeaLevel
-    private static void WireSea(TerrainBakeSettings settings, Mesh seaMesh, float voidDepth)
+    private static void WireSea(TerrainBakeSettings settings, Mesh seaMesh, float voidDepth,
+        float lowestLevel, int pixelsPerTile)
     {
         Transform holder = GetOrCreateChild(settings.transform, "Sea Level");
 
@@ -261,7 +262,7 @@ public static class TerrainBaker
         // level. The level itself is never written here, a re-bake keeps it
         Undo.RecordObject(sea, "Bake Terrain");
         Undo.RecordObject(holder, "Bake Terrain");
-        sea.SetFloor(voidDepth);
+        sea.SetBake(voidDepth, pixelsPerTile, lowestLevel);
         sea.Apply();
         EditorUtility.SetDirty(sea);
     }

@@ -171,6 +171,11 @@ public class GameItemRegistryEditor : Editor
             problems++;
         }
 
+        foreach (GameItem item in seen.Values)
+        {
+            problems += ValidateGrowth(item, registered);
+        }
+
         if (problems == 0)
         {
             Debug.Log($"GameItemRegistry: {seen.Count} items, all ids present and unique", registry);
@@ -184,12 +189,98 @@ public class GameItemRegistryEditor : Editor
     }
 
 
+    // MARK: growth
+
+
+    // Growth replaces one placed entity with another, so both ends need a prefab and the grown one can't
+    // be a tile. Returns the number of problems. Tags the grown item needs but the source doesn't are
+    // only a warning: the growth waits until the ground suits it, which may be never
+    private static int ValidateGrowth(GameItem item, HashSet<GameItem> registered)
+    {
+        GameItem into = item.GrowsInto;
+        if (into == null) return 0;
+
+        int problems = 0;
+
+        if (item.Prefab == null)
+        {
+            Debug.LogError($"GameItemRegistry: '{item.name}' grows into '{into.name}' but has no prefab, so it " +
+                $"is never an entity that could grow", item);
+            problems++;
+        }
+
+        if (into.Prefab == null || into.Tile != null)
+        {
+            Debug.LogError($"GameItemRegistry: '{item.name}' grows into '{into.name}', which needs a prefab and " +
+                $"no tile to replace an entity", item);
+            problems++;
+        }
+
+        if (!registered.Contains(into))
+        {
+            Debug.LogError($"GameItemRegistry: '{item.name}' grows into '{into.name}', which is not in this " +
+                $"registry, so the grown entity could never be saved", item);
+            problems++;
+        }
+
+        // a chain that comes back round would grow forever
+        HashSet<GameItem> chain = new HashSet<GameItem> { item };
+
+        for (GameItem step = into; step != null; step = step.GrowsInto)
+        {
+            if (chain.Add(step)) continue;
+
+            Debug.LogError($"GameItemRegistry: '{item.name}' grows round in a loop back to '{step.name}'", item);
+            problems++;
+            break;
+        }
+
+        WarnAboutTags(item, into, "placedOnTags", "needs", "doesn't");
+        WarnAboutTags(item, into, "antiPlacedOnTags", "is kept off", "isn't");
+
+        return problems;
+    }
+
+
+    // warns for each tag in into's list that item's own list lacks
+    private static void WarnAboutTags(GameItem item, GameItem into, string field, string verb, string negation)
+    {
+        HashSet<string> own = new HashSet<string>(ReadTags(item, field));
+
+        foreach (string tag in ReadTags(into, field))
+        {
+            if (own.Contains(tag)) continue;
+
+            Debug.LogWarning($"GameItemRegistry: '{into.name}' {verb} tag '{tag}' but '{item.name}', which " +
+                $"grows into it, {negation}, so the growth may wait for ground that never comes", item);
+        }
+    }
+
+
+    private static List<string> ReadTags(GameItem item, string field)
+    {
+        List<string> tags = new List<string>();
+
+        SerializedProperty list = new SerializedObject(item).FindProperty(field);
+        if (list == null) return tags;
+
+        for (int i = 0; i < list.arraySize; i++)
+        {
+            string tag = list.GetArrayElementAtIndex(i).stringValue;
+            if (!string.IsNullOrEmpty(tag)) tags.Add(tag);
+        }
+
+        return tags;
+    }
+
+
     // MARK: ordering
 
 
     // Orders the gathered items into the order the player meets them: the compendium first, then
     // items no puzzle reaches (A->Z), then the puzzle tree's ingredients depth by depth (A->Z
-    // within each depth). Falls back to a plain A->Z sort when the puzzle registry is missing.
+    // within each depth) with what they grow into trailing behind them. Falls back to a plain A->Z
+    // sort when the puzzle registry is missing.
     private static List<GameItem> OrderItems(GameItemRegistry registry, List<GameItem> found,
         out int compendiumCount, out int unreachedCount, out int reachedCount)
     {
@@ -240,6 +331,32 @@ public class GameItemRegistryEditor : Editor
             {
                 if (reachedSet.Add(ingredients[i])) reached.Add(ingredients[i]);
             }
+        }
+
+        // step 4: what a reached item grows into is met after the puzzle ingredients, not instead of
+        // them. A grown flower is reached, so it is not swept up with the items no puzzle reaches and
+        // pushed to the front of the book. Wave by wave so a chain keeps its order; the set makes a
+        // cycle terminate, and an item two growths reach keeps the place of its first appearance.
+        List<GameItem> growing = new List<GameItem>(reached);
+
+        while (growing.Count > 0)
+        {
+            List<GameItem> grown = new List<GameItem>();
+
+            for (int i = 0; i < growing.Count; i++)
+            {
+                GameItem into = growing[i].GrowsInto;
+                if (into == null) continue;
+                if (!reachedSet.Add(into)) continue;
+
+                grown.Add(into);
+            }
+
+            grown.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+
+            for (int i = 0; i < grown.Count; i++) reached.Add(grown[i]);
+
+            growing = grown;
         }
 
         // step 1: the compendium leads, matched by id rather than name

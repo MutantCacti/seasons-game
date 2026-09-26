@@ -5,11 +5,25 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 
-// Turns a drag out of an inventory slot into a terrain remap and/or a spawned entity
+// Turns a drag out of an inventory slot into a terrain remap and/or a spawned entity, and is the one
+// path anything else that puts an item into the world takes too (growth, through Replace)
 public class PlacementController : MonoBehaviour
 {
+    // How a committed placement looks and sounds. Player is a drop, Growth is something growing while
+    // the player watches, Silent is growth caught up on load, which the player never saw happen
+    public enum PlaceFeel
+    {
+        Player,
+        Growth,
+        Silent,
+    }
+
     private static PlacementController instance;
     public static PlacementController Instance { get { return instance; } }
+
+    // True while a ground change is still animating. A puzzle can look spent while the tile under it
+    // is still growing, so PuzzleManager holds its judgement until this clears
+    public bool IsPresenting { get { return presentationsInFlight > 0; } }
 
     // we can't have ghosts running their prefab behaviours so any component
     // that isn't of this type (or a Transform) gets destroyed
@@ -45,8 +59,22 @@ public class PlacementController : MonoBehaviour
     [SerializeField] private float growSettleDuration = 0.07f;
     [SerializeField] private float growOvershoot = 1.10f;
 
+    [Tooltip("growth: the new thing starts at the old one's sprite height and pops to full size")]
+    [SerializeField] private float growthPopDuration = 0.35f;
+    [Tooltip("Ease.OutBack overshoot of the growth pop")]
+    [SerializeField] private float growthPopOvershoot = 1.7f;
+    [SerializeField] private float growthPopMinScale = 0.05f;
+    [SerializeField] private float growthPopMaxScale = 5.0f;
+
     [SerializeField] private float shakeMagnitude = 0.02f;
     [SerializeField] private float shakeDuration = 0.08f;
+
+    [Header("Tile transition")]
+    [Tooltip("TerrainTop's twin with Alpha Clipping ticked, sharing its atlas")]
+    [SerializeField] private Material tileTransitionMaterial;
+    [SerializeField] private float tileTransitionDuration = 0.45f;
+    [SerializeField] private float tileTransitionBlockDuration = 0.14f;
+    [SerializeField] private float tileTransitionJitter = 0.08f;
 
     private const float RIPPLE_OFFSET = 0.002f;
     private const float RIPPLE_START_SCALE = 0.2f;
@@ -60,14 +88,38 @@ public class PlacementController : MonoBehaviour
     private bool warnedAboutMissingCursor;
     private bool warnedAboutMissingSound;
     private bool warnedAboutMissingRipple;
+    private bool warnedAboutMissingTransition;
+    private bool warnedAboutTransitionAtlas;
     private Transform ghostStaging;
 
     private Vector3Int previewCell;
     private bool hasPreview;
 
+    private readonly List<Vector4> transitionRects = new List<Vector4>();
+
+    // tile transitions still playing, so a puzzle is not judged while the ground is changing
+    private int presentationsInFlight;
+
+
+    // what a growth hands to its animation, measured before the old entity went
+    private struct GrowthPop
+    {
+        public GameItem from;
+        public bool hasOldHeight;
+        public float oldHeight;
+        public float delay;
+        public bool withSound;
+    }
+
 
     // Raised once a placement is fully committed and saved
     public event Action<GameItem, Vector3Int, GameObject> ItemPlaced;
+
+
+    // Raised once a placement has finished being shown: after its tile transition, or straight away
+    // when nothing was worth waiting for. A growth and a silent load catch-up raise it too, so a rule
+    // that hears this instead of ItemPlaced never misses a placement
+    public event Action<GameItem, Vector3Int> ItemShown;
 
 
     private void Awake()
@@ -241,11 +293,12 @@ public class PlacementController : MonoBehaviour
         GameItem item = dragging;
         GameObject instance = null;
         Vector3Int cell = default;
+        TerrainTile previousTile = null;
         bool placed = false;
 
         if (TryResolveTarget(screenPosition, out cell))
         {
-            placed = Commit(item, cell, out instance);
+            placed = Commit(item, cell, default, out instance, out previousTile);
         }
 
         // clears the tile patch and destroys the ghost
@@ -253,17 +306,7 @@ public class PlacementController : MonoBehaviour
 
         if (!placed) return false;
 
-        // We have to consume last because the slot will deactivate when count is 0
-        if (!inventoryManager.TryRemove(item, 1))
-        {
-            Debug.LogError($"PlacementController: placed '{item.name}' but could not consume it", this);
-        }
-
-        FlushSave();
-
-        ItemPlaced?.Invoke(item, cell, instance);
-
-        PlayPlacementAnimation(item, cell, instance);
+        Announce(item, cell, instance, previousTile, true, PlaceFeel.Player, default);
 
         return true;
     }
@@ -332,29 +375,40 @@ public class PlacementController : MonoBehaviour
         // a wall face resolves to the tile that produced it
         if (!terrainManager.TryGetTopCellAt(hit.point, ray.direction, out cell)) return false;
 
+        return CanPlace(dragging, cell);
+    }
+
+
+    // Whether item can go into cell, by the world's rules alone (no pointer, no inventory). replacing
+    // is an entity at the cell that is about to make way for it, so it neither occupies the cell nor
+    // gets a say over the ground
+    public bool CanPlace(GameItem item, Vector3Int cell, EntityId replacing = null)
+    {
+        if (item == null || terrainManager == null) return false;
+
         TerrainTile target = terrainManager.GetTile(cell);
         if (target == null) return false;
 
         // already that tile, cannot place
-        if (dragging.Tile != null && target == dragging.Tile) return false;
+        if (item.Tile != null && target == item.Tile) return false;
 
         // already an entity at that location
-        if (dragging.Prefab != null && entityManager != null && entityManager.HasEntityAt(cell)) return false;
+        if (item.Prefab != null && entityManager != null && entityManager.HasEntityAt(cell, replacing)) return false;
 
         // Changing the ground must not invalidate the placement rules of entities
         // already at that cell
-        if (!ResidentsAllow(dragging.Tile, cell)) return false;
+        if (!ResidentsAllow(item.Tile, cell, replacing)) return false;
 
-        return dragging.IsPlaceableOn(target);
+        return item.IsPlaceableOn(target);
     }
 
 
     // Check if an entity already at this tile will allow the tile to change
-    private bool ResidentsAllow(TerrainTile newTile, Vector3Int cell)
+    private bool ResidentsAllow(TerrainTile newTile, Vector3Int cell, EntityId replacing)
     {
         if (newTile == null || entityManager == null) return true;
 
-        entityManager.CollectEntitiesAt(cell, residents);
+        entityManager.CollectEntitiesAt(cell, residents, replacing);
 
         for (int i = 0; i < residents.Count; i++)
         {
@@ -370,19 +424,27 @@ public class PlacementController : MonoBehaviour
     // MARK: commit
 
 
-    private bool Commit(GameItem item, Vector3Int cell, out GameObject instance)
+    // previousTile is what the cell held before a remap, for the tile transition. It comes from the
+    // state, which a drag preview never touches, so it's the real old tile and not the previewed one.
+    // spawn is default for a drop; a growth carries its guid, fixture flag and stage stamp through it
+    private bool Commit(GameItem item, Vector3Int cell, EntityManager.SpawnInfo spawn, out GameObject instance, out TerrainTile previousTile)
     {
         instance = null;
+        previousTile = null;
 
         // Tile first, because it can fail but spawn cannot
         if (item.Tile != null)
         {
-            if (terrainManager == null || !terrainManager.Remap(cell, item.Tile)) return false;
+            if (terrainManager == null) return false;
+
+            previousTile = terrainManager.GetTile(cell);
+
+            if (!terrainManager.Remap(cell, item.Tile)) return false;
         }
 
         if (item.Prefab != null && entityManager != null)
         {
-            instance = entityManager.Spawn(item, cell);
+            instance = entityManager.Spawn(item, cell, spawn);
 
             if (instance == null)
             {
@@ -394,9 +456,111 @@ public class PlacementController : MonoBehaviour
     }
 
 
+    // Everything after a commit, shared by every placement so a drop and a growth can't drift apart:
+    // consume (a drop only), save, tell the world, then show it
+    private void Announce(GameItem item, Vector3Int cell, GameObject instance, TerrainTile previousTile,
+        bool fromInventory, PlaceFeel feel, GrowthPop pop)
+    {
+        // We have to consume last because the slot will deactivate when count is 0
+        if (fromInventory && !inventoryManager.TryRemove(item, 1))
+        {
+            Debug.LogError($"PlacementController: placed '{item.name}' but could not consume it", this);
+        }
+
+        FlushSave();
+
+        ItemPlaced?.Invoke(item, cell, instance);
+
+        TileTransition transition = null;
+
+        switch (feel)
+        {
+            case PlaceFeel.Player: transition = PlayPlacementAnimation(item, cell, instance, previousTile); break;
+            case PlaceFeel.Growth: PlayGrowthAnimation(item, cell, instance, pop); break;
+
+            // Silent: it's simply there
+        }
+
+        // Only a real ground change is worth waiting for. A growth has no tile to grow, and a skipped
+        // transition is over before it began, so both are shown at once
+        if (transition == null)
+        {
+            ItemShown?.Invoke(item, cell);
+            return;
+        }
+
+        // in flight until the cover says it has finished, which is also when listeners hear ItemShown.
+        // A scene unload kills the cover mid-tween and leaves this counted; the controller dies with
+        // that same scene, so nobody is left waiting on it
+        presentationsInFlight++;
+
+        transition.Finished += () => CompletePresentation(item, cell);
+    }
+
+
+    // The cover is gone, so the ground finally shows what the world already holds. The count drops
+    // first, so a soft-lock judgement queued from ItemShown sees the ground as settled
+    private void CompletePresentation(GameItem item, Vector3Int cell)
+    {
+        presentationsInFlight = Mathf.Max(0, presentationsInFlight - 1);
+
+        ItemShown?.Invoke(item, cell);
+    }
+
+
     private void FlushSave()
     {
         if (SaveDataManager.Instance != null) SaveDataManager.Instance.Save();
+    }
+
+
+    // MARK: replace
+
+
+    // Swaps a live entity for another item in the same cell, through the same commit and announce as a
+    // drop: one save holds both the removal and the addition, and the world hears ItemPlaced for the
+    // new item only. The new entity keeps the old one's guid (so puzzle credit and pings follow it) and
+    // fixture flag, and is stamped with stageDay/stageCycleTime. False, with the old one untouched,
+    // when the new item can't go there right now.
+    //
+    // delay and withSound only shape a Growth feel: many growths on one moment stagger and share sounds
+    public bool Replace(EntityId existing, GameItem into, int stageDay, float stageCycleTime, PlaceFeel feel,
+        float delay = 0.0f, bool withSound = true)
+    {
+        if (existing == null || into == null || entityManager == null) return false;
+
+        // growing into a tile could fail its remap after the old entity is gone, so it is refused up front
+        if (into.Prefab == null || into.Tile != null)
+        {
+            Debug.LogError($"PlacementController: '{into.name}' can't replace an entity: it needs a prefab and no tile", into);
+            return false;
+        }
+
+        if (!entityManager.TryGetLive(existing, out EntityManager.LiveEntity old)) return false;
+
+        if (!CanPlace(into, old.cell, existing)) return false;
+
+        GrowthPop pop = new GrowthPop { from = old.item, delay = delay, withSound = withSound };
+
+        // measured while the old one is still whole: its height is where the new one starts
+        pop.hasOldHeight = TryMeasureSpriteHeight(old.gameObject, out pop.oldHeight);
+
+        EntityManager.SpawnInfo spawn = new EntityManager.SpawnInfo
+        {
+            guid = existing.Guid,
+            fixture = old.fixture,
+            stageDay = stageDay,
+            stageCycleTime = stageCycleTime,
+        };
+
+        entityManager.Despawn(existing);
+
+        // no tile, so this can't fail; a spawn that does logs inside and the announce goes ahead, as a drop's would
+        Commit(into, old.cell, spawn, out GameObject instance, out TerrainTile previousTile);
+
+        Announce(into, old.cell, instance, previousTile, false, feel, pop);
+
+        return true;
     }
 
 
@@ -530,14 +694,21 @@ public class PlacementController : MonoBehaviour
 
     // Everything is committed by the time this runs: An animation started here
     // can therefore assume the world is already in its final state
-    // instance is null for a tile-only item.
-    private void PlayPlacementAnimation(GameItem item, Vector3Int cell, GameObject instance)
+    // instance is null for a tile-only item. Returns the ground change still playing, or null for
+    // everything that has nothing left to wait for
+    private TileTransition PlayPlacementAnimation(GameItem item, Vector3Int cell, GameObject instance, TerrainTile previousTile)
     {
         Vector3 worldPosition = terrainManager != null ? terrainManager.CellToWorld(cell) : Vector3.zero;
 
         if (instance != null) GrowFromBase(instance);
 
-        if (item.Tile != null) SpawnRipple(worldPosition);
+        TileTransition transition = null;
+
+        if (item.Tile != null)
+        {
+            SpawnRipple(worldPosition);
+            transition = PlayTileTransition(cell, previousTile);
+        }
 
         PlayPlaceSound(item, worldPosition);
 
@@ -549,11 +720,13 @@ public class PlacementController : MonoBehaviour
 
             for (int i = 0; i < animations.Length; i++) animations[i].Play();
         }
+
+        return transition;
     }
 
 
     // Ensure that the root stays at the tile level
-    private void GrowFromBase(GameObject instance)
+    private void GrowFromBase(GameObject instance, float delay = 0.0f)
     {
         Transform root = instance.transform;
 
@@ -561,7 +734,92 @@ public class PlacementController : MonoBehaviour
 
         root.DOScale(Vector3.one * growOvershoot, growDuration)
             .SetEase(Ease.OutQuad)
-            .OnComplete(() => root.DOScale(Vector3.one, growSettleDuration).SetEase(Ease.InQuad));
+            .SetDelay(delay)
+            .SetLink(instance)
+            .OnComplete(() => root.DOScale(Vector3.one, growSettleDuration).SetEase(Ease.InQuad).SetLink(instance));
+    }
+
+
+    // The old thing was destroyed this frame, so the new one takes its place at the old one's height
+    // and pops to its own: a seed swells into a flower, and a big old thing settles into a smaller one,
+    // all the same way. Then the ripple and the sound, but no shake: the player didn't do this
+    private void PlayGrowthAnimation(GameItem item, Vector3Int cell, GameObject instance, GrowthPop pop)
+    {
+        Vector3 worldPosition = terrainManager != null ? terrainManager.CellToWorld(cell) : Vector3.zero;
+
+        if (instance != null)
+        {
+            if (pop.hasOldHeight && TryMeasureSpriteHeight(instance, out float newHeight))
+            {
+                Transform root = instance.transform;
+
+                root.localScale = Vector3.one * Mathf.Clamp(pop.oldHeight / newHeight, growthPopMinScale, growthPopMaxScale);
+
+                root.DOScale(Vector3.one, growthPopDuration)
+                    .SetEase(Ease.OutBack, growthPopOvershoot)
+                    .SetDelay(pop.delay)
+                    .SetLink(instance);
+            }
+            else
+            {
+                GrowFromBase(instance, pop.delay);
+            }
+        }
+
+        // the rest lands with the pop, which a stagger may hold back
+        TweenCallback flourish = () =>
+        {
+            SpawnRipple(worldPosition);
+
+            if (pop.withSound) PlaySound(GrowthSound(pop.from, item), worldPosition);
+
+            if (instance == null) return;
+
+            PlacementAnimation[] animations = instance.GetComponentsInChildren<PlacementAnimation>(true);
+
+            for (int i = 0; i < animations.Length; i++) animations[i].Play();
+        };
+
+        if (pop.delay <= 0.0f || instance == null)
+        {
+            flourish();
+            return;
+        }
+
+        DOVirtual.DelayedCall(pop.delay, flourish, false).SetLink(instance);
+    }
+
+
+    // the source's own grow sound, then the grown item's place sound, then the default
+    private SoundObject GrowthSound(GameItem from, GameItem into)
+    {
+        if (from != null && from.GrowSound != null) return from.GrowSound;
+
+        return into.PlaceSound != null ? into.PlaceSound : defaultPlaceSound;
+    }
+
+
+    // The tallest sprite in the hierarchy, in world units: sprite height x lossy scale. Not
+    // renderer.bounds, because BillboardSprite tilts sprites toward the camera, so world bounds change
+    // with the camera angle
+    private static bool TryMeasureSpriteHeight(GameObject root, out float height)
+    {
+        height = 0.0f;
+        if (root == null) return false;
+
+        SpriteRenderer[] renderers = root.GetComponentsInChildren<SpriteRenderer>(false);
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            SpriteRenderer candidate = renderers[i];
+            if (candidate == null || !candidate.enabled || candidate.sprite == null) continue;
+
+            float local = candidate.drawMode == SpriteDrawMode.Simple ? candidate.sprite.bounds.size.y : candidate.size.y;
+
+            height = Mathf.Max(height, local * Mathf.Abs(candidate.transform.lossyScale.y));
+        }
+
+        return height > 0.0f;
     }
 
 
@@ -592,10 +850,64 @@ public class PlacementController : MonoBehaviour
     }
 
 
+    // Covers a cell that has JUST been remapped with a picture of the tile it held before, which the
+    // new one then grows over. Call it after TerrainManager.Remap, from anything that changes a tile:
+    // the new tile is read back from the terrain, so it works for any old -> new pair. Returns the
+    // cover still playing, or null when there is nothing to wait for
+    public TileTransition PlayTileTransition(Vector3Int cell, TerrainTile from)
+    {
+        if (terrainManager == null || from == null) return null;
+
+        TerrainTile to = terrainManager.GetTile(cell);
+        if (to == null || to == from) return null;
+
+        if (tileTransitionMaterial == null)
+        {
+            WarnOnce(ref warnedAboutMissingTransition, "no tileTransitionMaterial assigned, so tile changes pop instead of transitioning");
+            return null;
+        }
+
+        Sprite oldSprite = terrainManager.ResolveCellSprite(cell, from);
+        Sprite newSprite = terrainManager.ResolveCellSprite(cell, to);
+        if (oldSprite == null || newSprite == null) return null;
+
+        // one shared material means one atlas; a sprite from anywhere else would draw the wrong texels
+        if (!IsOnTransitionAtlas(from, oldSprite) || !IsOnTransitionAtlas(to, newSprite)) return null;
+
+        // no baked top quads means nothing on screen to cover (e.g. a stale bake)
+        if (!terrainManager.TryGetTopTexelRects(cell, transitionRects, out int pixelsPerTile)) return null;
+
+        Vector3 cellOrigin = new Vector3(cell.x, terrainManager.GetLevelHeight(cell.y), cell.z);
+
+        return TileTransition.Spawn(cellOrigin, oldSprite, newSprite, transitionRects, pixelsPerTile, tileTransitionMaterial,
+            tileTransitionDuration, tileTransitionBlockDuration, tileTransitionJitter);
+    }
+
+
+    private bool IsOnTransitionAtlas(TerrainTile tile, Sprite sprite)
+    {
+        if (sprite.texture == tileTransitionMaterial.mainTexture) return true;
+
+        if (!warnedAboutTransitionAtlas)
+        {
+            warnedAboutTransitionAtlas = true;
+            Debug.LogError($"PlacementController: '{tile.name}' sprite '{sprite.name}' is on " +
+                $"'{sprite.texture.name}', not the transition material's atlas, so its transitions " +
+                $"are skipped. Move the art into the terrain atlas", tile);
+        }
+
+        return false;
+    }
+
+
     private void PlayPlaceSound(GameItem item, Vector3 worldPosition)
     {
-        SoundObject sound = item.PlaceSound != null ? item.PlaceSound : defaultPlaceSound;
+        PlaySound(item.PlaceSound != null ? item.PlaceSound : defaultPlaceSound, worldPosition);
+    }
 
+
+    private void PlaySound(SoundObject sound, Vector3 worldPosition)
+    {
         if (sound == null)
         {
             WarnOnce(ref warnedAboutMissingSound, "no placement sound assigned");

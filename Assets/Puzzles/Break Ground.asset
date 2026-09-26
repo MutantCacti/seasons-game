@@ -13,11 +13,12 @@ MonoBehaviour:
   m_Name: Break Ground
   m_EditorClassIdentifier: Assembly-CSharp::BreakGround
   id: break_ground
-  description: Gotta shake things up around here.
+  description: Someone's got to shake things up around here. Let's look for a nice
+    flat spot.
   icon: {fileID: 1728845502, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: 2a41064d6f74dcdd8bc0c4ced089210d, type: 2}
-    count: 9
+    count: 1
   unlocks:
   - {fileID: 11400000, guid: 370016e1cef6a8dcc88855f77c074faa, type: 2}
   dirt: {fileID: 11400000, guid: 2a41064d6f74dcdd8bc0c4ced089210d, type: 2}

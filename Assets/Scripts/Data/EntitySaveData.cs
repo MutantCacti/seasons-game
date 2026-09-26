@@ -58,4 +58,9 @@ public struct EntitySave
     // one the world started with (a WorldFixtures entry) rather than one the player placed, so it never
     // counts towards a puzzle that wants things placed
     public bool fixture;
+
+    // The clock reading when this became its current stage (placed, or grown into), which is what its
+    // own growth counts from. stageDay 0 is a save from before stamping, stamped with the clock on load
+    public int stageDay;
+    public float stageCycleTime;
 }

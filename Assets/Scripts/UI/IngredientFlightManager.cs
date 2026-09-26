@@ -55,7 +55,7 @@ public class IngredientFlightManager : MonoBehaviour
 
     private class Batch
     {
-        public EntityId source;
+        public GrantOrigin source;
         public List<IngredientGrant> grants;
     }
 
@@ -149,7 +149,7 @@ public class IngredientFlightManager : MonoBehaviour
 
     // raised from PuzzleManager, possibly inside its Start before the hotbar has laid out, so launching
     // waits for LateUpdate
-    private void OnIngredientsGranted(EntityId source, IReadOnlyList<IngredientGrant> grants)
+    private void OnIngredientsGranted(GrantOrigin source, IReadOnlyList<IngredientGrant> grants)
     {
         if (grants == null || grants.Count == 0) return;
 
@@ -318,15 +318,16 @@ public class IngredientFlightManager : MonoBehaviour
     // MARK: start point
 
 
-    private Vector3 StartPoint(EntityId source)
+    // from the entity or the cell that completed the puzzle
+    private Vector3 StartPoint(GrantOrigin source)
     {
         Camera viewCamera = Camera.main;
         float margin = edgeMargin * (rootCanvas != null ? rootCanvas.scaleFactor : 1.0f);
 
         // nobody to credit (the starting puzzles): rise from just below the bottom centre
-        if (source == null || viewCamera == null) return new Vector3(Screen.width * 0.5f, -margin, 0.0f);
+        if (!source.TryGetPosition(out Vector3 origin) || viewCamera == null) return new Vector3(Screen.width * 0.5f, -margin, 0.0f);
 
-        Vector3 screen = viewCamera.WorldToScreenPoint(source.transform.position + Vector3.up * sourceHeightOffset);
+        Vector3 screen = viewCamera.WorldToScreenPoint(origin + Vector3.up * sourceHeightOffset);
         bool behind = screen.z < 0.0f;
 
         if (!behind && screen.x >= 0.0f && screen.x <= Screen.width && screen.y >= 0.0f && screen.y <= Screen.height)
@@ -352,11 +353,11 @@ public class IngredientFlightManager : MonoBehaviour
     // MARK: sound
 
 
-    private void PlayLaunch(EntityId source)
+    private void PlayLaunch(GrantOrigin source)
     {
         if (launchSound == null || AudioManager.Instance == null) return;
 
-        AudioManager.Instance.PlaySFX(launchSound, source != null ? source.transform.position : ListenerPosition());
+        AudioManager.Instance.PlaySFX(launchSound, source.TryGetPosition(out Vector3 origin) ? origin : ListenerPosition());
     }
 
 

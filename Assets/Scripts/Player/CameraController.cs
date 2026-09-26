@@ -3,11 +3,6 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    // hard limits on the camera's own position, the outermost backstop. the soft world bounds below
-    // keep the view centre on the island first, so these only bite at extreme zoom-outs
-    [SerializeField] private Vector2 movementBoundsX = new Vector2(10.0f, 20.0f);
-    [SerializeField] private Vector2 movementBoundsZ = new Vector2(-20.0f, -10.0f);
-
     [SerializeField] private float movementSpeed = 0.004f;  // camera movement speed; units per pointer delta pixel
     [SerializeField] private float keyboardMovementSpeed = 8.0f;  // camera movement speed; units per second
     [SerializeField] private float zoomSpeed = 1.5f;        // camera zoom in/out speed; units per scroll
@@ -32,8 +27,6 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float listenerDistance = 5.0f;
 
     [SerializeField] private SoundObject testSO;        // DEBUG
-    [SerializeField] private GameItem testGameItem;     // DEBUG
-    [SerializeField] private GameItem treeGameItem;     // DEBUG
 
     private bool leftClickDown = false;
     private Vector3 right;
@@ -53,6 +46,7 @@ public class CameraController : MonoBehaviour
     private Vector2 worldBoundsMin;
     private Vector2 worldBoundsMax;
     private float groundPlaneY = 0.0f;
+    private bool warnedAboutMissingTerrain = false;
 
 
     // shake state; elapsed starts past any duration, which is what "not shaking" looks like here
@@ -264,14 +258,32 @@ public class CameraController : MonoBehaviour
     // MARK: world bounds
 
 
+    // The outermost backstop, derived rather than authored. The world bounds are in ground-point space
+    // and this clamp is in camera space, and the view ray is the whole of the difference: the ground
+    // point sits viewForward.xz * distance ahead of the camera. Pulling the buffered bounds back
+    // through that offset is what keeps this a backstop at every zoom, so the ground clamp above is
+    // always the one that binds first. A fixed box cannot do that - it has to be re-authored whenever
+    // the map or the camera pitch changes, and until it is, it silently crops the reachable view.
+    //
     // Runs after ClampToWorldBounds in Update, so it covers every way the camera moves (drag, keys,
-    // zoom, ping pans) and always has the last word
+    // zoom, ping pans) and always has the last word. The drag allowance is included, so the rubber
+    // band still reaches its full overshoot before this catches it.
     private void ClampToMovementBounds()
     {
-        targetPosition.x = Mathf.Clamp(targetPosition.x, movementBoundsX.x, movementBoundsX.y);
-        targetPosition.z = Mathf.Clamp(targetPosition.z, movementBoundsZ.x, movementBoundsZ.y);
-    }
+        // no world to be a backstop for. Nothing else clamps either, so ResolveWorldBounds says so
+        if (!ResolveWorldBounds()) return;
 
+        GetBufferedBounds(out float minX, out float maxX, out float minZ, out float maxZ);
+
+        // A level or upward view never meets the ground, so there is no offset to allow for and the
+        // camera itself is held to the footprint. That is the one case this backstop is really for:
+        // with no ground point, ClampToWorldBounds cannot run at all. TryGetGroundOffset writes zero
+        // for exactly that case.
+        TryGetGroundOffset(out float offsetX, out float offsetZ);
+
+        targetPosition.x = Mathf.Clamp(targetPosition.x, minX - boundsOvershoot - offsetX, maxX + boundsOvershoot - offsetX);
+        targetPosition.z = Mathf.Clamp(targetPosition.z, minZ - boundsOvershoot - offsetZ, maxZ + boundsOvershoot - offsetZ);
+    }
 
 
     private bool IsDragging { get { return leftClickDown && dragStartedOnWorld; } }
@@ -283,7 +295,18 @@ public class CameraController : MonoBehaviour
         if (worldBoundsResolved) return true;
 
         TerrainManager terrain = TerrainManager.Instance;
-        if (terrain == null) return false;
+
+        if (terrain == null)
+        {
+            // the backstop is derived from the world now, so a scene without one has no bounds at all
+            if (!warnedAboutMissingTerrain)
+            {
+                warnedAboutMissingTerrain = true;
+                Debug.LogError("CameraController: no TerrainManager, so the camera has no world bounds to clamp to", this);
+            }
+
+            return false;
+        }
 
         terrain.GetWorldXZBounds(out worldBoundsMin, out worldBoundsMax);
 
@@ -304,21 +327,41 @@ public class CameraController : MonoBehaviour
     }
 
 
-    // The ground point under the view centre: where the view ray meets the ground plane. Only the
-    // XZ matters for the bounds, so the height is dropped.
-    private bool TryGetGroundPoint(out Vector2 ground)
+    // The horizontal step from the camera to the ground point under the view centre: where the view
+    // ray meets the ground plane. It is what separates camera space from ground space, so both the
+    // world clamp and the backstop are written in terms of it. Written as zero, and false, when a
+    // level or upward view never brings the ray down onto the ground at all.
+    private bool TryGetGroundOffset(out float offsetX, out float offsetZ)
     {
         Vector3 viewForward = transform.forward;
 
         // a level or upward view never brings the ray down onto the ground
         if (viewForward.y > -MIN_FORWARD_Y)
         {
-            ground = Vector2.zero;
+            offsetX = 0.0f;
+            offsetZ = 0.0f;
             return false;
         }
 
         float distance = (groundPlaneY - targetPosition.y) / viewForward.y;
-        ground = new Vector2(targetPosition.x + viewForward.x * distance, targetPosition.z + viewForward.z * distance);
+
+        offsetX = viewForward.x * distance;
+        offsetZ = viewForward.z * distance;
+        return true;
+    }
+
+
+    // The ground point under the view centre. Only the XZ matters for the bounds, so the height is
+    // dropped.
+    private bool TryGetGroundPoint(out Vector2 ground)
+    {
+        if (!TryGetGroundOffset(out float offsetX, out float offsetZ))
+        {
+            ground = Vector2.zero;
+            return false;
+        }
+
+        ground = new Vector2(targetPosition.x + offsetX, targetPosition.z + offsetZ);
         return true;
     }
 

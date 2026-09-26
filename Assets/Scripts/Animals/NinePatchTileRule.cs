@@ -32,9 +32,9 @@ public class NinePatchTileRule : AnimalSpawnRule
     [SerializeField] private TerrainTile requiredTileToBePlaced;
     [SerializeField] private TerrainTile desiredNeighbouringTile;
 
-    // The terrain does not remember which tiles were placed, so catching up on a load or an unlock
-    // counts the level's own tiles too: a lake with a 3x3 of water in it would spawn the animal at
-    // once. Off, the rule only reacts to placements, as it always has
+    // Catching up on a load or an unlock only looks for centres the player changed, so the world's
+    // own authored patches can't spawn the animal the moment its puzzle unlocks. The neighbours can
+    // still be authored. Off, the rule only reacts to placements, as it always has
     [SerializeField] private bool catchUpFromWorld = false;
 
     [System.NonSerialized] private List<Vector3Int> candidates;
@@ -50,7 +50,7 @@ public class NinePatchTileRule : AnimalSpawnRule
     }
 
 
-    public override void OnItemPlaced(WorldContext context, GameItem itemOrTileJustPlaced, Vector3Int cell) {
+    public override void OnItemShown(WorldContext context, GameItem itemOrTileJustPlaced, Vector3Int cell) {
         if (context == null || itemOrTileJustPlaced == null) return;
         if (requiredTileToBePlaced == null || desiredNeighbouringTile == null) return;
 
@@ -73,7 +73,7 @@ public class NinePatchTileRule : AnimalSpawnRule
     }
 
 
-    // any valid 3x3 anywhere, for catching up on a load or an unlock
+    // any valid 3x3 around a player-changed centre, for catching up on a load or an unlock
     protected override bool TryFindSpawn(WorldContext context, out Vector3 position) {
         position = default;
         if (requiredTileToBePlaced == null || desiredNeighbouringTile == null) return false;
@@ -83,7 +83,7 @@ public class NinePatchTileRule : AnimalSpawnRule
 
         if (candidates == null) candidates = new List<Vector3Int>();
 
-        terrain.CollectCellsOf(requiredTileToBePlaced, candidates);
+        terrain.CollectPlayerCellsOf(requiredTileToBePlaced, candidates);
 
         for (int i = 0; i < candidates.Count; i++) {
             if (!IsValidCentre(terrain, candidates[i])) continue;

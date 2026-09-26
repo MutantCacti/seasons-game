@@ -30,6 +30,10 @@ public class Puzzle : WorldListener
     // Completing this puzzle unlocks these
     [SerializeField] private List<Puzzle> unlocks = new List<Puzzle>();
 
+    [Tooltip("the checkpoint a fail resets to; set it to an earlier puzzle when this one's failure can be " +
+        "caused by that one. Empty resets to this puzzle's own")]
+    [SerializeField] private Puzzle resetsTo;
+
 
     public string Id => id;
     public string Name => name;   // Object.name, the name in the inspector
@@ -37,6 +41,9 @@ public class Puzzle : WorldListener
     public Sprite Icon => icon;
     public IReadOnlyList<Ingredient> Ingredients => ingredients;
     public IReadOnlyList<Puzzle> Unlocks => unlocks;
+
+    // whose checkpoint a fail of this one goes back to
+    public Puzzle ResetTarget => resetsTo != null ? resetsTo : this;
 
 
     // How many of item this puzzle needs

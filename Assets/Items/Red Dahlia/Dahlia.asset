@@ -10,14 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a447734dfd8a20878da909dc174cacf, type: 3}
-  m_Name: Spring Tree
+  m_Name: Dahlia
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
-  id: spring_tree
-  description: SPRING HAS SPRUNG
-  icon: {fileID: -2200514460404702099, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  id: dahlia
+  description: Pretty and full of nectar, sugary stems like straws... how full of
+    life.
+  icon: {fileID: 1168432263, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 0}
-  prefab: {fileID: 9028055878281512701, guid: 97b32e99050984c499e4578b0ec149de, type: 3}
+  prefab: {fileID: 492142840450197731, guid: 2d7990c052cc29d688faa2e5c68c54e4, type: 3}
   placeSound: {fileID: 0}
   placedOnTags:
   - grass
   antiPlacedOnTags: []
+  growsInto: {fileID: 0}
+  growthDays: 1
+  growSound: {fileID: 0}

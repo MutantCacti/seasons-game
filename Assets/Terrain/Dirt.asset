@@ -16,8 +16,8 @@ MonoBehaviour:
   Tags:
   - dirt
   FillVariants:
-  - {fileID: 1728845502, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
-  - {fileID: -893690871, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  - {fileID: 68045519, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  - {fileID: -1151170416, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
   VariantSeed: 7301764
   Edges:
     Slots:

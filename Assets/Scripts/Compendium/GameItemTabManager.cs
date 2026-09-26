@@ -3,7 +3,8 @@ using UnityEngine;
 
 
 // The Game Items tab: registry items, three per page, with undiscovered items greyed out and
-// newly discovered items pulsing with an outline until the player hovers over them.
+// newly discovered items pulsing with an outline until the player hovers over them. An item is
+// discovered the first time it is present (inventory, world or terrain) and stays discovered.
 public class GameItemTabManager : CompendiumTabManager
 {
     private const int ENTRIES_PER_PAGE = 3;
@@ -18,9 +19,8 @@ public class GameItemTabManager : CompendiumTabManager
 
     private Material silhouetteMaterial;
 
-    // Presence is runtime-only and rebuilt from the world on every load. Unseen items are saved,
-    // through the base class, keyed by GameItem.Id with kind 0.
-    private readonly HashSet<GameItem> present = new HashSet<GameItem>();
+    // Discovered and unseen items are saved through the base class, keyed by GameItem.Id (unseen with
+    // kind 0). Both are global, so a checkpoint reset never takes a discovery back
     private readonly List<UnseenSave> savedUnseen = new List<UnseenSave>();
     private bool baselineEmpty;
 
@@ -50,10 +50,16 @@ public class GameItemTabManager : CompendiumTabManager
     {
         SubscribeToEvents();
 
-        // A new world starts from an empty baseline, so everything the player begins with is
-        // unseen. A loaded world keeps what it saved as unseen, minus anything no longer present.
-        if (baselineEmpty) RecomputePresence();
-        else TakeBaselineSnapshot();
+        // A new world discovers what the player begins with like anything else, so it is all unseen.
+        // A save from before discovery was remembered is seeded quietly from what is present now,
+        // so nothing on show goes dark
+        if (!baselineEmpty && !DiscoverySeeded) SeedDiscovery();
+
+        // anything present but never discovered is a discovery, which also catches what a load's
+        // growth catch-up placed before this tab was listening
+        RecomputePresence();
+
+        PruneSavedUnseen();
     }
 
 
@@ -140,7 +146,7 @@ public class GameItemTabManager : CompendiumTabManager
             return;
         }
 
-        if (IsDiscovered(item))
+        if (IsDiscovered(item.Id))
         {
             entry.SetItem(item);
 
@@ -174,9 +180,9 @@ public class GameItemTabManager : CompendiumTabManager
     }
 
 
-    // An item is discovered if it is currently present: held in the inventory, standing in
-    // the world as a live entity, or remapped onto at least one terrain cell.
-    private bool IsDiscovered(GameItem item)
+    // Present: held in the inventory, standing in the world as a live entity, or remapped onto at
+    // least one terrain cell. Only ever used to discover, never to un-discover
+    private bool IsPresent(GameItem item)
     {
         if (InventoryManager.Instance != null && InventoryManager.Instance.GetCount(item) > 0) return true;
         if (EntityManager.Instance != null && EntityManager.Instance.HasEntityOf(item)) return true;
@@ -223,8 +229,8 @@ public class GameItemTabManager : CompendiumTabManager
     }
 
 
-    // Diffs the live world against the last known snapshot, marking every absent -> present
-    // transition as unseen. Absent items drop out of unseen so a later re-discovery pulses again.
+    // Anything present that has never been discovered becomes discovered and unseen. Absence changes
+    // nothing: once seen, it stays in the book
     private void RecomputePresence()
     {
         IReadOnlyList<GameItem> items = registry != null ? registry.Entries : null;
@@ -237,25 +243,15 @@ public class GameItemTabManager : CompendiumTabManager
             GameItem item = items[i];
             if (item == null) continue;
 
-            if (IsDiscovered(item))
-            {
-                if (present.Add(item))
-                {
-                    MarkUnseen(item.Id, 0, false);
-                    changed = true;
-                }
-            }
-            else
-            {
-                if (present.Remove(item)) changed = true;
+            if (IsDiscovered(item.Id)) continue;
+            if (!IsPresent(item)) continue;
 
-                if (TryGetUnseen(item.Id, out int _))
-                {
-                    ClearUnseen(item.Id, false);
-                    changed = true;
-                }
-            }
+            MarkDiscovered(item.Id, false);
+            MarkUnseen(item.Id, 0, false);
+            changed = true;
         }
+
+        MarkDiscoverySeeded();
 
         // one save for the whole diff rather than one per item
         if (!changed) return;
@@ -265,12 +261,10 @@ public class GameItemTabManager : CompendiumTabManager
     }
 
 
-    // The first snapshot of a loaded world. What was saved as unseen stays unseen, except items
-    // that are no longer present, which drop out exactly as they would have at runtime.
-    private void TakeBaselineSnapshot()
+    // An old save's first load: what is present now counts as already seen, so it is discovered but
+    // not unseen (whatever it saved as unseen stays unseen)
+    private void SeedDiscovery()
     {
-        present.Clear();
-
         IReadOnlyList<GameItem> items = registry != null ? registry.Entries : null;
         if (items == null) return;
 
@@ -279,15 +273,24 @@ public class GameItemTabManager : CompendiumTabManager
             GameItem item = items[i];
             if (item == null) continue;
 
-            if (IsDiscovered(item)) present.Add(item);
+            if (IsPresent(item)) MarkDiscovered(item.Id, false);
         }
 
-        PruneSavedUnseen();
+        MarkDiscoverySeeded();
+
+        SaveCompendium();
+
+        // pages can bind before Start, while nothing was discovered yet
+        RaiseChanged();
     }
 
 
+    // Drops unseen ids no item has any more, and any that were never discovered (unseen is always a
+    // subset of discovered, so that is only ever a hand-edited or broken save)
     private void PruneSavedUnseen()
     {
+        if (registry == null) return;
+
         CopyUnseen(savedUnseen);
 
         bool pruned = false;
@@ -296,7 +299,7 @@ public class GameItemTabManager : CompendiumTabManager
         {
             string id = savedUnseen[i].id;
 
-            if (!registry.TryGetById(id, out GameItem item))
+            if (!registry.TryGetById(id, out GameItem _))
             {
                 Debug.LogWarning($"GameItemTabManager: the save holds unseen item '{id}', but no item in " +
                     $"'{registry.name}' has that id - dropping it", this);
@@ -306,7 +309,7 @@ public class GameItemTabManager : CompendiumTabManager
                 continue;
             }
 
-            if (present.Contains(item)) continue;
+            if (IsDiscovered(id)) continue;
 
             ClearUnseen(id, false);
             pruned = true;

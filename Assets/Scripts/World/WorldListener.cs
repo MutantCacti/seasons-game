@@ -78,8 +78,17 @@ public abstract class WorldListener : ScriptableObject
     }
 
 
-    // after a placement has been committed, consumed and saved
+    // after a placement has been committed, consumed (if it came from the inventory) and saved. A growth
+    // is a placement too: this hears the grown item, and nothing hears the old one leave
     public virtual void OnItemPlaced(WorldContext context, GameItem item, Vector3Int cell)
+    {
+    }
+
+
+    // the placement's presentation is over: its tile transition finished, or nothing played. A rule
+    // that reacts to what has just appeared hears it here, so it never fires while the ground is still
+    // changing. Raised for every placement, exactly once
+    public virtual void OnItemShown(WorldContext context, GameItem item, Vector3Int cell)
     {
     }
 

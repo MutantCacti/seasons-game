@@ -22,6 +22,9 @@ public class TerrainVisuals : MonoBehaviour
 
     public TerrainQuadMap[] QuadMaps { get { return quadMaps; } }
 
+    // TerrainBaker always wires the maps as { tops, walls }, so the first one is the tops
+    public TerrainQuadMap TopQuadMap { get { return quadMaps != null && quadMaps.Length > 0 ? quadMaps[0] : null; } }
+
 
     // called by the bake
     public void SetQuadMaps(TerrainQuadMap[] maps)
