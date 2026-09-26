@@ -8,6 +8,10 @@ using UnityEditor;
 // "Sea Level" child of the Grid. It is scene data, not world state, so nothing here is saved.
 // The sea does nothing for gameplay; sea behaviour belongs to the seafloor tiles.
 //
+// In play mode there is no sea until WorldCondition.SeaRisen starts: the sheet waits down at the
+// void with its renderer off. The condition is saved in the world states, so a load or a
+// checkpoint reset puts the sea back where the save had it. Edit mode always shows it at `level`.
+//
 // NB: the trigger BoxCollider spans the baked mesh's bounds, so it also covers every hole and gap in
 // the silhouette. Any future "is this over water" query must check tiles/cells, not the collider.
 //
@@ -53,8 +57,25 @@ public class SeaLevel : MonoBehaviour
     [SerializeField] private float floorY = -4.0f;  // the terrain's voidDepth, where the skirt bottoms out
 
 
-    // readable any time, including before Awake and while inactive, because it is the serialized value
+    private MeshRenderer sheet;
+    private WorldStateManager worldStates;
+    private bool risen;
+
+    // true only while the sticky ConditionChanged is replaying the saved states at subscribe time
+    private bool replaying;
+
+
+    // the designer's level, where the sea is once risen. Readable any time, including before Awake
+    // and while inactive, because it is the serialized value
     public float Y { get { return level; } }
+
+
+    // edit mode always has a sea, so the sheet can be seen and tuned
+    public bool IsRisen { get { return risen || !Application.isPlaying; } }
+
+
+    // where the sheet actually is right now
+    public float SurfaceY { get { return transform.position.y; } }
 
 
     private void Awake()
@@ -72,7 +93,35 @@ public class SeaLevel : MonoBehaviour
         }
 
         instance = this;
+
+        sheet = GetComponent<MeshRenderer>();
+        if (sheet == null) Debug.LogError("SeaLevel: no MeshRenderer, so the sea can't be hidden before it rises", this);
+
+        // hidden before anything renders, then Start finds out if the save already has it risen
+        if (Application.isPlaying) SetSheetVisible(false);
+
         Apply();
+    }
+
+
+    private void Start()
+    {
+        if (!Application.isPlaying) return;
+
+        worldStates = WorldStateManager.Instance;
+
+        if (worldStates == null)
+        {
+            // nothing could ever raise it, so a scene without one just gets its sea
+            Debug.LogError("SeaLevel: no WorldStateManager, so SeaRisen is never heard - showing the sea straight away", this);
+            Snap();
+            return;
+        }
+
+        // sticky: a save with the sea risen is replayed straight away, inside this +=
+        replaying = true;
+        worldStates.ConditionChanged += OnConditionChanged;
+        replaying = false;
     }
 
 
@@ -84,6 +133,8 @@ public class SeaLevel : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (worldStates != null) worldStates.ConditionChanged -= OnConditionChanged;
+
         if (instance == this) instance = null;
     }
 
@@ -112,6 +163,43 @@ public class SeaLevel : MonoBehaviour
 #endif
 
 
+    // MARK: rising
+
+
+    // an ended SeaRisen still counts: the sea doesn't drain away
+    private void OnConditionChanged(WorldCondition condition, ConditionPhase phase)
+    {
+        if (condition != WorldCondition.SeaRisen || phase == ConditionPhase.NotStarted) return;
+        if (risen) return;
+
+        // a load snaps, only a live start gets to rise
+        if (replaying) Snap();
+        else Rise();
+    }
+
+
+    // the live rise, the moment SeaRisen starts. just a snap for now; the slow rise goes here, from
+    // the void up to `level`, and Apply() mustn't pull the sheet back to `level` while it runs
+    private void Rise()
+    {
+        Snap();
+    }
+
+
+    private void Snap()
+    {
+        risen = true;
+        SetSheetVisible(true);
+        Apply();
+    }
+
+
+    private void SetSheetVisible(bool visible)
+    {
+        if (sheet != null) sheet.enabled = visible;
+    }
+
+
     // MARK: level
 
 
@@ -122,12 +210,18 @@ public class SeaLevel : MonoBehaviour
     }
 
 
+    // down at the void until risen: under every top, and the skirt collapses to nothing there
+    private float TargetY { get { return IsRisen ? level : floorY; } }
+
+
     public void Apply()
     {
-        Vector3 position = transform.position;
-        if (position.y == level) return;
+        float y = TargetY;
 
-        transform.position = new Vector3(position.x, level, position.z);
+        Vector3 position = transform.position;
+        if (position.y == y) return;
+
+        transform.position = new Vector3(position.x, y, position.z);
     }
 
 

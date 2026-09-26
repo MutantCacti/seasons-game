@@ -426,4 +426,7 @@ public class WorldStateManager : MonoBehaviour
 
     [ContextMenu("End Bears Hibernating")]
     private void DebugEndBears() { if (Application.isPlaying) EndCondition(WorldCondition.BearsHibernating); }
+
+    [ContextMenu("Start Sea Risen")]
+    private void DebugStartSea() { if (Application.isPlaying) StartCondition(WorldCondition.SeaRisen); }
 }

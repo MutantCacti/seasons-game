@@ -20,6 +20,7 @@ public enum WorldCondition
 {
     LakeHabitable = 0,
     BearsHibernating = 1,
+    SeaRisen = 2,
 }
 
 

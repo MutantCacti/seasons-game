@@ -32,8 +32,6 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float listenerDistance = 5.0f;
 
     [SerializeField] private SoundObject testSO;        // DEBUG
-    [SerializeField] private GameItem testGameItem;     // DEBUG
-    [SerializeField] private GameItem treeGameItem;     // DEBUG
 
     private bool leftClickDown = false;
     private Vector3 right;

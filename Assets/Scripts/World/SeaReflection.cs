@@ -104,6 +104,13 @@ public class SeaReflection : MonoBehaviour
         SeaLevel sea = SeaLevel.Instance;
         if (sea == null || !sea.isActiveAndEnabled) return;
 
+        // no sea yet, so nothing to mirror into. with no target the sea's _SeaReflectionOn goes to 0
+        if (!sea.IsRisen)
+        {
+            ReleaseTarget();
+            return;
+        }
+
         EnsureCamera();
         if (!EnsureTarget(source)) return;
 
