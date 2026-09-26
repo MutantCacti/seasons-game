@@ -146,6 +146,12 @@ public class PuzzleManager : MonoBehaviour
 
     private readonly List<Puzzle> charged = new List<Puzzle>();
 
+    // scratch for the growth-pending scan
+    private readonly List<EntityManager.LiveEntity> scratchLive = new List<EntityManager.LiveEntity>();
+
+    // a guard against a growsInto cycle, which the item registry's validation reports
+    private const int MAX_GROWTH_CHAIN = 32;
+
     private bool completionEnabled = true;
 
     private bool checkpointManagerWarningLogged;
@@ -663,8 +669,9 @@ public class PuzzleManager : MonoBehaviour
 
 
     // Queues every active puzzle to be judged once the world has settled. Re-queueing one that is
-    // already flagged is harmless, because the flag is only raised on the transition.
-    private void ScheduleSoftLockCheck()
+    // already flagged is harmless, because the flag is only raised on the transition. Public so growth
+    // can have a puzzle that was waiting on it judged again once the grown things exist
+    public void ScheduleSoftLockCheck()
     {
         pendingSoftLockChecks.Clear();
 
@@ -701,6 +708,10 @@ public class PuzzleManager : MonoBehaviour
                 continue;
             }
 
+            // Spent, but some of it is still growing into what the puzzle may want, so it isn't judged
+            // yet. GrowthManager asks again once anything grows. An existing flag or ping is left alone
+            if (IsGrowthPending(puzzle)) continue;
+
             if (!softLocked.Add(puzzle)) continue;
 
             Debug.LogWarning($"PuzzleManager: '{puzzle.name}' has spent every ingredient it was given " +
@@ -721,6 +732,53 @@ public class PuzzleManager : MonoBehaviour
         }
 
         pendingSoftLockChecks.Clear();
+    }
+
+
+    // True while any live entity is one of the puzzle's ingredients, or anything one grows into,
+    // that will still grow: a seed, or the sapling it became on its way to a tree
+    private bool IsGrowthPending(Puzzle puzzle)
+    {
+        IReadOnlyList<Ingredient> ingredients = puzzle.Ingredients;
+        if (ingredients == null || ingredients.Count == 0) return false;
+
+        EntityManager entities = EntityManager.Instance;
+        if (entities == null) return false;
+
+        entities.CollectLive(scratchLive);
+
+        bool pending = false;
+
+        for (int i = 0; i < scratchLive.Count && !pending; i++)
+        {
+            GameItem item = scratchLive[i].item;
+            if (item == null || item.GrowsInto == null) continue;
+
+            pending = GrowsFromIngredient(item, ingredients);
+        }
+
+        scratchLive.Clear();
+
+        return pending;
+    }
+
+
+    // whether item is an ingredient or somewhere down an ingredient's growsInto chain
+    private static bool GrowsFromIngredient(GameItem item, IReadOnlyList<Ingredient> ingredients)
+    {
+        for (int i = 0; i < ingredients.Count; i++)
+        {
+            GameItem step = ingredients[i].item;
+
+            for (int depth = 0; step != null && depth < MAX_GROWTH_CHAIN; depth++)
+            {
+                if (step == item) return true;
+
+                step = step.GrowsInto;
+            }
+        }
+
+        return false;
     }
 
 

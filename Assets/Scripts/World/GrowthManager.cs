@@ -30,6 +30,9 @@ public class GrowthManager : MonoBehaviour
     [SerializeField] private PlacementController placementController;
     [SerializeField] private WorldStateManager worldStates;
 
+    // growth works without it, but a puzzle waiting on growth would never be judged again
+    [SerializeField] private PuzzleManager puzzleManager;
+
     [Header("Several growths on one moment")]
     [Tooltip("each growth after the first pops after a random delay up to this, so they come in as a wave")]
     [SerializeField] [Min(0.0f)] private float staggerMax = 0.2f;
@@ -62,10 +65,13 @@ public class GrowthManager : MonoBehaviour
         if (entityManager == null) entityManager = EntityManager.Instance;
         if (placementController == null) placementController = PlacementController.Instance;
         if (worldStates == null) worldStates = WorldStateManager.Instance;
+        if (puzzleManager == null) puzzleManager = PuzzleManager.Instance;
 
         if (entityManager == null) Debug.LogError("GrowthManager: no EntityManager, so nothing placed can ever grow", this);
         if (placementController == null) Debug.LogError("GrowthManager: no PlacementController, so nothing placed can ever grow", this);
         if (worldStates == null) Debug.LogError("GrowthManager: no WorldStateManager, so there is no clock to grow by", this);
+
+        if (puzzleManager == null) Debug.LogError("GrowthManager: no PuzzleManager, so a puzzle waiting on growth is never judged again once it grows", this);
 
         if (entityManager == null || placementController == null || worldStates == null) return;
 
@@ -105,6 +111,9 @@ public class GrowthManager : MonoBehaviour
         }
 
         caughtUp = true;
+
+        // a puzzle held back while its ingredients grew is judged against the caught-up world
+        JudgePuzzles();
     }
 
 
@@ -113,7 +122,15 @@ public class GrowthManager : MonoBehaviour
     {
         if (!caughtUp) return;
 
-        GrowDue(PlacementController.PlaceFeel.Growth);
+        if (GrowDue(PlacementController.PlaceFeel.Growth) > 0) JudgePuzzles();
+    }
+
+
+    // Soft locks skip a puzzle while its ingredients are still growing, so once something grows it is
+    // judged again: a grown item that doesn't satisfy it (and won't grow further) fails it properly
+    private void JudgePuzzles()
+    {
+        if (puzzleManager != null) puzzleManager.ScheduleSoftLockCheck();
     }
 
 
@@ -188,5 +205,7 @@ public class GrowthManager : MonoBehaviour
         }
 
         scratch.Clear();
+
+        if (grown > 0) JudgePuzzles();
     }
 }
