@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5a2b19b934b404c9fc86c5d0c89cdd3, type: 3}
+  m_Name: I Am The Rain
+  m_EditorClassIdentifier: Assembly-CSharp::IAmTheRain
+  id: i_am_the_rain
+  description: All life begins in the universal solvent.
+  icon: {fileID: 1296638262, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  ingredients:
+  - item: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
+    count: 1
+  unlocks:
+  - {fileID: 11400000, guid: 370016e1cef6a8dcc88855f77c074faa, type: 2}
+  - {fileID: 11400000, guid: 0fc367109252a58449792da384e7a561, type: 2}
+  resetsTo: {fileID: 0}
+  water: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
