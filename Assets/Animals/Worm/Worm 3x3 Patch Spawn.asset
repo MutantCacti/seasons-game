@@ -15,6 +15,6 @@ MonoBehaviour:
   id: worm
   animal: {fileID: 11400000, guid: 35aca377dbe5c7b5fb0e1e5f3c104ad4, type: 2}
   completes: {fileID: 11400000, guid: 370016e1cef6a8dcc88855f77c074faa, type: 2}
-  requiredTileToBePlaced: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
-  desiredNeighbouringTile: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
+  requiredTileToBePlaced: {fileID: 11400000, guid: f5371682b1105bd29878dcdc70dd82a6, type: 2}
+  desiredNeighbouringTile: {fileID: 11400000, guid: f5371682b1105bd29878dcdc70dd82a6, type: 2}
   catchUpFromWorld: 1
