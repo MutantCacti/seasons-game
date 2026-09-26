@@ -16,7 +16,7 @@ MonoBehaviour:
   description: It doesn't smell very good, but plants like the taste.
   icon: {fileID: 394711117, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 0}
-  prefab: {fileID: 8516599430986127693, guid: 85132d8ffc691c0f49f61d0c72e08b46, type: 3}
+  prefab: {fileID: 0}
   placeSound: {fileID: 11400000, guid: 0a2d503886ae94d6199c13e689aa6e82, type: 2}
   placedOnTags: []
   antiPlacedOnTags: []
@@ -24,3 +24,4 @@ MonoBehaviour:
   growthDays: 1
   growSound: {fileID: 0}
   reactions: []
+  hideInCompendium: 0
