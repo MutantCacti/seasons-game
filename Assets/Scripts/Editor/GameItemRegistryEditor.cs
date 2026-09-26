@@ -279,7 +279,8 @@ public class GameItemRegistryEditor : Editor
 
     // Orders the gathered items into the order the player meets them: the compendium first, then
     // items no puzzle reaches (A->Z), then the puzzle tree's ingredients depth by depth (A->Z
-    // within each depth). Falls back to a plain A->Z sort when the puzzle registry is missing.
+    // within each depth) with what they grow into trailing behind them. Falls back to a plain A->Z
+    // sort when the puzzle registry is missing.
     private static List<GameItem> OrderItems(GameItemRegistry registry, List<GameItem> found,
         out int compendiumCount, out int unreachedCount, out int reachedCount)
     {
@@ -330,6 +331,32 @@ public class GameItemRegistryEditor : Editor
             {
                 if (reachedSet.Add(ingredients[i])) reached.Add(ingredients[i]);
             }
+        }
+
+        // step 4: what a reached item grows into is met after the puzzle ingredients, not instead of
+        // them. A grown flower is reached, so it is not swept up with the items no puzzle reaches and
+        // pushed to the front of the book. Wave by wave so a chain keeps its order; the set makes a
+        // cycle terminate, and an item two growths reach keeps the place of its first appearance.
+        List<GameItem> growing = new List<GameItem>(reached);
+
+        while (growing.Count > 0)
+        {
+            List<GameItem> grown = new List<GameItem>();
+
+            for (int i = 0; i < growing.Count; i++)
+            {
+                GameItem into = growing[i].GrowsInto;
+                if (into == null) continue;
+                if (!reachedSet.Add(into)) continue;
+
+                grown.Add(into);
+            }
+
+            grown.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+
+            for (int i = 0; i < grown.Count; i++) reached.Add(grown[i]);
+
+            growing = grown;
         }
 
         // step 1: the compendium leads, matched by id rather than name
