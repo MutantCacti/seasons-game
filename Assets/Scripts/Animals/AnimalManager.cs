@@ -4,14 +4,9 @@ using UnityEngine;
 
 
 // Owns the animals in the world, their section of the save, and the spawn rules that bring them in.
-// Rules are AnimalSpawnRule assets; this forwards world events to them and does the spawning on their
-// behalf, so every animal is gated, saved, registered and credited the same way.
-//
-// Nothing reaches a rule until the world has finished loading (puzzles, world states and entities),
-// and then every rule hears OnLoaded once. Events a rule raises while being told of another (a spawn
-// inside OnAnimalSpawned, say) are queued and dispatched after, so a chain resolves in one frame
-// without the rules list being walked twice at once.
-public class AnimalManager : MonoBehaviour, AnimalSpawnContext
+// Rules are AnimalSpawnRule assets that hear world events through WorldEvents; this does the spawning
+// on their behalf, so every animal is gated, saved, registered and credited the same way.
+public class AnimalManager : MonoBehaviour
 {
     private static AnimalManager instance;
     public static AnimalManager Instance { get { return instance; } }
@@ -55,25 +50,8 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
     // swaps SaveData.world out, and both reload the scene
     private WorldState world;
 
-    private PlacementController placementController;
-    private PuzzleManager puzzleManager;
-    private WorldStateManager worldStates;
-    private SaveDataManager saveManager;
-
-    // true once every rule has heard OnLoaded; nothing is dispatched before
-    private bool ready;
-
-    private readonly Queue<Action<AnimalSpawnRule>> pendingDispatches = new Queue<Action<AnimalSpawnRule>>();
-    private bool dispatching;
-
-    // scratch for the context's scans
-    private readonly List<EntityId> scratchEntities = new List<EntityId>();
-    private readonly List<Vector3Int> scratchCells = new List<Vector3Int>();
-    private readonly List<Vector3> scratchPositions = new List<Vector3>();
-
-
-    public TerrainManager Terrain { get { return terrainManager; } }
-    public WorldStateManager States { get { return worldStates; } }
+    // every spawn rule, for WorldEvents to fan events out to
+    public IReadOnlyList<AnimalSpawnRule> SpawnRules { get { return ruleRegistry != null ? ruleRegistry.Entries : null; } }
 
 
     private void Awake()
@@ -98,6 +76,9 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
         }
 
         if (animalParent == null) animalParent = new GameObject("Animals").transform;
+
+        // the rules hear the world through it
+        WorldEvents.Ensure();
 
         ResolveWorld();
 
@@ -145,84 +126,12 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
             Debug.LogError("AnimalManager: no EntityManager, so a puzzle completed by an animal cannot find it", this);
         }
 
-        placementController = PlacementController.Instance;
-
-        if (placementController != null) placementController.ItemPlaced += OnItemPlaced;
-        else Debug.LogError("AnimalManager: no PlacementController, so placement-based spawn rules can never fire", this);
-
         AnimalsChanged?.Invoke();
-
-        SubscribeToWorld();
-    }
-
-
-    // the sticky ones (puzzles loaded, world states loaded, season and conditions) answer at once if
-    // they have already happened, which is why the replayed states are dropped while not ready
-    //
-    // every reference is resolved before anything is subscribed, because a sticky event calls
-    // TryBecomeReady on the spot and it must not see a manager as missing that is only unassigned
-    private void SubscribeToWorld()
-    {
-        saveManager = SaveDataManager.Instance;
-        worldStates = WorldStateManager.Instance;
-        puzzleManager = PuzzleManager.Instance;
-
-        if (saveManager != null) saveManager.NewWorldConstructed += TryBecomeReady;
-
-        if (worldStates != null)
-        {
-            worldStates.Loaded += TryBecomeReady;
-            worldStates.SeasonChanged += OnSeasonChanged;
-            worldStates.ConditionChanged += OnConditionChanged;
-            worldStates.Sunrise += OnSunrise;
-            worldStates.Noon += OnNoon;
-            worldStates.Sunset += OnSunset;
-            worldStates.Midnight += OnMidnight;
-        }
-        else
-        {
-            Debug.LogError("AnimalManager: no WorldStateManager, so no rule hears a season, a condition or the time of day", this);
-        }
-
-        // without one, nothing else would ever call this: the world states are simply not waited for
-        if (worldStates == null) TryBecomeReady();
-
-        if (puzzleManager != null)
-        {
-            puzzleManager.OnPuzzleUnlocked += OnPuzzleUnlocked;
-            puzzleManager.OnPuzzlesLoaded += TryBecomeReady;
-        }
-        else
-        {
-            Debug.LogError("AnimalManager: no PuzzleManager, so rules are never gated on their puzzles", this);
-            TryBecomeReady();
-        }
     }
 
 
     private void OnDestroy()
     {
-        if (placementController != null) placementController.ItemPlaced -= OnItemPlaced;
-
-        if (saveManager != null) saveManager.NewWorldConstructed -= TryBecomeReady;
-
-        if (worldStates != null)
-        {
-            worldStates.Loaded -= TryBecomeReady;
-            worldStates.SeasonChanged -= OnSeasonChanged;
-            worldStates.ConditionChanged -= OnConditionChanged;
-            worldStates.Sunrise -= OnSunrise;
-            worldStates.Noon -= OnNoon;
-            worldStates.Sunset -= OnSunset;
-            worldStates.Midnight -= OnMidnight;
-        }
-
-        if (puzzleManager != null)
-        {
-            puzzleManager.OnPuzzleUnlocked -= OnPuzzleUnlocked;
-            puzzleManager.OnPuzzlesLoaded -= TryBecomeReady;
-        }
-
         if (instance == this) instance = null;
     }
 
@@ -296,13 +205,16 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
 
 
     // a completed puzzle stays unlocked, so this holds from the unlock on. with no PuzzleManager (a test
-    // scene) nothing is gated, so progress never stalls
+    // scene) nothing is gated, so progress never stalls. Read fresh rather than cached in Start: the
+    // rules can hear OnLoaded, and spawn, before this manager's own Start has run
     private bool IsUnlocked(AnimalSpawnRule rule)
     {
         if (rule.Completes == null) return true;
-        if (puzzleManager == null) return true;
 
-        return puzzleManager.IsUnlocked(rule.Completes);
+        PuzzleManager puzzles = PuzzleManager.Instance;
+        if (puzzles == null) return true;
+
+        return puzzles.IsUnlocked(rule.Completes);
     }
 
 
@@ -323,99 +235,6 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
 
         return false;
     }
-
-
-    // Ready once puzzles have loaded, world states have loaded and a new world has finished being
-    // built. Each of those calls this, and the last one through tells every rule OnLoaded
-    private void TryBecomeReady()
-    {
-        if (ready) return;
-
-        if (puzzleManager != null && !puzzleManager.IsLoaded) return;
-        if (saveManager != null && saveManager.IsConstructingNewWorld) return;
-
-        // a rule's OnLoaded scan must see the placed entities
-        if (EntityManager.Instance != null) EntityManager.Instance.EnsureLoaded();
-
-        ready = true;
-
-        Dispatch(rule => rule.OnLoaded(this));
-    }
-
-
-    // Walks every rule with the hook. A hook that dispatches again (a spawn inside a spawn) is queued
-    // behind this one. A rule that throws is logged and the rest still hear the event
-    private void Dispatch(Action<AnimalSpawnRule> hook)
-    {
-        if (!ready || ruleRegistry == null) return;
-
-        pendingDispatches.Enqueue(hook);
-
-        if (dispatching) return;
-        dispatching = true;
-
-        try
-        {
-            while (pendingDispatches.Count > 0)
-            {
-                Action<AnimalSpawnRule> next = pendingDispatches.Dequeue();
-                IReadOnlyList<AnimalSpawnRule> rules = ruleRegistry.Entries;
-
-                for (int i = 0; i < rules.Count; i++)
-                {
-                    AnimalSpawnRule rule = rules[i];
-                    if (rule == null) continue;
-
-                    try
-                    {
-                        next(rule);
-                    }
-                    catch (Exception exception)
-                    {
-                        Debug.LogException(exception, rule);
-                    }
-                }
-            }
-        }
-        finally
-        {
-            dispatching = false;
-        }
-    }
-
-
-    private void OnItemPlaced(GameItem item, Vector3Int cell, GameObject instance)
-    {
-        Dispatch(rule => rule.OnItemPlaced(this, item, cell));
-    }
-
-
-    // only to the rules that complete this puzzle: it is their gate that just opened
-    private void OnPuzzleUnlocked(Puzzle puzzle)
-    {
-        Dispatch(rule =>
-        {
-            if (rule.Completes == puzzle) rule.OnPuzzleUnlocked(this);
-        });
-    }
-
-
-    private void OnSeasonChanged(Season season)
-    {
-        Dispatch(rule => rule.OnSeasonChanged(this, season));
-    }
-
-
-    private void OnConditionChanged(WorldCondition condition, ConditionPhase phase)
-    {
-        Dispatch(rule => rule.OnConditionChanged(this, condition, phase));
-    }
-
-
-    private void OnSunrise() { Dispatch(rule => rule.OnSunrise(this)); }
-    private void OnNoon() { Dispatch(rule => rule.OnNoon(this)); }
-    private void OnSunset() { Dispatch(rule => rule.OnSunset(this)); }
-    private void OnMidnight() { Dispatch(rule => rule.OnMidnight(this)); }
 
 
     // MARK: spawn
@@ -474,108 +293,9 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
                 $"complete '{rule.Completes.name}'", this);
         }
 
-        Dispatch(other => other.OnAnimalSpawned(this, animal, entityId));
+        if (WorldEvents.Instance != null) WorldEvents.Instance.RaiseAnimalSpawned(animal, entityId);
 
         return true;
-    }
-
-
-    // MARK: context queries
-
-
-    public void CollectPositionsOf(GameItem item, List<Vector3> results)
-    {
-        results.Clear();
-        if (item == null) return;
-
-        if (EntityManager.Instance != null)
-        {
-            EntityManager.Instance.CollectEntitiesOf(item, scratchEntities);
-
-            for (int i = 0; i < scratchEntities.Count; i++)
-            {
-                if (scratchEntities[i] != null) results.Add(scratchEntities[i].transform.position);
-            }
-        }
-
-        if (item.Tile != null && terrainManager != null)
-        {
-            terrainManager.CollectCellsOf(item.Tile, scratchCells);
-
-            for (int i = 0; i < scratchCells.Count; i++) results.Add(terrainManager.CellToWorld(scratchCells[i]));
-        }
-    }
-
-
-    // plain world space distance: a thing on a cliff above counts as near if it is close enough
-    public bool FindWithin(Vector3 point, float radius, GameItem item, out Vector3 found)
-    {
-        found = default;
-
-        CollectPositionsOf(item, scratchPositions);
-
-        float best = float.PositiveInfinity;
-
-        for (int i = 0; i < scratchPositions.Count; i++)
-        {
-            float distance = Vector3.Distance(point, scratchPositions[i]);
-            if (distance > radius || distance >= best) continue;
-
-            best = distance;
-            found = scratchPositions[i];
-        }
-
-        return !float.IsPositiveInfinity(best);
-    }
-
-
-    public bool TryRandomSurface(Predicate<TerrainTile> accept, bool offScreen, out Vector3 position)
-    {
-        position = default;
-        if (terrainManager == null) return false;
-
-        Camera view = offScreen ? Camera.main : null;
-
-        if (offScreen && view == null)
-        {
-            Debug.LogError("AnimalManager: no main camera, so an off-screen spawn point cannot be picked", this);
-            return false;
-        }
-
-        terrainManager.GetWorldXZBounds(out Vector2 min, out Vector2 max);
-
-        scratchPositions.Clear();
-
-        for (int z = Mathf.FloorToInt(min.y); z < Mathf.CeilToInt(max.y); z++)
-        {
-            for (int x = Mathf.FloorToInt(min.x); x < Mathf.CeilToInt(max.x); x++)
-            {
-                int level = terrainManager.GetTopLevel(x, z);
-                if (level < 0) continue;
-
-                Vector3Int cell = new Vector3Int(x, level, z);
-                if (accept != null && !accept(terrainManager.GetTile(cell))) continue;
-
-                Vector3 point = terrainManager.CellToWorld(cell);
-
-                if (view != null && IsOnScreen(view, point)) continue;
-
-                scratchPositions.Add(point);
-            }
-        }
-
-        if (scratchPositions.Count == 0) return false;
-
-        position = scratchPositions[UnityEngine.Random.Range(0, scratchPositions.Count)];
-        return true;
-    }
-
-
-    private static bool IsOnScreen(Camera view, Vector3 point)
-    {
-        Vector3 viewport = view.WorldToViewportPoint(point);
-
-        return viewport.z > 0.0f && viewport.x >= 0.0f && viewport.x <= 1.0f && viewport.y >= 0.0f && viewport.y <= 1.0f;
     }
 
 

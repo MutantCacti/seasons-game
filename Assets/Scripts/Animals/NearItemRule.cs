@@ -33,19 +33,19 @@ public class NearItemRule : AnimalSpawnRule
     [System.NonSerialized] private List<Vector3> nearPositions;
 
 
-    public override void OnLoaded(AnimalSpawnContext context)
+    public override void OnLoaded(WorldContext context)
     {
         if (catchUpFromWorld) base.OnLoaded(context);
     }
 
 
-    public override void OnPuzzleUnlocked(AnimalSpawnContext context)
+    public override void OnPuzzleUnlocked(WorldContext context)
     {
         if (catchUpFromWorld) base.OnPuzzleUnlocked(context);
     }
 
 
-    public override void OnItemPlaced(AnimalSpawnContext context, GameItem item, Vector3Int cell)
+    public override void OnItemPlaced(WorldContext context, GameItem item, Vector3Int cell)
     {
         if (context == null || item == null) return;
         if (placed == null || near == null) return;
@@ -74,7 +74,7 @@ public class NearItemRule : AnimalSpawnRule
 
     // any placed one with a near one beside it, for catching up on a load or an unlock. Each list is
     // collected once, since collecting a tile item scans the whole map
-    protected override bool TryFindSpawn(AnimalSpawnContext context, out Vector3 position)
+    protected override bool TryFindSpawn(WorldContext context, out Vector3 position)
     {
         position = default;
         if (placed == null || near == null) return false;
@@ -105,13 +105,13 @@ public class NearItemRule : AnimalSpawnRule
     // MARK: internals
 
 
-    private bool HasOtherWithin(AnimalSpawnContext context, Vector3 point, GameItem item)
+    private bool HasOtherWithin(WorldContext context, Vector3 point, GameItem item)
     {
         return TryFindOtherWithin(context, point, item, out Vector3 _);
     }
 
 
-    private bool TryFindOtherWithin(AnimalSpawnContext context, Vector3 point, GameItem item, out Vector3 found)
+    private bool TryFindOtherWithin(WorldContext context, Vector3 point, GameItem item, out Vector3 found)
     {
         found = default;
 
