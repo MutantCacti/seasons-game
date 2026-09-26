@@ -13,11 +13,18 @@ MonoBehaviour:
   m_Name: Compendium
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
   id: compendium
-  description: O' GREAT TOME
-  icon: {fileID: 0}
+  description: An ancient and magic book of kind and humble origin. It has no mind
+    to think or voice to speak, but it longs to see nature restored to this barren
+    land.
+  icon: {fileID: 21300000, guid: 2199d21c0b9a1063bbf0c807e963cb07, type: 3}
   tile: {fileID: 11400000, guid: 033db43898455b3f6abeb4007e3dc393, type: 2}
   prefab: {fileID: 8202063350275754688, guid: cdb433820f45695459e30bcdf0ec4530, type: 3}
   placeSound: {fileID: 0}
   placedOnTags:
   - grass
   antiPlacedOnTags: []
+  growsInto: {fileID: 0}
+  growthDays: 1
+  growSound: {fileID: 0}
+  reactions: []
+  hideInCompendium: 0
