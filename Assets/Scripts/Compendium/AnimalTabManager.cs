@@ -4,7 +4,8 @@ using UnityEngine;
 
 // The Animals tab: registry animals, three per page, with undiscovered animals as silhouettes and
 // newly discovered ones pulsing with an outline until the player hovers over them. Built the same way
-// as GameItemTabManager: an animal is discovered while at least one of its kind is in the world.
+// as GameItemTabManager: an animal is discovered the first time one of its kind is in the world, and
+// stays discovered.
 public class AnimalTabManager : CompendiumTabManager
 {
     private const int ENTRIES_PER_PAGE = 3;
@@ -19,9 +20,8 @@ public class AnimalTabManager : CompendiumTabManager
 
     private Material silhouetteMaterial;
 
-    // Presence is runtime-only and rebuilt from the world on every load, so it rolls back with a
-    // checkpoint. Unseen animals are saved, through the base class, keyed by Animal.Id with kind 0.
-    private readonly HashSet<Animal> present = new HashSet<Animal>();
+    // Discovered and unseen animals are saved through the base class, keyed by Animal.Id (unseen with
+    // kind 0). Both are global, so a checkpoint reset never takes a discovery back
     private readonly List<UnseenSave> savedUnseen = new List<UnseenSave>();
     private bool baselineEmpty;
 
@@ -57,10 +57,12 @@ public class AnimalTabManager : CompendiumTabManager
         if (animalManager != null) animalManager.AnimalsChanged += OnAnimalsChanged;
         else Debug.LogError("AnimalTabManager: no AnimalManager, so no animal can ever be discovered", this);
 
-        // A new world starts from an empty baseline, so an animal present from the start is unseen.
-        // A loaded world keeps what it saved as unseen, minus anything no longer present.
+        // A new world discovers an animal present from the start like any other, so it is unseen. A
+        // save from before discovery was remembered is seeded quietly from what is present now
         if (baselineEmpty) RecomputePresence();
-        else TakeBaselineSnapshot();
+        else if (!DiscoverySeeded) SeedDiscovery();
+
+        PruneSavedUnseen();
     }
 
 
@@ -148,7 +150,7 @@ public class AnimalTabManager : CompendiumTabManager
             return;
         }
 
-        if (IsDiscovered(animal))
+        if (IsDiscovered(animal.Id))
         {
             // CompendiumEntry.SetItem only takes a GameItem, so the same four calls by hand
             entry.SetImage(animal.Icon);
@@ -186,7 +188,8 @@ public class AnimalTabManager : CompendiumTabManager
     }
 
 
-    private bool IsDiscovered(Animal animal)
+    // only ever used to discover, never to un-discover
+    private bool IsPresent(Animal animal)
     {
         return animalManager != null && animalManager.HasAnimalOf(animal);
     }
@@ -201,8 +204,8 @@ public class AnimalTabManager : CompendiumTabManager
     }
 
 
-    // Diffs the live world against the last known snapshot, marking every absent -> present
-    // transition as unseen. Absent animals drop out of unseen so a later re-discovery pulses again.
+    // Any animal present that has never been discovered becomes discovered and unseen. Absence
+    // changes nothing: once seen, it stays in the book
     private void RecomputePresence()
     {
         IReadOnlyList<Animal> animals = registry != null ? registry.Entries : null;
@@ -215,25 +218,15 @@ public class AnimalTabManager : CompendiumTabManager
             Animal animal = animals[i];
             if (animal == null) continue;
 
-            if (IsDiscovered(animal))
-            {
-                if (present.Add(animal))
-                {
-                    MarkUnseen(animal.Id, 0, false);
-                    changed = true;
-                }
-            }
-            else
-            {
-                if (present.Remove(animal)) changed = true;
+            if (IsDiscovered(animal.Id)) continue;
+            if (!IsPresent(animal)) continue;
 
-                if (TryGetUnseen(animal.Id, out int _))
-                {
-                    ClearUnseen(animal.Id, false);
-                    changed = true;
-                }
-            }
+            MarkDiscovered(animal.Id, false);
+            MarkUnseen(animal.Id, 0, false);
+            changed = true;
         }
+
+        MarkDiscoverySeeded();
 
         // one save for the whole diff rather than one per animal
         if (!changed) return;
@@ -243,12 +236,10 @@ public class AnimalTabManager : CompendiumTabManager
     }
 
 
-    // The first snapshot of a loaded world. What was saved as unseen stays unseen, except animals
-    // that are no longer present, which drop out exactly as they would have at runtime.
-    private void TakeBaselineSnapshot()
+    // An old save's first load: what is present now counts as already seen, so it is discovered but
+    // not unseen (whatever it saved as unseen stays unseen)
+    private void SeedDiscovery()
     {
-        present.Clear();
-
         IReadOnlyList<Animal> animals = registry != null ? registry.Entries : null;
         if (animals == null) return;
 
@@ -257,15 +248,24 @@ public class AnimalTabManager : CompendiumTabManager
             Animal animal = animals[i];
             if (animal == null) continue;
 
-            if (IsDiscovered(animal)) present.Add(animal);
+            if (IsPresent(animal)) MarkDiscovered(animal.Id, false);
         }
 
-        PruneSavedUnseen();
+        MarkDiscoverySeeded();
+
+        SaveCompendium();
+
+        // pages can bind before Start, while nothing was discovered yet
+        RaiseChanged();
     }
 
 
+    // Drops unseen ids no animal has any more, and any that were never discovered (unseen is always a
+    // subset of discovered, so that is only ever a hand-edited or broken save)
     private void PruneSavedUnseen()
     {
+        if (registry == null) return;
+
         CopyUnseen(savedUnseen);
 
         bool pruned = false;
@@ -274,7 +274,7 @@ public class AnimalTabManager : CompendiumTabManager
         {
             string id = savedUnseen[i].id;
 
-            if (!registry.TryGetById(id, out Animal animal))
+            if (!registry.TryGetById(id, out Animal _))
             {
                 Debug.LogWarning($"AnimalTabManager: the save holds unseen animal '{id}', but no animal in " +
                     $"'{registry.name}' has that id - dropping it", this);
@@ -284,7 +284,7 @@ public class AnimalTabManager : CompendiumTabManager
                 continue;
             }
 
-            if (present.Contains(animal)) continue;
+            if (IsDiscovered(id)) continue;
 
             ClearUnseen(id, false);
             pruned = true;

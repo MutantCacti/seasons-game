@@ -231,6 +231,58 @@ public abstract class CompendiumTabManager : MonoBehaviour
     }
 
 
+    // MARK: discovery
+
+
+    // Discovery is global and one way: once seen, an id stays discovered through checkpoint resets
+    // and its thing leaving the world. Only a tab that discovers things uses this
+    protected bool IsDiscovered(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return false;
+
+        CompendiumTabSave tab = TabSave;
+        return tab != null && tab.discovered != null && tab.discovered.Contains(id);
+    }
+
+
+    // True when the id was newly discovered. Pass save false inside a batch and call SaveCompendium once after.
+    protected bool MarkDiscovered(string id, bool save = true)
+    {
+        if (string.IsNullOrEmpty(id)) return false;
+
+        CompendiumTabSave tab = TabSave;
+        if (tab == null) return false;
+
+        if (tab.discovered == null) tab.discovered = new List<string>();
+        if (tab.discovered.Contains(id)) return false;
+
+        tab.discovered.Add(id);
+
+        if (save) SaveCompendium();
+
+        return true;
+    }
+
+
+    // false only for a save from before discovery was remembered, until its tab seeds it
+    protected bool DiscoverySeeded
+    {
+        get
+        {
+            CompendiumTabSave tab = TabSave;
+            return tab == null || tab.discoverySeeded;
+        }
+    }
+
+
+    // not saved on its own: the seeding that calls this saves once for everything
+    protected void MarkDiscoverySeeded()
+    {
+        CompendiumTabSave tab = TabSave;
+        if (tab != null) tab.discoverySeeded = true;
+    }
+
+
     private static void RaiseUnseenChanged()
     {
         if (UnseenChanged != null) UnseenChanged();

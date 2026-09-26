@@ -12,13 +12,20 @@ public class UnseenSave
 }
 
 
-// What one tab remembers: the left page of the spread it was last on, and what it still has unseen
+// What one tab remembers: the left page of the spread it was last on, what it still has unseen, and,
+// for a tab that discovers things, every id the player has ever seen
 [Serializable]
 public class CompendiumTabSave
 {
     public string tabKey;
     public int page;
     public List<UnseenSave> unseen = new List<UnseenSave>();
+
+    // only ever grows; a new game is the one thing that clears it
+    public List<string> discovered = new List<string>();
+
+    // false in a save from before discovery was remembered, which then gets seeded from the world once
+    public bool discoverySeeded;
 
 
     // -1 when the id is not unseen
@@ -83,9 +90,10 @@ public class CompendiumSaveData
         for (int i = 0; i < tabs.Count; i++)
         {
             CompendiumTabSave tab = tabs[i];
-            if (tab == null || tab.unseen == null) continue;
+            if (tab == null) continue;
 
-            tab.unseen.Sort((a, b) => string.CompareOrdinal(a != null ? a.id : "", b != null ? b.id : ""));
+            if (tab.unseen != null) tab.unseen.Sort((a, b) => string.CompareOrdinal(a != null ? a.id : "", b != null ? b.id : ""));
+            if (tab.discovered != null) tab.discovered.Sort(string.CompareOrdinal);
         }
     }
 }
