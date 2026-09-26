@@ -141,6 +141,11 @@ public class BookAnimator : MonoBehaviour
     private bool wasHovered;
     private bool pointerHovering;
 
+    // the left button as of the last event, and whether this book is the one holding the cursor. The
+    // hand has to be pushed rather than polled, see UpdateCursor
+    private bool pointerHeld;
+    private bool ownsCursor;
+
     // Anything else that counts as the pointer being on the book, e.g. UI in front of it, which
     // IsHovered ignores on purpose. A set, so several sources cannot fight over one flag.
     private readonly HashSet<object> externalHover = new HashSet<object>();
@@ -150,6 +155,7 @@ public class BookAnimator : MonoBehaviour
     private bool warnedAboutHoverTarget;
     private bool warnedAboutYawTarget;
     private bool warnedAboutInput;
+    private bool warnedAboutCursor;
 
     private Transform readPivot;    // runtime pivot, so the flight does not fight the bob or the yaw
     private Vector3 readOffset;     // the book node's offset inside that pivot, for aiming its base
@@ -202,6 +208,9 @@ public class BookAnimator : MonoBehaviour
 
     private void OnEnable()
     {
+        // a press that spans a disable would otherwise still read as held when this comes back
+        pointerHeld = false;
+
         InputManager input = InputManager.Instance;
 
         if (input == null)
@@ -219,6 +228,9 @@ public class BookAnimator : MonoBehaviour
         InputManager input = InputManager.Instance;
 
         if (input != null) input.onLeftClickDown -= OnLeftClickDown;
+
+        // a claim that outlived the book would strand the cursor on the hand
+        ReleaseCursor();
     }
 
 
@@ -243,7 +255,13 @@ public class BookAnimator : MonoBehaviour
     {
         // the state machine stops with the rest of the game, so a hover that changes under the pause menu
         // cannot start a close and snap a page that was mid turn; the tweens are on scaled time too
-        if (Time.timeScale <= 0.0f) return;
+        if (Time.timeScale <= 0.0f)
+        {
+            // the cursor is not part of the frozen pose: a claim held into the pause would also sit on
+            // the pause menu's own buttons, so it is handed back for as long as the game is stopped
+            ReleaseCursor();
+            return;
+        }
 
         UpdateHover();
         UpdateFlips();
@@ -355,6 +373,10 @@ public class BookAnimator : MonoBehaviour
 
     private void OnLeftClickDown(bool pressed)
     {
+        // remembered for the cursor too: a held button is a drag or a press in progress, never a hover,
+        // and the drag that already owns the cursor must not have it taken away mid-move
+        pointerHeld = pressed;
+
         // the press only, and not while a menu has the game stopped behind it
         if (!pressed || Time.timeScale <= 0.0f) return;
         if (!IsHovered()) return;
@@ -546,6 +568,10 @@ public class BookAnimator : MonoBehaviour
         if (read > 0.0f)
         {
             pointerHovering = false;
+
+            // the read's click catcher covers the whole view, so a hand everywhere would be wrong. The
+            // menu on the pages earns its own cursor through the ordinary UI hover
+            ReleaseCursor();
             return;
         }
 
@@ -554,12 +580,65 @@ public class BookAnimator : MonoBehaviour
 
         pointerHovering = IsHovered();
 
+        // worked out before the early out below, and off pointerHovering alone: an external hover can
+        // hold the covers where they are while the pointer has already left the book
+        UpdateCursor();
+
         bool hovered = pointerHovering || externalHover.Count > 0;
 
         if (hovered == wasHovered) return;
 
         wasHovered = hovered;
         TweenTo(hovered ? 1.0f : 0.0f);
+    }
+
+
+    // The book is a world collider, so the UI raycast CursorManager polls can never land on it: the
+    // hand has to be pushed as an override instead. It is only held while the button is up, because a
+    // placement drag owns the cursor itself and both write the one override - without the held check
+    // the two would trade it back and forth frame by frame.
+    private void UpdateCursor()
+    {
+        if (pointerHovering && !pointerHeld)
+        {
+            TakeCursor();
+            return;
+        }
+
+        ReleaseCursor();
+    }
+
+
+    // Re-asserted every frame rather than only on the hover edge. There is a single override slot, so
+    // another claimant standing down can clear this out from under the book - AnimalSelection does
+    // exactly that when it defers to the book on a one frame lag - and an edge triggered claim would
+    // never be taken back. SetOverride is built for this: it only submits to the cursor on a real
+    // change, so the repeat costs a couple of field writes.
+    private void TakeCursor()
+    {
+        CursorManager cursorManager = CursorManager.Instance;
+
+        if (cursorManager == null)
+        {
+            WarnOnce(ref warnedAboutCursor, "no CursorManager, so hovering the book will not show the pointer cursor");
+            return;
+        }
+
+        cursorManager.SetOverride(CursorType.Pointer);
+        ownsCursor = true;
+    }
+
+
+    // Only a claim this book actually holds is handed back. The guard also matters on teardown, where
+    // this can run after the CursorManager has already been destroyed
+    private void ReleaseCursor()
+    {
+        if (!ownsCursor) return;
+
+        ownsCursor = false;
+
+        CursorManager cursorManager = CursorManager.Instance;
+        if (cursorManager != null) cursorManager.ClearOverride();
     }
 
 
