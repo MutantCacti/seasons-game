@@ -53,13 +53,16 @@ public class SeedentaryLifestyle : ScriptedPuzzle
         seed1Positions.Clear();
         seed2Positions.Clear();
 
+        //get positions of all types of seeds we'd like to count for this puzzle
         context.CollectPositionsOf(seeds_1, seed1Positions);
         context.CollectPositionsOf(seeds_2, seed2Positions);
 
+        //this puzzle is for a 2x2 patch, so if there's less than 4 seeds total, we know it's not possible
         if (seed1Positions.Count + seed2Positions.Count < 4) return false;
 
         HashSet<Vector3Int> occupied = new HashSet<Vector3Int>();
 
+        //convert all Vector3 positions of our seeds into Vector3Int and store them in a HashSet
         foreach (Vector3 position in seed1Positions) {
             occupied.Add(context.Terrain.WorldToCell(position));
         }
@@ -68,6 +71,7 @@ public class SeedentaryLifestyle : ScriptedPuzzle
         }
 
         foreach (Vector3Int cell in occupied) {
+            //check through each possible 'rotation' of a 2x2 patch
             if (Is2x2(occupied, cell, Vector3Int.right, Vector3Int.forward)) return true;
             if (Is2x2(occupied, cell, Vector3Int.left, Vector3Int.forward)) return true;
             if (Is2x2(occupied, cell, Vector3Int.right, Vector3Int.back)) return true;
@@ -78,6 +82,7 @@ public class SeedentaryLifestyle : ScriptedPuzzle
     }
     
     private bool Is2x2(HashSet<Vector3Int> occupied, Vector3Int origin, Vector3Int horizontal, Vector3Int vertical) {
+        //check that our list of found seeds has the cells around our current patch origin cell
         return
                 occupied.Contains(origin) &&
                 occupied.Contains(origin + horizontal) &&
