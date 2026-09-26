@@ -90,7 +90,7 @@ public class GameItemRegistry : ScriptableObject, Registry<GameItem>
             for (int j = 0; j < reactions.Count; j++)
             {
                 ItemReaction reaction = reactions[j];
-                if (reaction == null || reaction.Applied != item) continue;
+                if (reaction == null || reaction.Catalyst != item) continue;
                 if (reaction.Becomes == null) continue;
 
                 return true;
