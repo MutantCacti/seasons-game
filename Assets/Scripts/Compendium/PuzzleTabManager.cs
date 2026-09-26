@@ -95,6 +95,7 @@ public class PuzzleTabManager : CompendiumTabManager
         manager.OnPuzzleUnlocked += OnPuzzleUnlocked;
         manager.OnPuzzleComplete += OnPuzzleComplete;
         manager.OnPuzzleSoftLocked += OnPuzzleSoftLocked;
+        manager.OnPuzzleSoftLockCleared += OnPuzzleSoftLockCleared;
 
         // GameItemTabManager takes its baseline in Start, but this one waits for the puzzles to load:
         // the compendium is an entity, so this Start can run before PuzzleManager has restored
@@ -112,6 +113,7 @@ public class PuzzleTabManager : CompendiumTabManager
             manager.OnPuzzleUnlocked -= OnPuzzleUnlocked;
             manager.OnPuzzleComplete -= OnPuzzleComplete;
             manager.OnPuzzleSoftLocked -= OnPuzzleSoftLocked;
+            manager.OnPuzzleSoftLockCleared -= OnPuzzleSoftLockCleared;
             manager.OnPuzzlesLoaded -= OnPuzzlesLoaded;
         }
 
@@ -485,6 +487,16 @@ public class PuzzleTabManager : CompendiumTabManager
     private void OnPuzzleSoftLocked(Puzzle puzzle)
     {
         MarkPuzzleUnseen(puzzle, UnseenKind.Failed);
+    }
+
+
+    // No longer stuck: nothing new to mark, but the row still shows the fail state it was bound with,
+    // so the pages are re-bound. The fail glow follows IsSoftLocked by itself, and any Failed unseen
+    // flag is left in the save rather than cleared, because the pending-completion flush prunes it and
+    // a completion the player never saw is the one thing this tab must not swallow
+    private void OnPuzzleSoftLockCleared(Puzzle puzzle)
+    {
+        RaiseChanged();
     }
 
 

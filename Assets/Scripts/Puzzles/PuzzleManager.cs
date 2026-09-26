@@ -82,6 +82,10 @@ public class PuzzleManager : MonoBehaviour
 
     public event Action<Puzzle> OnPuzzleSoftLocked;
 
+    // Raised when a puzzle that had been flagged as stuck is let go of again, because the player turned
+    // out to still be able to act on it. The flag is already gone by the time this runs
+    public event Action<Puzzle> OnPuzzleSoftLockCleared;
+
 
     // Raised once per unlock batch, after it is saved, with the entity whose completion caused it
     // (null for the starting puzzles, or when that entity is gone) and every ingredient it granted.
@@ -204,6 +208,10 @@ public class PuzzleManager : MonoBehaviour
         else
         {
             inventoryManager.ItemConsumed += OnItemConsumed;
+
+            // A puzzle held off because the player is holding a reagent has to be judged again the
+            // moment they spend it, or the moment another puzzle hands them one
+            inventoryManager.SlotsChanged += OnSlotsChanged;
         }
 
         if (placementController == null) placementController = PlacementController.Instance;
@@ -224,7 +232,12 @@ public class PuzzleManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (inventoryManager != null) inventoryManager.ItemConsumed -= OnItemConsumed;
+        if (inventoryManager != null)
+        {
+            inventoryManager.ItemConsumed -= OnItemConsumed;
+            inventoryManager.SlotsChanged -= OnSlotsChanged;
+        }
+
         if (placementController != null) placementController.ItemShown -= OnPlacementShown;
 
         if (instance == this) instance = null;
@@ -696,6 +709,14 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
+    // The inventory moved: something was granted or spent, which is what decides whether the player is
+    // still holding a reagent a live entity would react with
+    private void OnSlotsChanged()
+    {
+        ScheduleSoftLockCheck();
+    }
+
+
     // Queues every active puzzle to be judged once the world has settled. Re-queueing one that is
     // already flagged is harmless, because the flag is only raised on the transition. Public so growth
     // can have a puzzle that was waiting on it judged again once the grown things exist
@@ -745,6 +766,24 @@ public class PuzzleManager : MonoBehaviour
             // ping is left alone
             if (IsPresenting()) continue;
 
+            // Spent, but the player is still holding something that would react with what's left on the
+            // ground, so the puzzle is not provably stuck: they can still act. Unlike the two checks
+            // above, this condition can become true AFTER the puzzle was flagged - a later puzzle grants
+            // the reagent - so it has to un-flag and withdraw, not just skip. SlotsChanged asks again
+            // whenever the inventory moves
+            if (IsReagentInHand(puzzle))
+            {
+                bool wasFlagged = softLocked.Remove(puzzle);
+
+                if (NotificationManager.Instance != null) NotificationManager.Instance.Withdraw(NotificationType.FailPuzzle, puzzle);
+
+                // the Puzzles tab is the only thing that reads IsSoftLocked, and it only rebinds on a
+                // change: without this, the row would keep its fail state after the data let go of it
+                if (wasFlagged) OnPuzzleSoftLockCleared?.Invoke(puzzle);
+
+                continue;
+            }
+
             if (!softLocked.Add(puzzle)) continue;
 
             Debug.LogWarning($"PuzzleManager: '{puzzle.name}' has spent every ingredient it was given " +
@@ -765,6 +804,82 @@ public class PuzzleManager : MonoBehaviour
         }
 
         pendingSoftLockChecks.Clear();
+    }
+
+
+    // True while the player can still act on this puzzle with something they are holding: a live entity
+    // they can still reach from one of the puzzle's ingredients has a reaction whose catalyst is in the
+    // inventory. The live entity is what makes it true: holding a reagent with nothing left to react
+    // with (every seed already fertilised, say) leaves the puzzle stuck, as it must
+    private bool IsReagentInHand(Puzzle puzzle)
+    {
+        IReadOnlyList<Ingredient> ingredients = puzzle.Ingredients;
+        if (ingredients == null || ingredients.Count == 0) return false;
+
+        EntityManager entities = EntityManager.Instance;
+        InventoryManager inventory = inventoryManager;
+
+        if (entities == null || inventory == null) return false;
+
+        for (int i = 0; i < ingredients.Count; i++)
+        {
+            if (TryFindHeldCatalyst(ingredients[i].item, entities, inventory)) return true;
+        }
+
+        return false;
+    }
+
+
+    // Walks forward from one ingredient, the same growsInto + every-reaction-becomes walk the growth
+    // check uses, and answers whether anything it reaches is both standing in the world and reacts to
+    // something the player holds
+    private bool TryFindHeldCatalyst(GameItem start, EntityManager entities, InventoryManager inventory)
+    {
+        growthPendingQueue.Clear();
+        growthPendingVisited.Clear();
+
+        if (start == null) return false;
+
+        growthPendingQueue.Add(start);
+        growthPendingVisited.Add(start);
+
+        for (int i = 0; i < growthPendingQueue.Count && i < MAX_GROWTH_CHAIN; i++)
+        {
+            GameItem step = growthPendingQueue[i];
+
+            if (HeldCatalystFor(step, entities, inventory)) return true;
+
+            Enqueue(step.GrowsInto);
+            EnqueueReactions(step);
+        }
+
+        return false;
+    }
+
+
+    // Whether something the player is holding reacts with a live one of this item. The entity check
+    // comes first because it is the cheap one, and because it is what stops a held reagent counting
+    // when the only things it could react with have already reacted
+    private static bool HeldCatalystFor(GameItem item, EntityManager entities, InventoryManager inventory)
+    {
+        if (item == null) return false;
+        if (!entities.HasEntityOf(item)) return false;
+
+        IReadOnlyList<ItemReaction> reactions = item.Reactions;
+        if (reactions == null) return false;
+
+        for (int i = 0; i < reactions.Count; i++)
+        {
+            ItemReaction reaction = reactions[i];
+            if (reaction == null) continue;
+            if (reaction.Becomes == null) continue;
+            if (reaction.Catalyst == null) continue;
+            if (inventory.GetCount(reaction.Catalyst) <= 0) continue;
+
+            return true;
+        }
+
+        return false;
     }
 
 
