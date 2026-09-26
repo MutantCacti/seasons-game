@@ -4,10 +4,11 @@ using UnityEngine;
 
 
 // A one shot cover over a cell whose tile just changed. It starts as the exact pixels of the old tile,
-// cut to the cell's own baked top quads so a trimmed edge never flashes a full square, then breaks into
-// 4px blocks that shrink away from the middle outwards, revealing the new tile the remap already put
-// underneath. It never touches the terrain, is never registered with EntityManager (so it is never
-// saved and never blocks a placement) and destroys itself when it's done.
+// cut to the cell's own baked top quads so a trimmed edge never flashes a full square. Then the new
+// tile grows over it in 4px blocks, middle first: each block scales up out of its edge facing the middle,
+// so it looks like it's pushing out of the block before it. The remap already happened underneath, so
+// once every block is grown the cover matches the terrain exactly and destroys itself. It's never
+// registered with EntityManager (so it is never saved and never blocks a placement).
 public class TileTransition : MonoBehaviour
 {
     // 8x8 blocks, so 4px blocks on a 32px tile
@@ -16,14 +17,18 @@ public class TileTransition : MonoBehaviour
     // just under the placement ripple's 0.002 so the ripple draws on top
     private const float COVER_OFFSET = 0.001f;
 
+    // every piece is drawn as three quads that never overlap (they'd z-fight at the same height):
+    // the grown new-tile rect, and the old-tile L left over around it (one arm is empty unless the
+    // piece grows out of a corner)
+    private const int QUADS_PER_PIECE = 3;
 
-    // one shrinking rect of the cover. A block the top quads cut into several pieces shrinks
-    // each piece to its own centre, so no piece drifts over a trimmed (transparent) corner
+
+    // one block, or the part of it that the cell's top quads keep. All in texels inside the slice
     private struct Piece
     {
-        public Vector3 centre;
-        public Vector3 min;
-        public Vector3 max;
+        public float x0, z0, x1, z1;
+        public int growX;   // +1 grows from x0 towards x1, -1 from x1 towards x0, 0 is always full width
+        public int growZ;
         public float delay;
     }
 
@@ -31,22 +36,29 @@ public class TileTransition : MonoBehaviour
     private Mesh mesh;
     private Piece[] pieces;
     private Vector3[] vertices;
+    private Vector2[] uvs;
     private float blockDuration;
+    private float pixelsPerTile;
+    private Vector2 oldOrigin;
+    private Vector2 newOrigin;
+    private Vector2 atlasSize;
     private uint seed;
 
 
     // cellOrigin is the cell's (x0, height, z0) corner in world space. texelRects are the cell's top
-    // quads as (x0, y0, x1, y1) texels inside the slice. Returns null when there is nothing to cover
-    public static TileTransition Spawn(Vector3 cellOrigin, Sprite oldSprite, List<Vector4> texelRects,
+    // quads as (x0, y0, x1, y1) texels inside the slice. Both sprites must share one atlas (the
+    // material's). Returns null when there is nothing to cover
+    public static TileTransition Spawn(Vector3 cellOrigin, Sprite oldSprite, Sprite newSprite, List<Vector4> texelRects,
         int pixelsPerTile, Material material, float duration, float blockDuration, float jitter)
     {
-        if (oldSprite == null || material == null || texelRects == null || texelRects.Count == 0) return null;
+        if (oldSprite == null || newSprite == null || material == null) return null;
+        if (texelRects == null || texelRects.Count == 0 || pixelsPerTile <= 0) return null;
 
         GameObject cover = new GameObject("Tile Transition");
         cover.transform.position = cellOrigin + Vector3.up * COVER_OFFSET;
 
         TileTransition transition = cover.AddComponent<TileTransition>();
-        transition.Build(oldSprite, texelRects, pixelsPerTile, material, duration, blockDuration, jitter);
+        transition.Build(oldSprite, newSprite, texelRects, pixelsPerTile, material, duration, blockDuration, jitter);
         transition.Play(duration);
 
         return transition;
@@ -56,82 +68,80 @@ public class TileTransition : MonoBehaviour
     // MARK: build
 
 
-    private void Build(Sprite sprite, List<Vector4> texelRects, int pixelsPerTile, Material material,
-        float duration, float blockDuration, float jitter)
+    private void Build(Sprite oldSprite, Sprite newSprite, List<Vector4> texelRects, int pixelsPerTile,
+        Material material, float duration, float blockDuration, float jitter)
     {
         seed = (uint)Random.Range(int.MinValue, int.MaxValue);
         this.blockDuration = Mathf.Max(0.0001f, blockDuration);
+        this.pixelsPerTile = pixelsPerTile;
 
-        List<Piece> built = new List<Piece>();
-        List<Vector2> uvs = new List<Vector2>();
+        oldOrigin = oldSprite.rect.position;
+        newOrigin = newSprite.rect.position;
+        atlasSize = new Vector2(oldSprite.texture.width, oldSprite.texture.height);
 
-        Rect slice = sprite.rect;
-        float atlasWidth = sprite.texture.width;
-        float atlasHeight = sprite.texture.height;
         float block = (float)pixelsPerTile / BLOCKS_PER_SIDE;
-        float half = pixelsPerTile * 0.5f;
-        float farthest = Mathf.Sqrt(2.0f) * half;
+        float farthest = Mathf.Sqrt(2.0f) * (BLOCKS_PER_SIDE - 1);
 
-        // blocks in the middle start first and the corners last, with the jitter on top, all fitted
+        // middle blocks start first and the corners last, with the jitter on top, all fitted
         // inside duration so the last block has exactly blockDuration to finish
         float spread = Mathf.Max(0.0f, duration - blockDuration - jitter);
+
+        List<Piece> built = new List<Piece>();
 
         for (int i = 0; i < texelRects.Count; i++)
         {
             Vector4 rect = texelRects[i];
 
             // cut the quad along the block grid so each piece belongs to exactly one block
-            for (float y0 = rect.y; y0 < rect.w; )
+            for (float z0 = rect.y; z0 < rect.w; )
             {
-                float y1 = Mathf.Min(rect.w, (Mathf.Floor(y0 / block) + 1.0f) * block);
+                float z1 = Mathf.Min(rect.w, (Mathf.Floor(z0 / block) + 1.0f) * block);
 
                 for (float x0 = rect.x; x0 < rect.z; )
                 {
                     float x1 = Mathf.Min(rect.z, (Mathf.Floor(x0 / block) + 1.0f) * block);
 
-                    // every piece of one block shares the block's delay, so a block goes as one
                     int blockX = Mathf.FloorToInt(x0 / block);
-                    int blockY = Mathf.FloorToInt(y0 / block);
-                    Vector2 blockCentre = new Vector2((blockX + 0.5f) * block, (blockY + 0.5f) * block);
-                    float radial = Vector2.Distance(blockCentre, new Vector2(half, half)) / farthest;
+                    int blockZ = Mathf.FloorToInt(z0 / block);
 
-                    Piece piece = new Piece
+                    // the block's offset from the middle in half blocks, so always odd and never 0
+                    int offsetX = 2 * blockX + 1 - BLOCKS_PER_SIDE;
+                    int offsetZ = 2 * blockZ + 1 - BLOCKS_PER_SIDE;
+                    int reachX = Mathf.Abs(offsetX);
+                    int reachZ = Mathf.Abs(offsetZ);
+
+                    // grows along whichever axis points at the middle, out of the edge on the middle's
+                    // side; a block on a diagonal grows out of its corner that faces the middle
+                    built.Add(new Piece
                     {
-                        min = new Vector3(x0 / pixelsPerTile, 0.0f, y0 / pixelsPerTile),
-                        max = new Vector3(x1 / pixelsPerTile, 0.0f, y1 / pixelsPerTile),
-                        delay = radial * spread + BlockJitter(blockX, blockY) * jitter,
-                    };
-                    piece.centre = (piece.min + piece.max) * 0.5f;
-                    built.Add(piece);
-
-                    // same winding and UV maths as TerrainTopMeshBuilder / TerrainVisuals.Patch
-                    float u0 = (slice.x + x0) / atlasWidth;
-                    float u1 = (slice.x + x1) / atlasWidth;
-                    float v0 = (slice.y + y0) / atlasHeight;
-                    float v1 = (slice.y + y1) / atlasHeight;
-
-                    uvs.Add(new Vector2(u0, v0));
-                    uvs.Add(new Vector2(u0, v1));
-                    uvs.Add(new Vector2(u1, v1));
-                    uvs.Add(new Vector2(u1, v0));
+                        x0 = x0, z0 = z0, x1 = x1, z1 = z1,
+                        growX = reachX >= reachZ ? (offsetX > 0 ? 1 : -1) : 0,
+                        growZ = reachZ >= reachX ? (offsetZ > 0 ? 1 : -1) : 0,
+                        delay = Mathf.Sqrt(reachX * reachX + reachZ * reachZ - 2) / farthest * spread
+                            + BlockJitter(blockX, blockZ) * jitter,
+                    });
 
                     x0 = x1;
                 }
 
-                y0 = y1;
+                z0 = z1;
             }
         }
 
         pieces = built.ToArray();
-        vertices = new Vector3[pieces.Length * 4];
 
-        int[] triangles = new int[pieces.Length * 6];
+        int quadCount = pieces.Length * QUADS_PER_PIECE;
+        vertices = new Vector3[quadCount * 4];
+        uvs = new Vector2[quadCount * 4];
+
+        int[] triangles = new int[quadCount * 6];
         Vector3[] normals = new Vector3[vertices.Length];
 
-        for (int i = 0; i < pieces.Length; i++)
+        // same winding as TerrainTopMeshBuilder
+        for (int quad = 0; quad < quadCount; quad++)
         {
-            int v = i * 4;
-            int t = i * 6;
+            int v = quad * 4;
+            int t = quad * 6;
 
             triangles[t] = v;
             triangles[t + 1] = v + 1;
@@ -143,15 +153,15 @@ public class TileTransition : MonoBehaviour
             for (int corner = 0; corner < 4; corner++) normals[v + corner] = Vector3.up;
         }
 
-        WriteVertices(0.0f);
+        Write(0.0f);
 
         mesh = new Mesh();
         mesh.name = "Tile Transition (runtime)";
         mesh.vertices = vertices;
         mesh.normals = normals;
-        mesh.SetUVs(0, uvs);
+        mesh.uv = uvs;
         mesh.triangles = triangles;
-        mesh.RecalculateBounds();   // the pieces only ever shrink, so these bounds hold throughout
+        mesh.RecalculateBounds();   // every quad stays inside its piece, so these bounds hold throughout
 
         gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
 
@@ -163,11 +173,11 @@ public class TileTransition : MonoBehaviour
 
 
     // a stable 0..1 per block within one cover, so a block's pieces agree
-    private float BlockJitter(int blockX, int blockY)
+    private float BlockJitter(int blockX, int blockZ)
     {
         unchecked
         {
-            uint hash = (uint)(blockX * 73856093) ^ (uint)(blockY * 19349663) ^ seed;
+            uint hash = (uint)(blockX * 73856093) ^ (uint)(blockZ * 19349663) ^ seed;
             hash ^= hash >> 13;
             hash *= 0x5bd1e995u;
             hash ^= hash >> 15;
@@ -193,31 +203,70 @@ public class TileTransition : MonoBehaviour
     {
         if (mesh == null) return;
 
-        WriteVertices(elapsed);
+        Write(elapsed);
         mesh.vertices = vertices;
+        mesh.uv = uvs;
     }
 
 
-    private void WriteVertices(float elapsed)
+    private void Write(float elapsed)
     {
         for (int i = 0; i < pieces.Length; i++)
         {
             Piece piece = pieces[i];
 
-            // slow then quick, and never past 1 so a piece can't grow over a trimmed corner or its
-            // neighbour (they sit at the same height and would z-fight)
+            // quick then settling, and never past 1 so a block can't grow over a trimmed corner or
+            // into its neighbour
             float t = Mathf.Clamp01((elapsed - piece.delay) / blockDuration);
-            float scale = Mathf.Clamp01(1.0f - DOVirtual.EasedValue(0.0f, 1.0f, t, Ease.InQuad));
+            float grown = Mathf.Clamp01(DOVirtual.EasedValue(0.0f, 1.0f, t, Ease.OutQuad));
 
-            Vector3 min = piece.centre + (piece.min - piece.centre) * scale;
-            Vector3 max = piece.centre + (piece.max - piece.centre) * scale;
+            // the grown rect, pinned to the piece's middle-facing edge (or corner)
+            float gx0 = piece.x0, gx1 = piece.x1, gz0 = piece.z0, gz1 = piece.z1;
 
-            int v = i * 4;
-            vertices[v] = new Vector3(min.x, 0.0f, min.z);
-            vertices[v + 1] = new Vector3(min.x, 0.0f, max.z);
-            vertices[v + 2] = new Vector3(max.x, 0.0f, max.z);
-            vertices[v + 3] = new Vector3(max.x, 0.0f, min.z);
+            if (piece.growX > 0) gx1 = Mathf.Lerp(piece.x0, piece.x1, grown);
+            else if (piece.growX < 0) gx0 = Mathf.Lerp(piece.x1, piece.x0, grown);
+
+            if (piece.growZ > 0) gz1 = Mathf.Lerp(piece.z0, piece.z1, grown);
+            else if (piece.growZ < 0) gz0 = Mathf.Lerp(piece.z1, piece.z0, grown);
+
+            int quad = i * QUADS_PER_PIECE;
+
+            // the new tile scales up: the whole block's texels squashed into the grown rect
+            WriteQuad(quad, gx0, gz0, gx1, gz1, newOrigin, piece.x0, piece.z0, piece.x1, piece.z1);
+
+            // the old tile stays put and is just cropped: the full-width strip beyond the grown rect
+            // in z, then the rest of the grown rect's rows beyond it in x
+            float oz0 = gz0 > piece.z0 ? piece.z0 : gz1;
+            float oz1 = gz0 > piece.z0 ? gz0 : piece.z1;
+            WriteQuad(quad + 1, piece.x0, oz0, piece.x1, oz1, oldOrigin, piece.x0, oz0, piece.x1, oz1);
+
+            float ox0 = gx0 > piece.x0 ? piece.x0 : gx1;
+            float ox1 = gx0 > piece.x0 ? gx0 : piece.x1;
+            WriteQuad(quad + 2, ox0, gz0, ox1, gz1, oldOrigin, ox0, gz0, ox1, gz1);
         }
+    }
+
+
+    // corners in texels, drawn as the slice's (u0, v0)..(u1, v1) texels. An empty rect is a degenerate
+    // quad, which draws nothing
+    private void WriteQuad(int quad, float x0, float z0, float x1, float z1,
+        Vector2 slice, float u0, float v0, float u1, float v1)
+    {
+        int v = quad * 4;
+
+        vertices[v] = new Vector3(x0 / pixelsPerTile, 0.0f, z0 / pixelsPerTile);
+        vertices[v + 1] = new Vector3(x0 / pixelsPerTile, 0.0f, z1 / pixelsPerTile);
+        vertices[v + 2] = new Vector3(x1 / pixelsPerTile, 0.0f, z1 / pixelsPerTile);
+        vertices[v + 3] = new Vector3(x1 / pixelsPerTile, 0.0f, z0 / pixelsPerTile);
+
+        // same UV maths as TerrainTopMeshBuilder / TerrainVisuals.Patch
+        Vector2 uv0 = new Vector2((slice.x + u0) / atlasSize.x, (slice.y + v0) / atlasSize.y);
+        Vector2 uv1 = new Vector2((slice.x + u1) / atlasSize.x, (slice.y + v1) / atlasSize.y);
+
+        uvs[v] = new Vector2(uv0.x, uv0.y);
+        uvs[v + 1] = new Vector2(uv0.x, uv1.y);
+        uvs[v + 2] = new Vector2(uv1.x, uv1.y);
+        uvs[v + 3] = new Vector2(uv1.x, uv0.y);
     }
 
 

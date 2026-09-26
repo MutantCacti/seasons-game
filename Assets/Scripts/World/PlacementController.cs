@@ -615,13 +615,15 @@ public class PlacementController : MonoBehaviour
     }
 
 
-    // Covers a cell that has JUST been remapped with a picture of the tile it held before, which then
-    // breaks up to reveal the new one. Call it after TerrainManager.Remap, from anything that changes a
-    // tile: the cover only ever shows the old tile, so it works for any old -> new pair
+    // Covers a cell that has JUST been remapped with a picture of the tile it held before, which the
+    // new one then grows over. Call it after TerrainManager.Remap, from anything that changes a tile:
+    // the new tile is read back from the terrain, so it works for any old -> new pair
     public void PlayTileTransition(Vector3Int cell, TerrainTile from)
     {
         if (terrainManager == null || from == null) return;
-        if (from == terrainManager.GetTile(cell)) return;
+
+        TerrainTile to = terrainManager.GetTile(cell);
+        if (to == null || to == from) return;
 
         if (tileTransitionMaterial == null)
         {
@@ -630,29 +632,35 @@ public class PlacementController : MonoBehaviour
         }
 
         Sprite oldSprite = terrainManager.ResolveCellSprite(cell, from);
-        if (oldSprite == null) return;
+        Sprite newSprite = terrainManager.ResolveCellSprite(cell, to);
+        if (oldSprite == null || newSprite == null) return;
 
         // one shared material means one atlas; a sprite from anywhere else would draw the wrong texels
-        if (oldSprite.texture != tileTransitionMaterial.mainTexture)
-        {
-            if (!warnedAboutTransitionAtlas)
-            {
-                warnedAboutTransitionAtlas = true;
-                Debug.LogError($"PlacementController: '{from.name}' sprite '{oldSprite.name}' is on " +
-                    $"'{oldSprite.texture.name}', not the transition material's atlas, so its transitions " +
-                    $"are skipped. Move the art into the terrain atlas", from);
-            }
-
-            return;
-        }
+        if (!IsOnTransitionAtlas(from, oldSprite) || !IsOnTransitionAtlas(to, newSprite)) return;
 
         // no baked top quads means nothing on screen to cover (e.g. a stale bake)
         if (!terrainManager.TryGetTopTexelRects(cell, transitionRects, out int pixelsPerTile)) return;
 
         Vector3 cellOrigin = new Vector3(cell.x, terrainManager.GetLevelHeight(cell.y), cell.z);
 
-        TileTransition.Spawn(cellOrigin, oldSprite, transitionRects, pixelsPerTile, tileTransitionMaterial,
+        TileTransition.Spawn(cellOrigin, oldSprite, newSprite, transitionRects, pixelsPerTile, tileTransitionMaterial,
             tileTransitionDuration, tileTransitionBlockDuration, tileTransitionJitter);
+    }
+
+
+    private bool IsOnTransitionAtlas(TerrainTile tile, Sprite sprite)
+    {
+        if (sprite.texture == tileTransitionMaterial.mainTexture) return true;
+
+        if (!warnedAboutTransitionAtlas)
+        {
+            warnedAboutTransitionAtlas = true;
+            Debug.LogError($"PlacementController: '{tile.name}' sprite '{sprite.name}' is on " +
+                $"'{sprite.texture.name}', not the transition material's atlas, so its transitions " +
+                $"are skipped. Move the art into the terrain atlas", tile);
+        }
+
+        return false;
     }
 
 
