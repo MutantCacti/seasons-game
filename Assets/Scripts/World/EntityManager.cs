@@ -25,6 +25,7 @@ public class EntityManager : MonoBehaviour
         public EntityId entityId;
         public GameItem item;
         public Vector3Int cell;
+        public bool fixture;
     }
 
 
@@ -160,7 +161,7 @@ public class EntityManager : MonoBehaviour
             return false;
         }
 
-        EntityId entityId = CreateInstance(item, new Vector3Int(entry.x, level, entry.z));
+        EntityId entityId = CreateInstance(item, new Vector3Int(entry.x, level, entry.z), entry.fixture);
 
         // An empty guid has to be replaced, and so does one that an entity loaded earlier already
         // claimed. The earlier entity keeps it, so anything that refers to the guid still resolves.
@@ -259,7 +260,7 @@ public class EntityManager : MonoBehaviour
                 continue;
             }
 
-            if (Spawn(fixture.item, new Vector3Int(fixture.column.x, level, fixture.column.y)) != null) seeded++;
+            if (Spawn(fixture.item, new Vector3Int(fixture.column.x, level, fixture.column.y), true) != null) seeded++;
         }
 
         manager.AcknowledgeNewWorld();
@@ -275,6 +276,13 @@ public class EntityManager : MonoBehaviour
 
 
     public GameObject Spawn(GameItem item, Vector3Int cell)
+    {
+        return Spawn(item, cell, false);
+    }
+
+
+    // fixture: one of the world's own starting entities rather than something the player placed
+    private GameObject Spawn(GameItem item, Vector3Int cell, bool fixture)
     {
         EnsureLoaded();
 
@@ -299,7 +307,7 @@ public class EntityManager : MonoBehaviour
         // logs and gives up if the item is not in the registry
         if (registry == null || !registry.TryGetIdByEntry(item, out string id)) return null;
 
-        EntityId entityId = CreateInstance(item, cell);
+        EntityId entityId = CreateInstance(item, cell, fixture);
 
         if (world != null && world.entities != null)
         {
@@ -311,7 +319,9 @@ public class EntityManager : MonoBehaviour
                 levelY = TerrainManager.ToLevelMillimetres(terrainManager.GetLevelHeight(cell.y)),
 
                 // reading the guid here is what gives a freshly spawned entity its identity
-                guid = entityId.Guid
+                guid = entityId.Guid,
+
+                fixture = fixture,
             });
         }
 
@@ -344,6 +354,23 @@ public class EntityManager : MonoBehaviour
         }
 
         return false;
+    }
+
+
+    // How many of this item the player has placed that are still in the world. The world's own starting
+    // fixtures don't count
+    public int CountPlaced(GameItem item)
+    {
+        if (item == null) return 0;
+
+        int count = 0;
+
+        for (int i = 0; i < live.Count; i++)
+        {
+            if (live[i].item == item && !live[i].fixture) count++;
+        }
+
+        return count;
     }
 
 
@@ -417,7 +444,7 @@ public class EntityManager : MonoBehaviour
     // MARK: internals
 
 
-    private EntityId CreateInstance(GameItem item, Vector3Int cell)
+    private EntityId CreateInstance(GameItem item, Vector3Int cell, bool fixture)
     {
         GameObject instance = Instantiate(item.Prefab, terrainManager.CellToWorld(cell), item.Prefab.transform.rotation, entityParent);
         instance.name = item.Prefab.name;
@@ -429,7 +456,7 @@ public class EntityManager : MonoBehaviour
 
         entityId.Destroyed += OnEntityDestroyed;
 
-        live.Add(new LiveEntity { gameObject = instance, entityId = entityId, item = item, cell = cell });
+        live.Add(new LiveEntity { gameObject = instance, entityId = entityId, item = item, cell = cell, fixture = fixture });
 
         return entityId;
     }

@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-// The one place world events are fanned out to WorldListeners (the spawn rules), and the WorldContext
-// they act through. It listens to placement, puzzle unlocks, the world states and the clock, and
-// AnimalManager tells it about spawns.
+// The one place world events are fanned out to WorldListeners, and the WorldContext they act through.
+// The listeners are every spawn rule and every active scripted puzzle (unlocked, not completed); a
+// puzzle completed partway through an event stops hearing it straight away. It listens to placement,
+// puzzle unlocks, the world states and the clock, and AnimalManager tells it about spawns.
 //
 // Nothing reaches a listener until the world has finished loading: puzzles, world states, entities,
 // and a new world's construction. Then every listener hears OnLoaded once. An event raised while one
@@ -201,6 +202,9 @@ public class WorldEvents : MonoBehaviour, WorldContext
                     WorldListener listener = snapshot[i];
                     if (listener == null) continue;
 
+                    // completed by an earlier listener in this same event
+                    if (listener is Puzzle puzzle && !IsListening(puzzle)) continue;
+
                     try
                     {
                         next(listener);
@@ -228,12 +232,30 @@ public class WorldEvents : MonoBehaviour, WorldContext
         AnimalManager animals = AnimalManager.Instance;
         IReadOnlyList<AnimalSpawnRule> rules = animals != null ? animals.SpawnRules : null;
 
-        if (rules == null) return;
-
-        for (int i = 0; i < rules.Count; i++)
+        if (rules != null)
         {
-            if (rules[i] != null) snapshot.Add(rules[i]);
+            for (int i = 0; i < rules.Count; i++)
+            {
+                if (rules[i] != null) snapshot.Add(rules[i]);
+            }
         }
+
+        PuzzleRegistry registry = puzzleManager != null ? puzzleManager.Registry : null;
+        IReadOnlyList<Puzzle> puzzles = registry != null ? registry.Entries : null;
+
+        if (puzzles == null) return;
+
+        for (int i = 0; i < puzzles.Count; i++)
+        {
+            if (IsListening(puzzles[i])) snapshot.Add(puzzles[i]);
+        }
+    }
+
+
+    // only a scripted puzzle has anything to hear, and only while it is active
+    private bool IsListening(Puzzle puzzle)
+    {
+        return puzzle is ScriptedPuzzle && puzzleManager != null && puzzleManager.IsActive(puzzle);
     }
 
 
@@ -246,12 +268,13 @@ public class WorldEvents : MonoBehaviour, WorldContext
     }
 
 
-    // only to the listeners it belongs to: for a spawn rule, the puzzle it completes
+    // only to the listeners it belongs to: the puzzle itself, and the spawn rules that complete it
     private void OnPuzzleUnlocked(Puzzle puzzle)
     {
         Dispatch(listener =>
         {
-            if (listener is AnimalSpawnRule rule && rule.Completes == puzzle) listener.OnPuzzleUnlocked(this);
+            bool belongs = listener == puzzle || (listener is AnimalSpawnRule rule && rule.Completes == puzzle);
+            if (belongs) listener.OnPuzzleUnlocked(this);
         });
     }
 
@@ -299,6 +322,42 @@ public class WorldEvents : MonoBehaviour, WorldContext
     public bool Spawn(AnimalSpawnRule rule, Vector3 position)
     {
         return AnimalManager.Instance != null && AnimalManager.Instance.Spawn(rule, position);
+    }
+
+
+    // MARK: context: puzzles
+
+
+    public int CountPlaced(GameItem item)
+    {
+        if (item == null) return 0;
+
+        TerrainManager terrain = Terrain;
+
+        if (item.Tile != null && terrain != null)
+        {
+            terrain.CollectPlayerCellsOf(item.Tile, scratchCells);
+            return scratchCells.Count;
+        }
+
+        return EntityManager.Instance != null ? EntityManager.Instance.CountPlaced(item) : 0;
+    }
+
+
+    public void CollectPlacedCells(GameItem item, List<Vector3Int> results)
+    {
+        results.Clear();
+
+        TerrainManager terrain = Terrain;
+        if (item == null || item.Tile == null || terrain == null) return;
+
+        terrain.CollectPlayerCellsOf(item.Tile, results);
+    }
+
+
+    public bool Complete(Puzzle puzzle, PuzzleCredit credit)
+    {
+        return puzzleManager != null && puzzleManager.Complete(puzzle, credit);
     }
 
 

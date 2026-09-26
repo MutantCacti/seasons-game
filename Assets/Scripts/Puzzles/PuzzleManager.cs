@@ -257,6 +257,13 @@ public class PuzzleManager : MonoBehaviour
     // MARK: completion
 
 
+    // the same, with a PuzzleCredit: what a scripted puzzle completes with
+    public bool Complete(Puzzle puzzle, PuzzleCredit credit)
+    {
+        return Complete(puzzle, credit.entity);
+    }
+
+
     // single entry point, every world script should use this to submit puzzle completion
     // returns true only when the puzzle was completed right now. false when puzzles are disabled,
     // the puzzle is null or already completed, or the completion was queued: a puzzle that is not

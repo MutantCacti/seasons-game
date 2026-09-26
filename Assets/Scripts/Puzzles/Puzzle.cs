@@ -11,11 +11,14 @@ public struct Ingredient
 }
 
 
+// A plain puzzle: completed by something else (a spawn rule, a script) through PuzzleManager.Complete.
+// A puzzle with its own completion code is a ScriptedPuzzle subclass instead. It is a WorldListener so
+// that a scripted one can hear the world; a plain one's hooks are all empty.
 [CreateAssetMenu(
     fileName = "Puzzle",
     menuName = "Puzzles/Puzzle"
 )]
-public class Puzzle : ScriptableObject
+public class Puzzle : WorldListener
 {
     [SerializeField] private string id;
     [SerializeField] [TextArea] private string description;

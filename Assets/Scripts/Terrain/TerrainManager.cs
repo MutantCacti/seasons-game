@@ -333,6 +333,30 @@ public partial class TerrainManager : MonoBehaviour
     }
 
 
+    // Fills results with the cells the player has changed that hold this tile right now: the terrain
+    // save's remaps, so the world's own authored tiles never count. It is what is there NOW, not what
+    // was ever placed: a cell changed to the tile and later changed again (dirt watered into grass)
+    // stops counting. One pass over the remaps, which only grow as the player places tiles
+    public void CollectPlayerCellsOf(TerrainTile tile, List<Vector3Int> results)
+    {
+        results.Clear();
+        if (tile == null || registry == null || world == null || world.terrain == null || world.terrain.remaps == null) return;
+        if (!registry.TryGetIdByEntry(tile, out string tileId)) return;
+
+        List<TerrainCellSave> remaps = world.terrain.remaps;
+
+        for (int i = 0; i < remaps.Count; i++)
+        {
+            TerrainCellSave remap = remaps[i];
+            if (remap.tileId != tileId) continue;
+            if (!TryGetLevelAtMillimetres(remap.levelY, out int level)) continue;
+
+            Vector3Int cell = new Vector3Int(remap.x, level, remap.z);
+            if (state.GetTile(cell) == tile) results.Add(cell);
+        }
+    }
+
+
     // Fills results with every cell holding this tile, on every level. A whole-map scan, so it is for
     // events (a load, a puzzle unlocking), not for every frame
     public void CollectCellsOf(TerrainTile tile, List<Vector3Int> results)

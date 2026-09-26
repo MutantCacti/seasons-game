@@ -37,11 +37,27 @@ public interface WorldContext
 
     // refuses anything CanSpawn would refuse, so calling it too often is harmless
     bool Spawn(AnimalSpawnRule rule, Vector3 position);
+
+
+    // MARK: puzzles
+
+
+    // How many of this item the player has placed that are in the world right now. For a tile item,
+    // the cells the player changed that hold its tile NOW: one later changed again (dirt watered into
+    // grass) stops counting, so a puzzle that must count "ever placed" should complete as soon as it
+    // can. The world's own authored tiles and starting fixtures never count
+    int CountPlaced(GameItem item);
+
+    // the cells behind CountPlaced for a tile item. Fills the caller's list
+    void CollectPlacedCells(GameItem item, List<Vector3Int> results);
+
+    // through PuzzleManager.Complete, with its queue, ping and completedBy
+    bool Complete(Puzzle puzzle, PuzzleCredit credit);
 }
 
 
-// Something that hears the world's events through WorldEvents: every hook is empty here, and a
-// listener overrides the ones it cares about.
+// Something that hears the world's events through WorldEvents (a spawn rule, a scripted puzzle):
+// every hook is empty here, and a listener overrides the ones it cares about.
 //
 // Nothing is heard until the world has finished loading, and then OnLoaded comes once. An event a
 // listener causes while hearing another (a spawn inside OnAnimalSpawned) is queued and heard after, so
@@ -55,7 +71,8 @@ public abstract class WorldListener : ScriptableObject
     }
 
 
-    // the puzzle this listener belongs to just unlocked
+    // the puzzle this listener belongs to just unlocked: for a puzzle itself, for a spawn rule the one
+    // it completes
     public virtual void OnPuzzleUnlocked(WorldContext context)
     {
     }
