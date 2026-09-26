@@ -114,13 +114,15 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 0
-    - _NightStrength: 0.55
+    - _NightStrength: 0.6
     - _OcclusionStrength: 1
     - _Opacity: 0.92
     - _Parallax: 0.005
     - _PixelsPerUnit: 32
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _ReflectionBase: 0.25
+    - _ReflectionStrength: 0.6
     - _RefractionPixels: 1.5
     - _RingFrequency: 1.6
     - _RingReach: 2.2
