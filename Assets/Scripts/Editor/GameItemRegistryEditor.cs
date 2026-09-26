@@ -174,6 +174,7 @@ public class GameItemRegistryEditor : Editor
         foreach (GameItem item in seen.Values)
         {
             problems += ValidateGrowth(item, registered);
+            problems += ValidateReactions(item, registered);
         }
 
         if (problems == 0)
@@ -271,6 +272,97 @@ public class GameItemRegistryEditor : Editor
         }
 
         return tags;
+    }
+
+
+    // MARK: reactions
+
+
+    // A reaction replaces one placed entity with another when a reagent is dropped on it, so both ends
+    // are asked for the same things a growth is, and the applied item needs no prefab of its own: the
+    // whole point of a reagent is that it has nothing to place. Returns the number of problems
+    private static int ValidateReactions(GameItem item, HashSet<GameItem> registered)
+    {
+        IReadOnlyList<ItemReaction> reactions = item.Reactions;
+
+        if (reactions == null || reactions.Count == 0) return 0;
+
+        int problems = 0;
+
+        // an item that does both is legal - a sprout could react to something as well as grow - but it
+        // is far more often a seed that kept its old growsInto, which would grow on its own AND react
+        if (item.GrowsInto != null)
+        {
+            Debug.LogWarning($"GameItemRegistry: '{item.name}' both grows into '{item.GrowsInto.name}' and " +
+                $"has reactions, so it will grow on its own as well as react - clear growsInto if the " +
+                $"reaction is meant to be the whole change", item);
+        }
+
+        // nothing placed, so nothing can be dropped on: a reaction here can never run
+        if (item.Prefab == null)
+        {
+            Debug.LogError($"GameItemRegistry: '{item.name}' has reactions but no prefab, so it is never a " +
+                $"placed entity that a reagent could be dropped on", item);
+            problems++;
+        }
+
+        HashSet<GameItem> applied = new HashSet<GameItem>();
+
+        for (int i = 0; i < reactions.Count; i++)
+        {
+            ItemReaction reaction = reactions[i];
+
+            if (reaction == null)
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' has an empty reaction at {i}", item);
+                problems++;
+                continue;
+            }
+
+            GameItem from = reaction.Applied;
+            GameItem into = reaction.Becomes;
+
+            if (from == null || into == null)
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' has a reaction with no " +
+                    $"{(from == null ? "applied item" : "result")}, so it can never do anything", item);
+                problems++;
+                continue;
+            }
+
+            // the same shape a growth's result needs: it replaces an entity, so it has to be one
+            if (into.Prefab == null || into.Tile != null)
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' reacts to '{from.name}' by becoming " +
+                    $"'{into.name}', which needs a prefab and no tile to replace an entity", item);
+                problems++;
+            }
+
+            // a reagent is not saved and is never placed, but a reaction to an unregistered item could
+            // still be authored, and nobody would ever see the reagent in the world
+            if (!registered.Contains(from))
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' reacts to '{from.name}', which is not in " +
+                    $"this registry", item);
+                problems++;
+            }
+
+            if (!registered.Contains(into))
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' reacts to '{from.name}' by becoming " +
+                    $"'{into.name}', which is not in this registry, so the new entity could never be saved", item);
+                problems++;
+            }
+
+            if (!applied.Add(from))
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' has more than one reaction to '{from.name}', " +
+                    $"so only the first is ever used", item);
+                problems++;
+            }
+        }
+
+        return problems;
     }
 
 

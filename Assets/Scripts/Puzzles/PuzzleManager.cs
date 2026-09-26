@@ -151,7 +151,12 @@ public class PuzzleManager : MonoBehaviour
     // scratch for the growth-pending scan
     private readonly List<EntityManager.LiveEntity> scratchLive = new List<EntityManager.LiveEntity>();
 
-    // a guard against a growsInto cycle, which the item registry's validation reports
+    // scratch for the forward walk from one ingredient: what it can still become, and what has been
+    // queued already
+    private readonly List<GameItem> growthPendingQueue = new List<GameItem>();
+    private readonly HashSet<GameItem> growthPendingVisited = new HashSet<GameItem>();
+
+    // a guard against a growsInto or reaction cycle, which the item registry's validation reports
     private const int MAX_GROWTH_CHAIN = 32;
 
     private bool completionEnabled = true;
@@ -770,8 +775,8 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
-    // True while any live entity is one of the puzzle's ingredients, or anything one grows into,
-    // that will still grow: a seed, or the sapling it became on its way to a tree
+    // True while any live entity is one of the puzzle's ingredients, or anything one grows into or
+    // reacts into, that will still grow: a seed, or the sapling it became on its way to a tree
     private bool IsGrowthPending(Puzzle puzzle)
     {
         IReadOnlyList<Ingredient> ingredients = puzzle.Ingredients;
@@ -787,6 +792,10 @@ public class PuzzleManager : MonoBehaviour
         for (int i = 0; i < scratchLive.Count && !pending; i++)
         {
             GameItem item = scratchLive[i].item;
+
+            // Only something that will grow on its own clock holds the judgement off. A seed waiting on
+            // the player to fertilise it doesn't: if the reagent is spent, that is a soft lock like any
+            // other, and saying so is the whole point of this check
             if (item == null || item.GrowsInto == null) continue;
 
             pending = GrowsFromIngredient(item, ingredients);
@@ -798,22 +807,70 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
-    // whether item is an ingredient or somewhere down an ingredient's growsInto chain
-    private static bool GrowsFromIngredient(GameItem item, IReadOnlyList<Ingredient> ingredients)
+    // whether item is an ingredient or somewhere down what an ingredient grows into or reacts into
+    private bool GrowsFromIngredient(GameItem item, IReadOnlyList<Ingredient> ingredients)
     {
         for (int i = 0; i < ingredients.Count; i++)
         {
-            GameItem step = ingredients[i].item;
-
-            for (int depth = 0; step != null && depth < MAX_GROWTH_CHAIN; depth++)
-            {
-                if (step == item) return true;
-
-                step = step.GrowsInto;
-            }
+            if (ReachesFrom(ingredients[i].item, item)) return true;
         }
 
         return false;
+    }
+
+
+    // Breadth-first forward from an ingredient: what it grows into after growthDays, and what a reaction
+    // turns it into right away. Reactions can branch, so this walks every one of them rather than a
+    // single chain. growthPendingQueue and growthPendingVisited are reused rather than allocated; both
+    // are scratch, so a check is never re-entered (this runs from a coroutine, not from a walk)
+    private bool ReachesFrom(GameItem start, GameItem wanted)
+    {
+        growthPendingQueue.Clear();
+        growthPendingVisited.Clear();
+
+        if (start == null) return false;
+
+        growthPendingQueue.Add(start);
+        growthPendingVisited.Add(start);
+
+        // the same guard the chain walk always had: a reaction loop or a growsInto loop is caught by the
+        // registry's validation, and this only has to not spin. The queue can't grow past one entry per
+        // item, so the index walk always ends anyway
+        for (int i = 0; i < growthPendingQueue.Count && i < MAX_GROWTH_CHAIN; i++)
+        {
+            GameItem step = growthPendingQueue[i];
+
+            if (step == wanted) return true;
+
+            Enqueue(step.GrowsInto);
+            EnqueueReactions(step);
+        }
+
+        return false;
+    }
+
+
+    private void EnqueueReactions(GameItem step)
+    {
+        IReadOnlyList<ItemReaction> reactions = step.Reactions;
+        if (reactions == null) return;
+
+        for (int i = 0; i < reactions.Count; i++)
+        {
+            ItemReaction reaction = reactions[i];
+            if (reaction == null) continue;
+
+            Enqueue(reaction.Becomes);
+        }
+    }
+
+
+    private void Enqueue(GameItem item)
+    {
+        if (item == null) return;
+        if (!growthPendingVisited.Add(item)) return;
+
+        growthPendingQueue.Add(item);
     }
 
 
