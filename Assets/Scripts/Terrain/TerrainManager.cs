@@ -458,6 +458,53 @@ public partial class TerrainManager : MonoBehaviour
     }
 
 
+    // The batch form of Remap: every occupied cell on one level, as one visual batch, for events
+    // that change a whole level at once (the risen sea flooding the seafloor).
+    //
+    // Skips cells the map does not occupy silently - a hole is not remappable and the caller is not
+    // doing anything wrong, unlike a player placing onto one - and skips cells already holding the
+    // tile. Returns how many cells actually changed, so 0 means nothing happened at all: no GPU
+    // work, nothing to save, and re-running a batch that has already run is free.
+    //
+    // Does not save. The caller knows whether the change is worth persisting.
+    public int RemapLevel(int level, TerrainTile tile)
+    {
+        if (tile == null) return 0;
+        if (registry == null) return 0;
+        if (level < 0 || level >= state.LevelCount) return 0;
+
+        // resolved once for the whole level rather than once per cell, and reported once by the
+        // registry if it is not registered
+        if (!registry.TryGetIdByEntry(tile, out string tileId)) return 0;
+
+        int levelY = ToLevelMillimetres(state.levelHeights[level]);
+        int changed = 0;
+
+        for (int z = state.originZ; z < state.originZ + state.depth; z++)
+        {
+            for (int x = state.originX; x < state.originX + state.width; x++)
+            {
+                Vector3Int cell = new Vector3Int(x, level, z);
+
+                TerrainTile current = state.GetTile(cell);
+                if (current == null) continue;
+                if (current == tile) continue;
+
+                state.SetTile(cell, tile);
+                world.terrain.SetRemap(x, z, levelY, tileId);
+
+                if (visuals != null) visuals.PatchDeferred(cell, ResolveCellSprite(cell, tile));
+
+                changed++;
+            }
+        }
+
+        if (changed > 0 && visuals != null) visuals.FlushDeferred();
+
+        return changed;
+    }
+
+
     // The one place a tile becomes visible
     private void SetCellVisual(Vector3Int cell, TerrainTile tile)
     {
@@ -623,9 +670,15 @@ public partial class TerrainManager : MonoBehaviour
             }
 
             state.SetTile(cell, tile);
-            SetCellVisual(cell, tile);
+
+            // deferred: a flooded save is hundreds of rows, and a whole-mesh upload per row is the
+            // same hitch the flood itself would cause. One flush after the loop instead
+            if (visuals != null) visuals.PatchDeferred(cell, ResolveCellSprite(cell, tile));
+
             applied++;
         }
+
+        if (visuals != null) visuals.FlushDeferred();
 
         if (skipped > 0)
         {
