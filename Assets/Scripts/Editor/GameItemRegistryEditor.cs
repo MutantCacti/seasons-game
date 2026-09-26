@@ -177,8 +177,6 @@ public class GameItemRegistryEditor : Editor
             problems += ValidateReactions(item, registered);
         }
 
-        ValidateCompendiumVisibility(registry, seen.Values);
-
         if (problems == 0)
         {
             Debug.Log($"GameItemRegistry: {seen.Count} items, all ids present and unique", registry);
@@ -189,46 +187,6 @@ public class GameItemRegistryEditor : Editor
         }
 
         return problems;
-    }
-
-
-    // MARK: compendium
-
-
-    // A hidden item is kept out of the book, so a puzzle asking for one hands the player something they
-    // can never look up. Only a warning: hiding an ingredient is odd authoring, not a broken project
-    private static void ValidateCompendiumVisibility(GameItemRegistry registry, Dictionary<string, GameItem>.ValueCollection items)
-    {
-        PuzzleRegistry puzzles = registry.PuzzleRegistry;
-        if (puzzles == null) return;
-
-        IReadOnlyList<Puzzle> entries = puzzles.Entries;
-        if (entries == null) return;
-
-        foreach (GameItem item in items)
-        {
-            if (item == null || !item.HideInCompendium) continue;
-
-            for (int i = 0; i < entries.Count; i++)
-            {
-                Puzzle puzzle = entries[i];
-                if (puzzle == null) continue;
-
-                IReadOnlyList<Ingredient> ingredients = puzzle.Ingredients;
-                if (ingredients == null) continue;
-
-                for (int j = 0; j < ingredients.Count; j++)
-                {
-                    if (ingredients[j].item != item) continue;
-
-                    Debug.LogWarning($"GameItemRegistry: '{item.name}' is hidden from the compendium but " +
-                        $"'{puzzle.name}' grants it as an ingredient, so the player can hold it with no " +
-                        $"page to read", item);
-
-                    break;
-                }
-            }
-        }
     }
 
 
