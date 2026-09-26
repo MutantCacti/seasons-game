@@ -663,7 +663,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: fern_one
+      name: fern_summer
       rect:
         serializedVersion: 2
         x: 64
@@ -729,7 +729,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: fern_two
+      name: fern_spring
       rect:
         serializedVersion: 2
         x: 160
@@ -1487,8 +1487,8 @@ TextureImporter:
       coral_one: -948755693
       coral_three: 2072582592
       coral_two: 2034212763
-      fern_one: 1462247588
-      fern_two: -1638845706
+      fern_spring: -1638845706
+      fern_summer: 1462247588
       flower_lavender: -2104039760
       flower_tulip: 74952161
       germination: 1540360546
