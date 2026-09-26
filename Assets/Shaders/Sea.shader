@@ -258,7 +258,10 @@ Shader "Seasons/Sea"
             {
                 float2 cell = floor(snappedWS.xz * _PixelsPerUnit);
                 float pick = Hash21(cell);
-                if (pick >= _GlintDensity) return colour;
+
+                float density = lerp(_GlintDensity, _GlintDensity * 0.25, Night());
+
+                if (pick >= density) return colour;
 
                 float twinkle = frac(Hash21(cell + 17.0) + _Time.y * _GlintSpeed);
                 if (twinkle > 0.3) return colour;
