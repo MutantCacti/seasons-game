@@ -198,10 +198,11 @@ public class AnimalSelection : MonoBehaviour
 
         if (cameraController != null) cameraController.Follow(animal.transform);
 
+        // before the measure: an animal may change sprite when focused (a deer turns side-on)
+        animal.OnFocused();
+
         markerWidth = markerWidthScale * SpriteWorldWidth(animal);
         ShowMarker();
-
-        animal.OnFocused();
 
         if (focusSound != null && AudioManager.Instance != null) AudioManager.Instance.PlaySFX(focusSound, animal.transform.position);
 
