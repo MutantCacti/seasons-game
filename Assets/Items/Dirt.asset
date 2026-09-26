@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
   id: dirt
   description: Brown, crumbly, and full of bacteria.
-  icon: {fileID: 394711117, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  icon: {fileID: -893690871, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 11400000, guid: 4253d9d4b67f460a296cc8a56ecb9ad4, type: 2}
   prefab: {fileID: 0}
   placeSound: {fileID: 11400000, guid: c0cbd6b28de883c3c80125a0250b8ff9, type: 2}
@@ -24,3 +24,4 @@ MonoBehaviour:
   growsInto: {fileID: 0}
   growthDays: 1
   growSound: {fileID: 0}
+  reactions: []

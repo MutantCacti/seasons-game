@@ -49,6 +49,9 @@ public class EntityManager : MonoBehaviour
 
     private readonly List<LiveEntity> live = new List<LiveEntity>();
 
+    // scratch for TryGetLiveAt, which is called once a frame while a placement drag is live
+    private readonly List<EntityId> liveAtScratch = new List<EntityId>();
+
     // entities another manager owns and saves (animals), kept out of live so they never occupy a cell
     // or count as a GameItem. only guid lookups search them.
     private readonly List<EntityId> external = new List<EntityId>();
@@ -443,6 +446,40 @@ public class EntityManager : MonoBehaviour
 
             results.Add(live[i].item);
         }
+    }
+
+
+    // Fills results with the live entities standing on a cell, minus except, so that a reagent dropped
+    // on one can be resolved to the identity it is about to replace. Takes the caller's list because
+    // this runs once a frame while a placement drag is live.
+    //
+    // More than one entity can share a cell (nothing enforces one, a mis-authored prefab or fixture
+    // could put two there), so which one a reaction lands on is whichever looks first. Placement
+    // already treats a cell as one entity's, through HasEntityAt, so it is not worth a rule here
+    public void CollectLiveAt(Vector3Int cell, List<EntityId> results, EntityId except = null)
+    {
+        results.Clear();
+
+        for (int i = 0; i < live.Count; i++)
+        {
+            if (live[i].cell != cell) continue;
+            if (live[i].entityId == null) continue;
+            if (except != null && live[i].entityId == except) continue;
+
+            results.Add(live[i].entityId);
+        }
+    }
+
+
+    // The one entity on a cell, for a caller that has no list to hand. False when the cell is empty
+    public bool TryGetLiveAt(Vector3Int cell, out LiveEntity entity, EntityId except = null)
+    {
+        entity = default;
+
+        CollectLiveAt(cell, liveAtScratch, except);
+        if (liveAtScratch.Count == 0) return false;
+
+        return TryGetLive(liveAtScratch[0], out entity);
     }
 
 

@@ -37,6 +37,11 @@ public class PlacementController : MonoBehaviour
     [SerializeField] private TerrainManager terrainManager;
     [SerializeField] private EntityManager entityManager;
     [SerializeField] private InventoryManager inventoryManager;
+
+    // Resolves an item with no tile and no prefab: one that some item reacts to is a reagent and can
+    // be dropped on that entity, anything else has nothing to place
+    [SerializeField] private GameItemRegistry registry;
+
     [SerializeField] private Camera viewCamera;
     [SerializeField] private CameraController cameraController;
 
@@ -101,7 +106,7 @@ public class PlacementController : MonoBehaviour
     private int presentationsInFlight;
 
 
-    // what a growth hands to its animation, measured before the old entity went
+    // what a growth or a reagent drop hands to its animation, measured before the old entity went
     private struct GrowthPop
     {
         public GameItem from;
@@ -109,6 +114,11 @@ public class PlacementController : MonoBehaviour
         public float oldHeight;
         public float delay;
         public bool withSound;
+
+        // the player's own reagent drop, rather than something growing while they watch: it shakes the
+        // camera, where a growth never does. Its sound and the item it spends travel as the announce's
+        // source instead
+        public bool shake;
     }
 
 
@@ -141,6 +151,12 @@ public class PlacementController : MonoBehaviour
         if (terrainManager == null) Debug.LogError("PlacementController: no TerrainManager, so a drop has no cell to land in", this);
         if (entityManager == null) Debug.LogError("PlacementController: no EntityManager, so a prefab item cannot be placed", this);
         if (viewCamera == null) Debug.LogError("PlacementController: no camera, so a drop cannot be raycast", this);
+
+        if (registry == null)
+        {
+            Debug.LogError("PlacementController: no GameItemRegistry, so a reagent cannot be told from an " +
+                "item with nothing to place, and every reagent drag is refused", this);
+        }
 
         if (terrainMask.value == 0)
         {
@@ -243,9 +259,10 @@ public class PlacementController : MonoBehaviour
         GameItem item = slot != null ? slot.Item : null;
         if (item == null) return false;
 
-        if (item.Tile == null && item.Prefab == null)
+        if (item.IsReagentShape && (registry == null || !registry.IsReagent(item)))
         {
-            Debug.LogError($"PlacementController: '{item.name}' has neither a tile nor a prefab, so there is nothing to place", item);
+            Debug.LogError($"PlacementController: '{item.name}' has neither a tile nor a prefab, and no item " +
+                $"reacts to it, so there is nothing to place", item);
             return false;
         }
 
@@ -296,13 +313,24 @@ public class PlacementController : MonoBehaviour
         TerrainTile previousTile = null;
         bool placed = false;
 
-        if (TryResolveTarget(screenPosition, out cell))
+        bool resolved = TryResolveTarget(screenPosition, out cell);
+
+        // Everything a commit needs is captured by now, so the drag lets go of the cursor and of its
+        // preview before the world changes. A failure below leaves it released, exactly as a refused
+        // drop always has
+        CancelDrag();
+
+        if (!resolved) return false;
+
+        // A reagent has neither a tile nor a prefab, so nothing is placed at the cell: the entity
+        // standing there becomes the reaction's result instead. Replace consumes the reagent, so
+        // nothing after this may consume it again
+        if (item.IsReagentShape)
         {
-            placed = Commit(item, cell, default, out instance, out previousTile);
+            return ResolveReaction(item, cell);
         }
 
-        // clears the tile patch and destroys the ghost
-        CancelDrag();
+        placed = Commit(item, cell, default, out instance, out previousTile);
 
         if (!placed) return false;
 
@@ -310,6 +338,9 @@ public class PlacementController : MonoBehaviour
 
         return true;
     }
+
+
+    // MARK: commit
 
 
     public void CancelDrag()
@@ -389,6 +420,21 @@ public class PlacementController : MonoBehaviour
         TerrainTile target = terrainManager.GetTile(cell);
         if (target == null) return false;
 
+        // An item with neither a tile nor a prefab has nothing of its own to place, so the only drop it
+        // allows is a reagent on an entity that reacts to it. The reaction's result is what has to fit
+        // the cell, tested as if it were replacing that entity, so the entity itself doesn't occupy the
+        // cell and doesn't get a say over the ground
+        if (item.IsReagentShape)
+        {
+            if (registry == null) return false;
+
+            if (!TryResolveReactionTarget(item, cell, out EntityManager.LiveEntity reacting)) return false;
+
+            GameItem becomes = reacting.item.ReactionInto(item);
+
+            return becomes != null && CanPlace(becomes, cell, replacing: reacting.entityId);
+        }
+
         // already that tile, cannot place
         if (item.Tile != null && target == item.Tile) return false;
 
@@ -457,14 +503,22 @@ public class PlacementController : MonoBehaviour
 
 
     // Everything after a commit, shared by every placement so a drop and a growth can't drift apart:
-    // consume (a drop only), save, tell the world, then show it
+    // consume (a drop only), save, tell the world, then show it.
+    //
+    // source is the item the placement came from, when it isn't the one being placed: a reagent drop
+    // places `item` but spends and sounds like the reagent. Null means item
     private void Announce(GameItem item, Vector3Int cell, GameObject instance, TerrainTile previousTile,
-        bool fromInventory, PlaceFeel feel, GrowthPop pop)
+        bool fromInventory, PlaceFeel feel, GrowthPop pop, GameItem source = null)
     {
-        // We have to consume last because the slot will deactivate when count is 0
-        if (fromInventory && !inventoryManager.TryRemove(item, 1))
+        if (fromInventory)
         {
-            Debug.LogError($"PlacementController: placed '{item.name}' but could not consume it", this);
+            GameItem spend = source != null ? source : item;
+
+            // We have to consume last because the slot will deactivate when count is 0
+            if (!inventoryManager.TryRemove(spend, 1))
+            {
+                Debug.LogError($"PlacementController: placed '{item.name}' but could not consume '{spend.name}'", this);
+            }
         }
 
         FlushSave();
@@ -475,7 +529,7 @@ public class PlacementController : MonoBehaviour
 
         switch (feel)
         {
-            case PlaceFeel.Player: transition = PlayPlacementAnimation(item, cell, instance, previousTile); break;
+            case PlaceFeel.Player: transition = PlayPlacementAnimation(item, cell, instance, previousTile, source); break;
             case PlaceFeel.Growth: PlayGrowthAnimation(item, cell, instance, pop); break;
 
             // Silent: it's simply there
@@ -520,12 +574,14 @@ public class PlacementController : MonoBehaviour
     // Swaps a live entity for another item in the same cell, through the same commit and announce as a
     // drop: one save holds both the removal and the addition, and the world hears ItemPlaced for the
     // new item only. The new entity keeps the old one's guid (so puzzle credit and pings follow it) and
-    // fixture flag, and is stamped with stageDay/stageCycleTime. False, with the old one untouched,
-    // when the new item can't go there right now.
+    // fixture flag, and is stamped with stageDay/stageCycleTime. False, with the old one untouched and
+    // nothing consumed, when the new item can't go there right now.
     //
-    // delay and withSound only shape a Growth feel: many growths on one moment stagger and share sounds
+    // delay and withSound only shape a Growth feel: many growths on one moment stagger and share sounds.
+    // consume and reagent are the reagent drop's: it spends one of reagent and shows itself as the
+    // player's own placement, which is a shake the growth feel never gets
     public bool Replace(EntityId existing, GameItem into, int stageDay, float stageCycleTime, PlaceFeel feel,
-        float delay = 0.0f, bool withSound = true)
+        float delay = 0.0f, bool withSound = true, bool consume = false, GameItem reagent = null)
     {
         if (existing == null || into == null || entityManager == null) return false;
 
@@ -536,14 +592,33 @@ public class PlacementController : MonoBehaviour
             return false;
         }
 
+        // A commit that cannot spend the reagent must not take the old entity with it: a drop that
+        // placed nothing would still have eaten the fertiliser. Nothing else may consume it, so this
+        // refusal is also the only place a reaction's consumption can be turned down. A warning, not an
+        // error: the slot can empty during the drag, which is not a broken setup
+        if (consume && (inventoryManager == null || !inventoryManager.Has(reagent)))
+        {
+            Debug.LogWarning($"PlacementController: refused to replace an entity for '{reagent?.name}': " +
+                $"there is none left to consume", this);
+            return false;
+        }
+
         if (!entityManager.TryGetLive(existing, out EntityManager.LiveEntity old)) return false;
 
         if (!CanPlace(into, old.cell, existing)) return false;
 
-        GrowthPop pop = new GrowthPop { from = old.item, delay = delay, withSound = withSound };
+        GrowthPop pop = new GrowthPop
+        {
+            from = old.item,
+            delay = delay,
+            withSound = withSound,
+            shake = consume,
+        };
 
-        // measured while the old one is still whole: its height is where the new one starts
-        pop.hasOldHeight = TryMeasureSpriteHeight(old.gameObject, out pop.oldHeight);
+        // measured while the old one is still whole: its height is where the new one starts. A reagent
+        // drop is not height-matched: a flat ground sprite's height is its thickness, so it would pop
+        // from a fraction of itself, and the base growth is what a player's own drop looks like anyway
+        pop.hasOldHeight = !consume && TryMeasureSpriteHeight(old.gameObject, out pop.oldHeight);
 
         EntityManager.SpawnInfo spawn = new EntityManager.SpawnInfo
         {
@@ -558,9 +633,45 @@ public class PlacementController : MonoBehaviour
         // no tile, so this can't fail; a spawn that does logs inside and the announce goes ahead, as a drop's would
         Commit(into, old.cell, spawn, out GameObject instance, out TerrainTile previousTile);
 
-        Announce(into, old.cell, instance, previousTile, false, feel, pop);
+        // the reagent is what the placement spent, so it is what the announce consumes and sounds like
+        Announce(into, old.cell, instance, previousTile, consume, feel, pop, consume ? reagent : null);
 
         return true;
+    }
+
+
+    // MARK: reaction
+
+
+    // The entity a reagent drop would land on: the entity at the cell, when its item reacts to reagent.
+    // A cell is one entity's, by the same assumption CanPlace and HasEntityAt make
+    private bool TryResolveReactionTarget(GameItem reagent, Vector3Int cell, out EntityManager.LiveEntity target)
+    {
+        target = default;
+
+        if (entityManager == null) return false;
+        if (!entityManager.TryGetLiveAt(cell, out target)) return false;
+        if (target.item == null) return false;
+
+        // a reagent that nothing reacts to is not a reagent, so this is also what makes CanPlace refuse
+        // a plain drop of an item with no tile and no prefab
+        return target.item.ReactionInto(reagent) != null;
+    }
+
+
+    // Drops a reagent onto the entity that reacts to it. Replace does the whole placement, including
+    // consuming the reagent, so this only decides whether it is worth trying at all
+    private bool ResolveReaction(GameItem reagent, Vector3Int cell)
+    {
+        if (!TryResolveReactionTarget(reagent, cell, out EntityManager.LiveEntity target)) return false;
+
+        GameItem into = target.item.ReactionInto(reagent);
+        if (into == null) return false;
+
+        // stage 0 re-stamps the new entity at the clock as it stands, as a fresh drop is stamped: the
+        // sprout then ages from the moment it was fertilised
+        return Replace(target.entityId, into, 0, 0.0f, PlaceFeel.Player,
+            delay: 0.0f, withSound: true, consume: true, reagent: reagent);
     }
 
 
@@ -694,9 +805,11 @@ public class PlacementController : MonoBehaviour
 
     // Everything is committed by the time this runs: An animation started here
     // can therefore assume the world is already in its final state
-    // instance is null for a tile-only item. Returns the ground change still playing, or null for
+    // instance is null for a tile-only item. source is the item the drop came from, for a reagent, and
+    // null for a plain drop of item itself. Returns the ground change still playing, or null for
     // everything that has nothing left to wait for
-    private TileTransition PlayPlacementAnimation(GameItem item, Vector3Int cell, GameObject instance, TerrainTile previousTile)
+    private TileTransition PlayPlacementAnimation(GameItem item, Vector3Int cell, GameObject instance, TerrainTile previousTile,
+        GameItem source)
     {
         Vector3 worldPosition = terrainManager != null ? terrainManager.CellToWorld(cell) : Vector3.zero;
 
@@ -710,7 +823,9 @@ public class PlacementController : MonoBehaviour
             transition = PlayTileTransition(cell, previousTile);
         }
 
-        PlayPlaceSound(item, worldPosition);
+        // a reagent is what the player placed, so it is what they hear. The chain is the growth one,
+        // with the reagent standing in for the old entity
+        PlaySound(GrowthSound(source != null ? source : item, item), worldPosition);
 
         if (cameraController != null) cameraController.Shake(shakeMagnitude, shakeDuration);
 
@@ -742,7 +857,8 @@ public class PlacementController : MonoBehaviour
 
     // The old thing was destroyed this frame, so the new one takes its place at the old one's height
     // and pops to its own: a seed swells into a flower, and a big old thing settles into a smaller one,
-    // all the same way. Then the ripple and the sound, but no shake: the player didn't do this
+    // all the same way. Then the ripple and the sound, but no shake: the player didn't do this - a
+    // reagent drop did, and that one shakes
     private void PlayGrowthAnimation(GameItem item, Vector3Int cell, GameObject instance, GrowthPop pop)
     {
         Vector3 worldPosition = terrainManager != null ? terrainManager.CellToWorld(cell) : Vector3.zero;
@@ -773,6 +889,8 @@ public class PlacementController : MonoBehaviour
 
             if (pop.withSound) PlaySound(GrowthSound(pop.from, item), worldPosition);
 
+            if (pop.shake && cameraController != null) cameraController.Shake(shakeMagnitude, shakeDuration);
+
             if (instance == null) return;
 
             PlacementAnimation[] animations = instance.GetComponentsInChildren<PlacementAnimation>(true);
@@ -790,7 +908,8 @@ public class PlacementController : MonoBehaviour
     }
 
 
-    // the source's own grow sound, then the grown item's place sound, then the default
+    // the source's own grow sound, then the grown item's place sound, then the default. A reagent drop
+    // passes the reagent as `from`, so its place sound leads the same chain
     private SoundObject GrowthSound(GameItem from, GameItem into)
     {
         if (from != null && from.GrowSound != null) return from.GrowSound;

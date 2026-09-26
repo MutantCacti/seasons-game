@@ -54,6 +54,13 @@ public class AudioManager : MonoBehaviour
     }
 
 
+    // volumeScale multiplies the SoundObject's volume, capped at 1, so leave it headroom
+    public void PlaySFX(SoundObject sfxObject, Vector3 worldPos, float pitchScale, float volumeScale)
+    {
+        sfxPlayer.Play(sfxObject, worldPos, pitchScale, volumeScale);
+    }
+
+
     public void StopAllSFX()
     {
         sfxPlayer.StopAll();

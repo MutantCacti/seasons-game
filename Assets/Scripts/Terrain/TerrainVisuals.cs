@@ -14,6 +14,14 @@ public class TerrainVisuals : MonoBehaviour
     private readonly List<Vector2[]> uvs = new List<Vector2[]>();
     private readonly List<bool> patchable = new List<bool>();
 
+    // batched patching: the queued cells, the meshes with unflushed writes, and scratch buffers so
+    // a flush allocates nothing after the first one. Reused between batches
+    private readonly List<Vector3Int> deferredCells = new List<Vector3Int>();
+    private readonly List<Sprite> deferredSprites = new List<Sprite>();
+    private readonly List<Vector3Int> scratchCells = new List<Vector3Int>();
+    private readonly List<Sprite> scratchSprites = new List<Sprite>();
+    private readonly List<int> dirtyMeshes = new List<int>();
+
     private bool initialised;
     private uint visualHash;
     private bool hashKnown;
@@ -52,6 +60,78 @@ public class TerrainVisuals : MonoBehaviour
         EnsureInitialised();
         if (quadMaps == null) return;
 
+        // the immediate path shares the batched writer and its dirty list, then uploads straight away
+        dirtyMeshes.Clear();
+
+        WriteCellUVs(cell, sprite, dirtyMeshes);
+
+        for (int i = 0; i < dirtyMeshes.Count; i++)
+        {
+            int map = dirtyMeshes[i];
+            if (meshes[map] != null) meshes[map].SetUVs(0, uvs[map]);
+        }
+    }
+
+
+    // A batch: writes the cell's UVs into the cached buffer but uploads nothing. FlushDeferred is
+    // what touches the GPU, once per dirty mesh rather than once per cell
+    public void PatchDeferred(Vector3Int cell, Sprite sprite)
+    {
+        if (sprite == null) return;
+
+        deferredCells.Add(cell);
+        deferredSprites.Add(sprite);
+    }
+
+
+    // Ends a batch. One whole-mesh SetUVs per dirty mesh, which is the bounded cost the flood needs:
+    // a level of cells costs at most one upload per mesh, whatever the level's size.
+    //
+    // Mesh.SetUVs' (start, length) overload cannot patch a subrange: the docs say the resulting mesh
+    // has `length` vertices, so it takes a slice of the input array rather than of the mesh, and
+    // passing a level's vertex range would shrink the terrain to that level. Whole-mesh it is.
+    //
+    // The queue is emptied before anything can early-return or upload, so nothing deferred is
+    // flushed twice and a scene with no baked visuals cannot accumulate cells forever
+    public void FlushDeferred()
+    {
+        if (deferredCells.Count == 0) return;
+
+        // take the cells away first: the rest of this can return early without stranding them
+        scratchCells.Clear();
+        scratchSprites.Clear();
+
+        scratchCells.AddRange(deferredCells);
+        scratchSprites.AddRange(deferredSprites);
+
+        int count = scratchCells.Count;
+
+        deferredCells.Clear();
+        deferredSprites.Clear();
+
+        EnsureInitialised();
+        if (quadMaps == null) return;
+
+        dirtyMeshes.Clear();
+
+        for (int i = 0; i < count; i++)
+        {
+            WriteCellUVs(scratchCells[i], scratchSprites[i], dirtyMeshes);
+        }
+
+        for (int i = 0; i < dirtyMeshes.Count; i++)
+        {
+            int map = dirtyMeshes[i];
+            if (meshes[map] != null) meshes[map].SetUVs(0, uvs[map]);
+        }
+    }
+
+
+    // Writes the cell's quads into the cached UV array, for the maps that have any, and marks those
+    // maps as needing an upload. Shared by the immediate and the deferred paths so they cannot
+    // disagree about what a cell resolves to
+    private void WriteCellUVs(Vector3Int cell, Sprite sprite, List<int> dirty)
+    {
         // the wall atlas is laid out the same as the tile atlas, so one slice rect describes the
         // quad in both meshes and the sprite's own texture gives the right dimensions for either
         // TODO: change the way that works because holy shit that's gonna be impossible
@@ -97,7 +177,9 @@ public class TerrainVisuals : MonoBehaviour
             }
 
             patchable[i] = ok;
-            if (ok) mesh.SetUVs(0, meshUvs);
+
+            if (!ok) continue;
+            if (!dirty.Contains(i)) dirty.Add(i);
         }
     }
 

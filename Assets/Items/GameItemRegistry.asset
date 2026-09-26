@@ -17,8 +17,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2a41064d6f74dcdd8bc0c4ced089210d, type: 2}
   - {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
   - {fileID: 11400000, guid: 094ecffb17153e02fb86e9c15e48a83b, type: 2}
-  - {fileID: 11400000, guid: 3ea59f08fabc65b4fb76d1e98ecd567b, type: 2}
-  - {fileID: 11400000, guid: 641663caa22cd29a68165a82bcc24891, type: 2}
+  - {fileID: 11400000, guid: 74e06d725d78ae269987bf3ee8534eb2, type: 2}
   - {fileID: 11400000, guid: 194053dd46cc844d890f12c6cfae168b, type: 2}
+  - {fileID: 11400000, guid: 641663caa22cd29a68165a82bcc24891, type: 2}
+  - {fileID: 11400000, guid: 4e1fd6ecb2257639daed0f5e89d72cfc, type: 2}
   - {fileID: 11400000, guid: bd6e914e243fb49b28c60794bff562bb, type: 2}
+  - {fileID: 11400000, guid: 3ea59f08fabc65b4fb76d1e98ecd567b, type: 2}
+  - {fileID: 11400000, guid: 23142dca9dc523b14acab44078f8a522, type: 2}
   puzzleRegistry: {fileID: 11400000, guid: 11fca8477c0b4b219b4793fb3e097a9a, type: 2}

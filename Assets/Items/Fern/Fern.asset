@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a447734dfd8a20878da909dc174cacf, type: 3}
+  m_Name: Fern
+  m_EditorClassIdentifier: Assembly-CSharp::GameItem
+  id: fern_summer
+  description: A leafy plant that provides shelter for small animals.
+  icon: {fileID: 1462247588, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  tile: {fileID: 0}
+  prefab: {fileID: 212010971281103808, guid: 7fac7796131fac647befd453bf8a414d, type: 3}
+  placeSound: {fileID: 0}
+  placedOnTags:
+  - grass
+  antiPlacedOnTags: []
+  growsInto: {fileID: 0}
+  growthDays: 1
+  growSound: {fileID: 0}

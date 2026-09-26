@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AnimalRegistry
   animals:
   - {fileID: 11400000, guid: 35aca377dbe5c7b5fb0e1e5f3c104ad4, type: 2}
+  - {fileID: 11400000, guid: 7b3a183a0a2b7e249951a6274350c1ab, type: 2}

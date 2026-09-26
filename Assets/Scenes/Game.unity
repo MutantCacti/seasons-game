@@ -15517,7 +15517,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c849bc00a51489b31b48556a4c7679f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IngredientFlightManager
-  inventoryManager: {fileID: 230018482}
+  inventoryManager: {fileID: 0}
   flierPrefab: {fileID: 5210957364938071269, guid: b5ac1cba4e702698290bc19a309deaea, type: 3}
   glowColour: {r: 1, g: 0.95, b: 0.8, a: 1}
   stagger: 0.07
@@ -15582,7 +15582,7 @@ GameObject:
   - component: {fileID: 230018480}
   - component: {fileID: 230018479}
   - component: {fileID: 230018481}
-  - component: {fileID: 230018482}
+  - component: {fileID: 230018484}
   - component: {fileID: 230018483}
   m_Layer: 5
   m_Name: Inventory Container Panel
@@ -15689,7 +15689,21 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
---- !u!114 &230018482
+--- !u!114 &230018483
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 230018477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 779f65cb26f94b61aa1144cec8b5efcb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InventoryContainer
+  inventory: {fileID: 0}
+  layoutGroup: {fileID: 230018481}
+--- !u!114 &230018484
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -15718,20 +15732,6 @@ MonoBehaviour:
   - {fileID: 2019140011}
   - {fileID: 540493824}
   registry: {fileID: 11400000, guid: 03db0fd31fcdc6297b2946be5ba96786, type: 2}
---- !u!114 &230018483
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 230018477}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 779f65cb26f94b61aa1144cec8b5efcb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::InventoryContainer
-  inventory: {fileID: 230018482}
-  layoutGroup: {fileID: 230018481}
 --- !u!1 &236633206
 GameObject:
   m_ObjectHideFlags: 0
@@ -16565,7 +16565,7 @@ MonoBehaviour:
   failTint: {r: 0.824, g: 0.341, b: 0.247, a: 1}
   completeSpawnSound: {fileID: 11400000, guid: 433901e488883701e8ac95bfd65dcd66, type: 2}
   completeOpenSound: {fileID: 0}
-  failSpawnSound: {fileID: 11400000, guid: 8a5c63df299932a79a06fe88bad4677a, type: 2}
+  failSpawnSound: {fileID: 11400000, guid: 36ac646139a7c03a1aa3ba5fc8c5be3c, type: 2}
   failOpenSound: {fileID: 0}
   edgeMargin: 0.04
   edgePingHeight: 0.09
@@ -27707,7 +27707,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlacementController
   terrainManager: {fileID: 236633208}
   entityManager: {fileID: 1689511887}
-  inventoryManager: {fileID: 230018482}
+  inventoryManager: {fileID: 0}
+  registry: {fileID: 11400000, guid: 03db0fd31fcdc6297b2946be5ba96786, type: 2}
   viewCamera: {fileID: 1764824870}
   cameraController: {fileID: 1764824873}
   terrainMask:
@@ -28309,7 +28310,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PuzzleManager
   registry: {fileID: 11400000, guid: 11fca8477c0b4b219b4793fb3e097a9a, type: 2}
-  inventoryManager: {fileID: 230018482}
+  inventoryManager: {fileID: 0}
   placementController: {fileID: 0}
   softLockGraceSeconds: 0.5
 --- !u!1 &1080143287
@@ -28652,6 +28653,7 @@ GameObject:
   - component: {fileID: 1193446113}
   - component: {fileID: 1193446112}
   - component: {fileID: 1193446111}
+  - component: {fileID: 1193446115}
   m_Layer: 4
   m_Name: Sea Level
   m_TagString: Untagged
@@ -28688,7 +28690,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SeaLevel
   level: 0.25
   skirtStartY: -1
-  riseDuration: 1.5
+  riseDuration: 5
   floorY: -4
   lowestTopY: 0
   pixelsPerUnit: 32
@@ -28770,6 +28772,20 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1193446109}
   m_Mesh: {fileID: 4300000, guid: a44a68d3b9d5f13f6b2e5e936e5e34a7, type: 2}
+--- !u!114 &1193446115
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1193446109}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c21ac6a72df8f904bb3f28d71a44bb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeaFloorRemapper
+  seafloorTile: {fileID: 11400000, guid: 8da4a0082d0432c3180c4531b7e54114, type: 2}
+  remapDelaySeconds: 0.02
 --- !u!1 &1203589268
 GameObject:
   m_ObjectHideFlags: 0

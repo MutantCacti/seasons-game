@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c26e09b07590bfa38afe2dcf2c5dee71, type: 3}
+  m_Name: Riverbed
+  m_EditorClassIdentifier: Assembly-CSharp::TerrainTile
+  Id: riverbed
+  Tags:
+  - riverbed
+  FillVariants:
+  - {fileID: 328919795, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+  VariantSeed: 0
+  Edges:
+    Slots:
+    - {fileID: 697232574, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: -2129845790, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: -691318772, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -299815803, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -1825784321, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: 875868159, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -905718408, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -120820207, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 952969597, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 1949780630, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -27184777, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: -996820160, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 692257414, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: -1690340437, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: -478229811, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: -176760917, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -1076305619, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 1529312766, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -497251659, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 0}
+    - {fileID: -1694231024, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 1133900048, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -512963597, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -227208499, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 1183727232, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -1320813159, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: -594197619, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 1145394493, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}
+    - {fileID: 1671411214, guid: 562c5a4926d3b44e1adad7e37e614895, type: 3}

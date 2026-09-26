@@ -50,6 +50,15 @@ public class SFXPlayer : MonoBehaviour
     // up through a sequence
     public void Play(SoundObject soundObject, Vector3 worldPos, float pitchScale)
     {
+        Play(soundObject, worldPos, pitchScale, 1f);
+    }
+
+
+    // volumeScale multiplies the SoundObject's own (randomised) volume, for callers that get louder
+    // or quieter with what they're doing. the result is still capped at 1, so a SoundObject that
+    // wants to be boosted needs its volume set below 1 to leave headroom
+    public void Play(SoundObject soundObject, Vector3 worldPos, float pitchScale, float volumeScale)
+    {
         if (soundObject == null) return;
 
         AudioClip clip = soundObject.PickRandomClip();
@@ -76,7 +85,7 @@ public class SFXPlayer : MonoBehaviour
         }
 
         audioSource.clip = clip;
-        audioSource.volume = soundObject.PickRandomVolume();
+        audioSource.volume = Mathf.Clamp01(soundObject.PickRandomVolume() * volumeScale);
         // same limits SoundObject keeps its own pitch inside
         audioSource.pitch = Mathf.Clamp(soundObject.PickRandomPitch() * pitchScale, 0.25f, 3f);
 

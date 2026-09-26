@@ -174,6 +174,7 @@ public class GameItemRegistryEditor : Editor
         foreach (GameItem item in seen.Values)
         {
             problems += ValidateGrowth(item, registered);
+            problems += ValidateReactions(item, registered);
         }
 
         if (problems == 0)
@@ -274,13 +275,104 @@ public class GameItemRegistryEditor : Editor
     }
 
 
+    // MARK: reactions
+
+
+    // A reaction replaces one placed entity with another when a reagent is dropped on it, so both ends
+    // are asked for the same things a growth is, and the applied item needs no prefab of its own: the
+    // whole point of a reagent is that it has nothing to place. Returns the number of problems
+    private static int ValidateReactions(GameItem item, HashSet<GameItem> registered)
+    {
+        IReadOnlyList<ItemReaction> reactions = item.Reactions;
+
+        if (reactions == null || reactions.Count == 0) return 0;
+
+        int problems = 0;
+
+        // an item that does both is legal - a sprout could react to something as well as grow - but it
+        // is far more often a seed that kept its old growsInto, which would grow on its own AND react
+        if (item.GrowsInto != null)
+        {
+            Debug.LogWarning($"GameItemRegistry: '{item.name}' both grows into '{item.GrowsInto.name}' and " +
+                $"has reactions, so it will grow on its own as well as react - clear growsInto if the " +
+                $"reaction is meant to be the whole change", item);
+        }
+
+        // nothing placed, so nothing can be dropped on: a reaction here can never run
+        if (item.Prefab == null)
+        {
+            Debug.LogError($"GameItemRegistry: '{item.name}' has reactions but no prefab, so it is never a " +
+                $"placed entity that a reagent could be dropped on", item);
+            problems++;
+        }
+
+        HashSet<GameItem> applied = new HashSet<GameItem>();
+
+        for (int i = 0; i < reactions.Count; i++)
+        {
+            ItemReaction reaction = reactions[i];
+
+            if (reaction == null)
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' has an empty reaction at {i}", item);
+                problems++;
+                continue;
+            }
+
+            GameItem from = reaction.Catalyst;
+            GameItem into = reaction.Becomes;
+
+            if (from == null || into == null)
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' has a reaction with no " +
+                    $"{(from == null ? "catalyst item" : "result")}, so it can never do anything", item);
+                problems++;
+                continue;
+            }
+
+            // the same shape a growth's result needs: it replaces an entity, so it has to be one
+            if (into.Prefab == null || into.Tile != null)
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' reacts to '{from.name}' by becoming " +
+                    $"'{into.name}', which needs a prefab and no tile to replace an entity", item);
+                problems++;
+            }
+
+            // a reagent is not saved and is never placed, but a reaction to an unregistered item could
+            // still be authored, and nobody would ever see the reagent in the world
+            if (!registered.Contains(from))
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' reacts to '{from.name}', which is not in " +
+                    $"this registry", item);
+                problems++;
+            }
+
+            if (!registered.Contains(into))
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' reacts to '{from.name}' by becoming " +
+                    $"'{into.name}', which is not in this registry, so the new entity could never be saved", item);
+                problems++;
+            }
+
+            if (!applied.Add(from))
+            {
+                Debug.LogError($"GameItemRegistry: '{item.name}' has more than one reaction to '{from.name}', " +
+                    $"so only the first is ever used", item);
+                problems++;
+            }
+        }
+
+        return problems;
+    }
+
+
     // MARK: ordering
 
 
-    // Orders the gathered items into the order the player meets them: the compendium first, then
-    // items no puzzle reaches (A->Z), then the puzzle tree's ingredients depth by depth (A->Z
-    // within each depth) with what they grow into trailing behind them. Falls back to a plain A->Z
-    // sort when the puzzle registry is missing.
+    // Orders the gathered items into the order the player meets them: the compendium first, then items
+    // no puzzle reaches (A->Z), then the puzzle tree's ingredients in meet order, each item followed by
+    // whatever it grows into or reacts into. Falls back to a plain A->Z sort when the puzzle registry
+    // is missing.
     private static List<GameItem> OrderItems(GameItemRegistry registry, List<GameItem> found,
         out int compendiumCount, out int unreachedCount, out int reachedCount)
     {
@@ -304,6 +396,10 @@ public class GameItemRegistryEditor : Editor
         // several depths reach keeps the place of its first appearance.
         List<GameItem> reached = new List<GameItem>();
         HashSet<GameItem> reachedSet = new HashSet<GameItem>();
+
+        // what each reached item can become: growsInto, and every reaction's becomes. Kept for the
+        // dependency order below, which needs the edges rather than just the set
+        Dictionary<GameItem, GameItem[]> becomeEdges = new Dictionary<GameItem, GameItem[]>();
 
         for (int depth = 0; depth < walk.Levels.Count; depth++)
         {
@@ -333,31 +429,19 @@ public class GameItemRegistryEditor : Editor
             }
         }
 
-        // step 4: what a reached item grows into is met after the puzzle ingredients, not instead of
-        // them. A grown flower is reached, so it is not swept up with the items no puzzle reaches and
-        // pushed to the front of the book. Wave by wave so a chain keeps its order; the set makes a
-        // cycle terminate, and an item two growths reach keeps the place of its first appearance.
-        List<GameItem> growing = new List<GameItem>(reached);
-
-        while (growing.Count > 0)
+        // step 4: what a reached item grows into or reacts into is reached too, so it is not swept up
+        // with the items no puzzle reaches and hoisted to the front of the book: a seed's sprout and
+        // flower follow the seed, which is where the player meets them
+        for (int i = 0; reached.Count > i; i++)
         {
-            List<GameItem> grown = new List<GameItem>();
-
-            for (int i = 0; i < growing.Count; i++)
-            {
-                GameItem into = growing[i].GrowsInto;
-                if (into == null) continue;
-                if (!reachedSet.Add(into)) continue;
-
-                grown.Add(into);
-            }
-
-            grown.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
-
-            for (int i = 0; i < grown.Count; i++) reached.Add(grown[i]);
-
-            growing = grown;
+            CollectBecomes(reached[i], reachedSet, reached, becomeEdges);
         }
+
+        // then order by dependency, so a thing always follows the thing it is made from: the seed
+        // before its sprout, the sprout before its flower, and each chain kept together rather than
+        // interleaved with the other. Ties keep the meet order above, so the puzzle tree still decides
+        // between items that don't depend on each other
+        SortByDependencies(reached, becomeEdges);
 
         // step 1: the compendium leads, matched by id rather than name
         GameItem compendium = null;
@@ -390,7 +474,7 @@ public class GameItemRegistryEditor : Editor
 
         unreached.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
 
-        // assemble: compendium, then unreached, then reached in meet order
+        // assemble: compendium, then unreached, then reached in the order the player meets them
         List<GameItem> ordered = new List<GameItem>(found.Count);
         HashSet<GameItem> placed = new HashSet<GameItem>();
         HashSet<GameItem> registered = new HashSet<GameItem>(found);
@@ -416,6 +500,125 @@ public class GameItemRegistryEditor : Editor
         reachedCount = ordered.Count - compendiumCount - unreachedCount;
 
         return ordered;
+    }
+
+
+    // Adds everything item can become - what it grows into, and what each of its reactions turns it
+    // into - to reached. A hidden item is collected too: the seeds are hidden from the book, and the
+    // flowers they lead to still have to be discovered through them. Records item's own edges so the
+    // dependency order below can see them
+    private static void CollectBecomes(GameItem item, HashSet<GameItem> reachedSet, List<GameItem> reached,
+        Dictionary<GameItem, GameItem[]> becomeEdges)
+    {
+        if (item == null) return;
+        if (becomeEdges.ContainsKey(item)) return;
+
+        GameItem[] edges = OutputEdges(item);
+        becomeEdges.Add(item, edges);
+
+        for (int i = 0; i < edges.Length; i++)
+        {
+            GameItem into = edges[i];
+            if (into == null) continue;
+            if (!reachedSet.Add(into)) continue;
+
+            reached.Add(into);
+        }
+    }
+
+
+    // The items this one becomes: its growsInto and every complete reaction's becomes. A catalyst is
+    // deliberately not an edge here - the player has to be holding it - so it never orders the book
+    private static GameItem[] OutputEdges(GameItem item)
+    {
+        List<GameItem> edges = new List<GameItem>();
+
+        if (item.GrowsInto != null) edges.Add(item.GrowsInto);
+
+        IReadOnlyList<ItemReaction> reactions = item.Reactions;
+
+        if (reactions != null)
+        {
+            for (int i = 0; i < reactions.Count; i++)
+            {
+                ItemReaction reaction = reactions[i];
+                if (reaction == null || reaction.Becomes == null) continue;
+
+                edges.Add(reaction.Becomes);
+            }
+        }
+
+        return edges.ToArray();
+    }
+
+
+    // Reorders items only as much as the becomes edges require, keeping the meet order wherever the
+    // edges allow it. A depth-first walk of each chain, entered from the reached list in meet order:
+    // a seed, then the sprout it becomes, then the flower that sprout becomes, with the next chain
+    // only after the whole of this one
+    private static void SortByDependencies(List<GameItem> items, Dictionary<GameItem, GameItem[]> becomeEdges)
+    {
+        Dictionary<GameItem, int> finishOrder = new Dictionary<GameItem, int>();
+
+        int counter = 0;
+
+        // one walk per root, each with its own path set: every item is visited once in total, and a
+        // chain is always entered where the player meets it rather than from its middle. The path set
+        // is what terminates a become cycle, which validation reports separately
+        for (int i = 0; i < items.Count; i++)
+        {
+            VisitDependencies(items[i], becomeEdges, finishOrder, new HashSet<GameItem>(), ref counter);
+        }
+
+        // a stable sort over the finish order, so two items with nothing between them hold their places
+        items.Sort((a, b) =>
+        {
+            finishOrder.TryGetValue(a, out int left);
+            finishOrder.TryGetValue(b, out int right);
+
+            return left.CompareTo(right);
+        });
+    }
+
+
+    // Depth-first with the chain in front of item first, then item, then what item becomes, so nothing
+    // is placed before the thing it is made from
+    private static void VisitDependencies(GameItem item, Dictionary<GameItem, GameItem[]> becomeEdges,
+        Dictionary<GameItem, int> finishOrder, HashSet<GameItem> onPath, ref int counter)
+    {
+        if (item == null) return;
+        if (finishOrder.ContainsKey(item)) return;
+        if (!onPath.Add(item)) return;
+
+        foreach (KeyValuePair<GameItem, GameItem[]> entry in becomeEdges)
+        {
+            if (!HasOutput(entry.Value, item)) continue;
+
+            VisitDependencies(entry.Key, becomeEdges, finishOrder, onPath, ref counter);
+        }
+
+        finishOrder[item] = counter;
+        counter++;
+
+        if (!becomeEdges.TryGetValue(item, out GameItem[] edges) || edges == null) return;
+
+        for (int i = 0; i < edges.Length; i++)
+        {
+            VisitDependencies(edges[i], becomeEdges, finishOrder, onPath, ref counter);
+        }
+    }
+
+
+    private static bool HasOutput(GameItem[] outputs, GameItem item)
+    {
+        if (outputs == null) return false;
+
+        for (int i = 0; i < outputs.Length; i++)
+        {
+            if (outputs[i] == item) return true;
+        }
+
+        return false;
     }
 
 

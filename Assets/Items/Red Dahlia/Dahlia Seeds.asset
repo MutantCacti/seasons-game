@@ -16,11 +16,15 @@ MonoBehaviour:
   description: Small but mighty.
   icon: {fileID: 514303188, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 0}
-  prefab: {fileID: 9101707734154989034, guid: f7cab45899b8ae640b27a5d5b1fb4ffc, type: 3}
+  prefab: {fileID: 2364035327301001657, guid: bc2485f00b7ae8d1ba00cd0de1e42a54, type: 3}
   placeSound: {fileID: 11400000, guid: 756fa5864d79864498977474a2d1b2f1, type: 2}
   placedOnTags:
   - grass
   antiPlacedOnTags: []
-  growsInto: {fileID: 11400000, guid: 194053dd46cc844d890f12c6cfae168b, type: 2}
+  growsInto: {fileID: 0}
   growthDays: 0.25
-  growSound: {fileID: 11400000, guid: 24880d88405b3458e8bce297d8c78634, type: 2}
+  growSound: {fileID: 0}
+  reactions:
+  - catalyst: {fileID: 11400000, guid: 23142dca9dc523b14acab44078f8a522, type: 2}
+    becomes: {fileID: 11400000, guid: 74e06d725d78ae269987bf3ee8534eb2, type: 2}
+  hideInCompendium: 1
