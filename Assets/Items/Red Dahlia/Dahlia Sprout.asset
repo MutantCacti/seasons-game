@@ -10,14 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a447734dfd8a20878da909dc174cacf, type: 3}
-  m_Name: Seed 1
+  m_Name: Dahlia Sprout
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
-  id: seed_1
+  id: dahlia_sprout
   description: 
-  icon: {fileID: 1425304339, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  icon: {fileID: 1540360546, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 0}
-  prefab: {fileID: 212010971281103808, guid: ce2365baa1afc2041ba0ef599589b9ed, type: 3}
+  prefab: {fileID: 9101707734154989034, guid: f7cab45899b8ae640b27a5d5b1fb4ffc, type: 3}
   placeSound: {fileID: 0}
-  placedOnTags:
-  - grass
+  placedOnTags: []
   antiPlacedOnTags: []
+  growsInto: {fileID: 11400000, guid: 194053dd46cc844d890f12c6cfae168b, type: 2}
+  growthDays: 0.25
+  growSound: {fileID: 11400000, guid: 24880d88405b3458e8bce297d8c78634, type: 2}
+  reactions: []
+  hideInCompendium: 1

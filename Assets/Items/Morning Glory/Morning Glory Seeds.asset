@@ -16,11 +16,15 @@ MonoBehaviour:
   description: One day these humble seedlings will bring blue-tinted joy.
   icon: {fileID: -131840173, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 0}
-  prefab: {fileID: 9101707734154989034, guid: f7cab45899b8ae640b27a5d5b1fb4ffc, type: 3}
+  prefab: {fileID: 258504900554182900, guid: 72883c44aadda8cd59e777d4259fa39f, type: 3}
   placeSound: {fileID: 11400000, guid: 756fa5864d79864498977474a2d1b2f1, type: 2}
   placedOnTags:
   - grass
   antiPlacedOnTags: []
-  growsInto: {fileID: 11400000, guid: bd6e914e243fb49b28c60794bff562bb, type: 2}
+  growsInto: {fileID: 0}
   growthDays: 0.25
-  growSound: {fileID: 11400000, guid: 24880d88405b3458e8bce297d8c78634, type: 2}
+  growSound: {fileID: 0}
+  reactions:
+  - catalyst: {fileID: 11400000, guid: 23142dca9dc523b14acab44078f8a522, type: 2}
+    becomes: {fileID: 11400000, guid: 4e1fd6ecb2257639daed0f5e89d72cfc, type: 2}
+  hideInCompendium: 1
