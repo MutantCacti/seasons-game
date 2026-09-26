@@ -225,8 +225,8 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
-    // Which entity completed this puzzle. False when the completion was never attributed to one, or
-    // when the entity that did it is no longer in the world.
+    // Which entity completed this puzzle. False when the completion was never attributed to one, when
+    // the entity that did it is no longer in the world, or when it was credited to a cell instead
     public bool TryGetCompletedBy(Puzzle puzzle, out EntityId entity)
     {
         entity = null;
@@ -235,9 +235,29 @@ public class PuzzleManager : MonoBehaviour
 
         if (!completedBy.TryGetValue(puzzle, out string guid)) return false;
 
+        if (PuzzleCredit.IsCellKey(guid)) return false;
+
         if (EntityManager.Instance == null) return false;
 
         return EntityManager.Instance.TryGetEntity(guid, out entity);
+    }
+
+
+    // Where to go to see what completed this puzzle: the entity, or failing that the credited cell's
+    // top. False when there is neither
+    public bool TryGetCreditTarget(Puzzle puzzle, out EntityId entity, out Vector3 point)
+    {
+        point = default;
+
+        if (TryGetCompletedBy(puzzle, out entity) && entity != null)
+        {
+            point = entity.transform.position;
+            return true;
+        }
+
+        if (puzzle == null || !completedBy.TryGetValue(puzzle, out string key)) return false;
+
+        return PuzzleCredit.TryResolveCellKey(key, TerrainManager.Instance, out point);
     }
 
 
@@ -257,10 +277,21 @@ public class PuzzleManager : MonoBehaviour
     // MARK: completion
 
 
-    // the same, with a PuzzleCredit: what a scripted puzzle completes with
+    // the same, with a PuzzleCredit: what a scripted puzzle completes with. A cell goes on as its key
+    // wherever a guid would, so the queue, completedBy and the ping all carry it unchanged
     public bool Complete(Puzzle puzzle, PuzzleCredit credit)
     {
-        return Complete(puzzle, credit.entity);
+        if (!credit.hasCell) return Complete(puzzle, credit.entity);
+
+        if (!completionEnabled) return false;
+        if (puzzle == null) return false;
+
+        string key = PuzzleCredit.ToCellKey(credit.cell, TerrainManager.Instance);
+
+        if (key == null) Debug.LogError($"PuzzleManager: '{puzzle.name}' was credited to cell {credit.cell}, which " +
+            $"is not on this terrain, so nothing is recorded as having completed it", this);
+
+        return CompleteInternal(puzzle, key, null);
     }
 
 
@@ -495,7 +526,8 @@ public class PuzzleManager : MonoBehaviour
 
             EntityId source = null;
 
-            if (!string.IsNullOrEmpty(guid) && EntityManager.Instance != null)
+            // a cell credit has no entity to find; its key still goes to completedBy and the ping
+            if (!string.IsNullOrEmpty(guid) && !PuzzleCredit.IsCellKey(guid) && EntityManager.Instance != null)
             {
                 EntityManager.Instance.TryGetEntity(guid, out source);
             }
@@ -837,6 +869,14 @@ public class PuzzleManager : MonoBehaviour
             {
                 Debug.LogError($"PuzzleManager: the save attributes '{puzzle.name}' to an empty guid - " +
                     $"dropping it", this);
+                continue;
+            }
+
+            // a cell credit is its key; one that doesn't parse can never be resolved
+            if (PuzzleCredit.IsCellKey(entry.entityGuid) && !PuzzleCredit.TryParseCellKey(entry.entityGuid, out int _, out int _, out int _))
+            {
+                Debug.LogError($"PuzzleManager: the save attributes '{puzzle.name}' to the malformed cell " +
+                    $"'{entry.entityGuid}' - dropping it", this);
                 continue;
             }
 

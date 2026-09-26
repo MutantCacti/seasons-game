@@ -1,24 +1,6 @@
 using UnityEngine;
 
 
-// Who a puzzle's completion is credited to: the thing its ping points at, and what the compendium's
-// row goes to. None is allowed; the completion then just counts.
-public readonly struct PuzzleCredit
-{
-    public readonly EntityId entity;
-
-
-    private PuzzleCredit(EntityId entity)
-    {
-        this.entity = entity;
-    }
-
-
-    public static PuzzleCredit None { get { return default; } }
-    public static PuzzleCredit Entity(EntityId entity) { return new PuzzleCredit(entity); }
-}
-
-
 // A puzzle with its own code: one subclass per puzzle, one asset of it. It hears world events
 // through WorldEvents while it is active (unlocked and not completed), and never before or after.
 //

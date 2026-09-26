@@ -24,7 +24,7 @@ public class PuzzleLedgerSave
 public class PuzzleCompletionSave
 {
     public string puzzleId;
-    public string entityGuid;   // an EntityId guid, resolved through EntityManager
+    public string entityGuid;   // an EntityId guid, resolved through EntityManager, or a PuzzleCredit cell key
 }
 
 

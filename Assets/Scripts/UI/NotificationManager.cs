@@ -344,6 +344,19 @@ public class NotificationManager : MonoBehaviour
     }
 
 
+    // a ping whose target is a terrain cell rather than an entity
+    public void PanToPoint(Vector3 point)
+    {
+        if (cameraController == null)
+        {
+            Debug.LogError("NotificationManager: no CameraController, so the camera cannot pan to this ping", this);
+            return;
+        }
+
+        cameraController.PanToPoint(point);
+    }
+
+
     // MARK: pings
 
 

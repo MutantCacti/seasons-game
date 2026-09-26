@@ -320,7 +320,7 @@ public class PuzzleTabManager : CompendiumTabManager
                 row.SetText(COMPLETE_TEXT);
 
                 // nothing to go to once the entity that did it has left the world
-                row.SetInteractable(PuzzleManager.Instance.TryGetCompletedBy(puzzle, out EntityId _));
+                row.SetInteractable(PuzzleManager.Instance.TryGetCreditTarget(puzzle, out EntityId _, out Vector3 _));
                 row.SetOnClick(() => GoTo(puzzle));
                 break;
 
@@ -588,7 +588,8 @@ public class PuzzleTabManager : CompendiumTabManager
     {
         // checked again here, the entity can be removed while the book is open
         if (PuzzleManager.Instance == null) return;
-        if (!PuzzleManager.Instance.TryGetCompletedBy(puzzle, out EntityId entity) || entity == null) return;
+        // an entity, or the cell it was credited to
+        if (!PuzzleManager.Instance.TryGetCreditTarget(puzzle, out EntityId entity, out Vector3 point)) return;
 
         CameraController view = ViewCamera;
 
@@ -600,7 +601,8 @@ public class PuzzleTabManager : CompendiumTabManager
 
         if (CompendiumUIManager.Instance != null) CompendiumUIManager.Instance.RequestClose();
 
-        view.PanToTransform(entity.transform);
+        if (entity != null) view.PanToTransform(entity.transform);
+        else view.PanToPoint(point);
     }
 
 

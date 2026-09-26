@@ -409,11 +409,15 @@ public class EntityManager : MonoBehaviour
 
     // Resolves a guid back to the entity that owns it. False when nothing in the world has that guid,
     // which is also what a guid belonging to an entity that has since been destroyed returns.
+    //
+    // A puzzle credited to a terrain cell saves the cell's key where a guid would go; that is not an
+    // entity, so it is false, quietly
     public bool TryGetEntity(string guid, out EntityId entity)
     {
         entity = null;
 
         if (string.IsNullOrEmpty(guid)) return false;
+        if (PuzzleCredit.IsCellKey(guid)) return false;
 
         for (int i = 0; i < live.Count; i++)
         {

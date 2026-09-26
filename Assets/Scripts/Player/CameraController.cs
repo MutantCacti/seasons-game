@@ -66,11 +66,15 @@ public class CameraController : MonoBehaviour
     private const float MIN_FORWARD_Y = 0.0001f;
     private Transform panTarget;
 
+    // a pan to a fixed point (a credited cell) rather than a transform; it ends on arrival like a pan
+    private bool panningToPoint;
+    private Vector3 panPoint;
+
     // a follow is a pan that never arrives: it keeps the target centred until something ends it
     private bool following;
 
 
-    public bool IsPanningToTarget { get { return panTarget != null; } }
+    public bool IsPanningToTarget { get { return panTarget != null || panningToPoint; } }
     public bool IsFollowing { get { return following && panTarget != null; } }
 
 
@@ -390,7 +394,18 @@ public class CameraController : MonoBehaviour
     public void PanToTransform(Transform target)
     {
         EndFollow();
+        panningToPoint = false;
         panTarget = target;
+    }
+
+
+    // The same glide to a fixed point, e.g. the cell a puzzle was credited to
+    public void PanToPoint(Vector3 point)
+    {
+        EndFollow();
+        panTarget = null;
+        panningToPoint = true;
+        panPoint = point;
     }
 
 
@@ -398,6 +413,7 @@ public class CameraController : MonoBehaviour
     // Zooming keeps it; dragging, WASD or another pan end it and raise FollowEnded
     public void Follow(Transform target)
     {
+        panningToPoint = false;
         panTarget = target;
         following = target != null;
     }
@@ -417,6 +433,7 @@ public class CameraController : MonoBehaviour
     {
         EndFollow();
         panTarget = null;
+        panningToPoint = false;
     }
 
 
@@ -432,7 +449,7 @@ public class CameraController : MonoBehaviour
     private void TickPanToTarget()
     {
         // Unity-null covers a target destroyed mid pan
-        if (panTarget == null)
+        if (panTarget == null && !panningToPoint)
         {
             panTarget = null;
             EndFollow();
@@ -445,17 +462,22 @@ public class CameraController : MonoBehaviour
         if (viewForward.y > -MIN_FORWARD_Y)
         {
             panTarget = null;
+            panningToPoint = false;
             EndFollow();
             return;
         }
 
         // step back along the view ray from the target until we are at the current height
-        Vector3 point = panTarget.position;
+        Vector3 point = panningToPoint ? panPoint : panTarget.position;
         float distance = (point.y - targetPosition.y) / viewForward.y;
 
         targetPosition = point - viewForward * distance;
 
-        if (!following && (currentPosition - targetPosition).sqrMagnitude < PAN_ARRIVE_SQR) panTarget = null;
+        if (!following && (currentPosition - targetPosition).sqrMagnitude < PAN_ARRIVE_SQR)
+        {
+            panTarget = null;
+            panningToPoint = false;
+        }
     }
 
 

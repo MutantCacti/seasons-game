@@ -16,7 +16,7 @@ public enum NotificationType
 public class NotificationSave
 {
     public NotificationType type;
-    public string targetEntityGuid;     // an EntityId guid, resolved through EntityManager; may be empty
+    public string targetEntityGuid;     // an EntityId guid, resolved through EntityManager, or a PuzzleCredit cell key; may be empty
     public string puzzleId;
 }
 
