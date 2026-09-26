@@ -50,26 +50,15 @@ public class NinePatchTileRule : AnimalSpawnRule
     }
 
 
+    // The world is remapped the moment a tile goes down, but its cover takes a moment to grow over the
+    // old one. While any cover is still playing, a 3x3 can look complete before the player can see it,
+    // so the rule waits: the last cover to finish is the one that asks, and it looks over the whole
+    // settled world rather than only the cell it was told about
     public override void OnItemShown(WorldContext context, GameItem itemOrTileJustPlaced, Vector3Int cell) {
-        if (context == null || itemOrTileJustPlaced == null) return;
-        if (requiredTileToBePlaced == null || desiredNeighbouringTile == null) return;
+        if (context == null) return;
+        if (context.IsPresenting) return;
 
-        // tiles are matched rather than items, so a tile-only item like Water works
-        if (itemOrTileJustPlaced.Tile != requiredTileToBePlaced) return;
-
-        TerrainManager terrain = context.Terrain;
-        if (terrain == null) return;
-
-
-        for (int i = 0; i < CENTRE_OFFSETS.Length; i++) {
-            //assume the center of the 3x3 is one of the neighbouring tiles to the one just placed
-            Vector3Int center = cell + CENTRE_OFFSETS[i];
-
-            if (!IsValidCentre(terrain, center)) continue;
-
-            context.Spawn(this, terrain.CellToWorld(center));
-            return;
-        }
+        TrySpawn(context);
     }
 
 

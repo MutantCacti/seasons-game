@@ -49,6 +49,10 @@ public class WorldEvents : MonoBehaviour, WorldContext
     public bool IsReady { get { return ready; } }
 
 
+    // the ground a listener would read is still growing over from the last placement
+    public bool IsPresenting { get { return placementController != null && placementController.IsPresenting; } }
+
+
     // Sticky: raised once every listener has heard OnLoaded, i.e. from when the loaded world may
     // change. A late subscriber hears it straight away
     public event Action Ready
