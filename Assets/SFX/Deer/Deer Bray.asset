@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ad02a35d4b6a5748b713a1421b24793, type: 3}
+  m_Name: Deer Bray
+  m_EditorClassIdentifier: Assembly-CSharp::SoundObject
+  clips:
+  - {fileID: 8300000, guid: 42fc5172f3fa0e981bc68a05080cf39f, type: 3}
+  - {fileID: 8300000, guid: c6b93f190e57dc3788a5abd14c474a5f, type: 3}
+  - {fileID: 8300000, guid: 7e9b188f261bbf0efadde5f241e8a89f, type: 3}
+  - {fileID: 8300000, guid: 34e513c060e8c7133a89018ebd157454, type: 3}
+  - {fileID: 8300000, guid: 67cd203cea67bd61693206a780c66d50, type: 3}
+  - {fileID: 8300000, guid: 8a1e2e0dc13914d11bb72466ddde240d, type: 3}
+  - {fileID: 8300000, guid: cd9ba671e5112a608897c4379fe57a4b, type: 3}
+  - {fileID: 8300000, guid: 8e5b146ff926f70e1a1c9e0f399173e7, type: 3}
+  - {fileID: 8300000, guid: 84d022589ece25e9b80da00281ea736e, type: 3}
+  - {fileID: 8300000, guid: c6c5ad07f1c9fccf398a31fe13e4f28e, type: 3}
+  - {fileID: 8300000, guid: 46654ba49441b1ac9aa6e38b955e2fa2, type: 3}
+  - {fileID: 8300000, guid: 5119d12c34c66b0de9f369b98d9d3f62, type: 3}
+  - {fileID: 8300000, guid: a2178480410dffb6aba7db14c865839f, type: 3}
+  - {fileID: 8300000, guid: 0a9a2b2b290b85729a07c9d80abdb26b, type: 3}
+  loop: 0
+  volume: 0.404
+  volumeVariation: 0.049
+  pitch: 1
+  pitchVariationSemitones: 0.1
+  spatialBlend: 1
+  minDistance: 1
+  maxDistance: 15

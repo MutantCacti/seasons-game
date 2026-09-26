@@ -1,0 +1,255 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5107978839270462576
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4962601377749035378}
+  - component: {fileID: 3983568179674976239}
+  - component: {fileID: 5985721995974587602}
+  - component: {fileID: 8129766143931118512}
+  - component: {fileID: 1796789463085545969}
+  m_Layer: 0
+  m_Name: Deer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4962601377749035378
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5107978839270462576}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &3983568179674976239
+SpriteRenderer:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5107978839270462576}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: fbbde3d170b94c8aa3785e76ed6f5745, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: -1122634173, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 0.7368421, y: 0.6315789}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
+--- !u!114 &5985721995974587602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5107978839270462576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 514d92b7d6f5094d199621f14ce2c544, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BillboardSprite
+  targetCamera: {fileID: 0}
+  yawOffset: 0
+--- !u!114 &8129766143931118512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5107978839270462576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77813ecc1ac031ca5bc337463057908b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityId
+--- !u!114 &1796789463085545969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5107978839270462576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99feb5a7b5ebf62dda9ad4cb41218430, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeerController
+  hoverGrow: 1.05
+  hoverDuration: 0.12
+  focusHopHeight: 0.08
+  focusHopDuration: 0.22
+  renameHopHeight: 0.14
+  renameHopDuration: 0.3
+  spriteRenderer: {fileID: 3983568179674976239}
+  downFrames:
+  - {fileID: 757672419246310184, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 749042807, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 254052153, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 473571914, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: -36264780, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 785969783, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  upFrames:
+  - {fileID: 983053857, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 887931387, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 1290371061, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: -1236676833, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: -2067934208, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 1198625238, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  leftFrames:
+  - {fileID: -341105308, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 1434046518, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: -38088394, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 1842809504, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 750536821, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: -176170987, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  rightFrames:
+  - {fileID: -1122634173, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 2079511326, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: 468616049, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: -522707151, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: -1659713245, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  - {fileID: -1801560276, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
+  standFrame: 0
+  framesPerUnit: 12
+  sideBias: 1.1
+  facingHysteresis: 0.15
+  turnDistance: 0.12
+  sizeRange: {x: 0.85, y: 1.15}
+  warmTint: {r: 1, g: 0.95, b: 0.86, a: 1}
+  coolTint: {r: 0.9, g: 0.95, b: 1, a: 1}
+  brightnessRange: {x: 0.92, y: 1}
+  gaitVariation: 0.08
+  forbiddenTiles:
+  - {fileID: 11400000, guid: 8da4a0082d0432c3180c4531b7e54114, type: 2}
+  pathRadius: 6
+  cellMargin: 0.2
+  pathJitter: 0.15
+  walkSpeed: 0.45
+  rushSpeed: 1.1
+  fleeSpeed: 2.4
+  wanderSteps: {x: 1, y: 4}
+  hopDuration: 0.32
+  hopArc: 0.25
+  activityWidth: 0.1
+  activityFloor: 0.15
+  loudBoost: 1.6
+  standDuration: {x: 1.5, y: 4}
+  standWeight: 1
+  standHappyWeight: 1.5
+  standActiveWeight: 0.8
+  wanderWeight: 0.8
+  wanderActiveWeight: 2
+  grazeWeight: 2
+  restWeight: 1.5
+  sightRadius: 6
+  foodItems:
+  - {fileID: 11400000, guid: 3ea59f08fabc65b4fb76d1e98ecd567b, type: 2}
+  grazeDuration: {x: 3, y: 6}
+  munchInterval: {x: 0.8, y: 1.6}
+  rustleAngle: 8
+  rustleDuration: 0.4
+  grazeDistance: 0.4
+  grazeInFront: 0.08
+  shelterItems: []
+  restDuration: {x: 4, y: 8}
+  fleeFrom: []
+  detectRadius: 4
+  detectInterval: 0.25
+  alertDuration: {x: 0.25, y: 0.5}
+  fleeSteps: 6
+  spookedDuration: {x: 6, y: 10}
+  stotEvery: 3
+  stotHeight: 0.08
+  stotDuration: 0.22
+  herdRadius: 5
+  herdWeight: 2
+  answerRadius: 8
+  answerChance: 0.6
+  answerDelay: {x: 0.5, y: 1.5}
+  focusFreeze: 0.6
+  happinessRadius: 3
+  baseHappiness: 0.45
+  fernBonus: 0.25
+  fernsForFull: 3
+  shelterBonus: 0.15
+  companyBonus: 0.15
+  spookedPenalty: 0.4
+  noFoodTip: Nothing green to nibble nearby
+  noShelterTip: No trees to shelter under
+  lonelyTip: Lonely without the herd
+  spookedTip: Still trembling from a fright
+  happyLines:
+  - Nose deep in ferns
+  - Ears up, all is quiet
+  - Dozing in the dappled shade
+  - Tail flicking contentedly
+  - Hooves light, heart lighter
+  - Keeping one ear on the treeline
+  - Dusk smells delicious
+  stepSound: {fileID: 11400000, guid: e345e290f2fa6f576970d0c147e6ba5d, type: 2}
+  braySound: {fileID: 11400000, guid: 412cbf53382f8279a9775a549da80aa7, type: 2}
+  snortSound: {fileID: 0}
+  munchSound: {fileID: 0}
+  footfallFrames: 0100000004000000
+  landVolume: 1.3
+  busyHerdSize: 3
+  brayInterval: {x: 8, y: 20}
+  brayActiveScale: 0.35

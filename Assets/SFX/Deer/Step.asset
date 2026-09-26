@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ad02a35d4b6a5748b713a1421b24793, type: 3}
+  m_Name: Step
+  m_EditorClassIdentifier: Assembly-CSharp::SoundObject
+  clips:
+  - {fileID: 8300000, guid: 4c9b2124c2c86a9089e4ab8b6ead50e5, type: 3}
+  - {fileID: 8300000, guid: 3c35efdfc083899679b7ca75ce0e1ca1, type: 3}
+  - {fileID: 8300000, guid: c38cea51ddace5db2aa6e198ded3dcc9, type: 3}
+  - {fileID: 8300000, guid: 069e14ff77cd204bfabf33ec15594eb3, type: 3}
+  - {fileID: 8300000, guid: 4a17e1bc4dded59639986e8330dd7b72, type: 3}
+  - {fileID: 8300000, guid: 00b1c1f1a7669a99d88c9059a604fcc0, type: 3}
+  - {fileID: 8300000, guid: 8ee94f3fa5cacb120814e2afff2849c8, type: 3}
+  - {fileID: 8300000, guid: b5e40cbd507fadf1fb59277941e79dfb, type: 3}
+  - {fileID: 8300000, guid: 22d42b66e2cf81eafbd52cdad8fbf99d, type: 3}
+  - {fileID: 8300000, guid: b749e098a9ea4f4b298f05ed4dbd2fea, type: 3}
+  - {fileID: 8300000, guid: d3f22a35dabd332419b2afb114f7ee32, type: 3}
+  - {fileID: 8300000, guid: 6c7677166f6354dbca429277fb94d672, type: 3}
+  loop: 0
+  volume: 0.2
+  volumeVariation: 0.025
+  pitch: 1
+  pitchVariationSemitones: 0.12
+  spatialBlend: 1
+  minDistance: 1
+  maxDistance: 15
