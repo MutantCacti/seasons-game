@@ -19,13 +19,31 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private WorldFixtures worldFixtures;
 
 
-    private struct LiveEntity
+    // One entity in the world, as growth and placement need to see it
+    public struct LiveEntity
     {
         public GameObject gameObject;
         public EntityId entityId;
         public GameItem item;
         public Vector3Int cell;
         public bool fixture;
+
+        // the clock reading when it became its current stage, see EntitySave
+        public int stageDay;
+        public float stageCycleTime;
+    }
+
+
+    // What a spawn carries over when it isn't a fresh placement. default is a fresh one: a new guid,
+    // not a fixture, stamped with the clock as it is now
+    public struct SpawnInfo
+    {
+        public string guid;
+        public bool fixture;
+
+        // 0 stamps with the clock now
+        public int stageDay;
+        public float stageCycleTime;
     }
 
 
@@ -161,24 +179,34 @@ public class EntityManager : MonoBehaviour
             return false;
         }
 
-        EntityId entityId = CreateInstance(item, new Vector3Int(entry.x, level, entry.z), entry.fixture);
+        bool changed = false;
+
+        // a save from before stamping: its growth counts from now, rather than from day 0, where
+        // everything would be long overdue
+        if (entry.stageDay <= 0)
+        {
+            CurrentClock(out repaired.stageDay, out repaired.stageCycleTime);
+            changed = true;
+        }
 
         // An empty guid has to be replaced, and so does one that an entity loaded earlier already
         // claimed. The earlier entity keeps it, so anything that refers to the guid still resolves.
-        if (string.IsNullOrEmpty(entry.guid) || IsGuidLive(entry.guid))
+        string guid = entry.guid;
+
+        if (string.IsNullOrEmpty(guid) || IsGuidLive(guid))
         {
-            string replacement = System.Guid.NewGuid().ToString("N");
+            guid = System.Guid.NewGuid().ToString("N");
 
             Debug.LogWarning($"EntityManager: saved entity '{entry.itemId}' at ({entry.x}, {entry.z}) has " +
-                $"the missing or already used guid '{entry.guid}', so it was given '{replacement}' instead", this);
+                $"the missing or already used guid '{entry.guid}', so it was given '{guid}' instead", this);
 
-            repaired.guid = replacement;
-            entityId.Assign(replacement);
-            return true;
+            repaired.guid = guid;
+            changed = true;
         }
 
-        entityId.Assign(entry.guid);
-        return false;
+        CreateInstance(item, new Vector3Int(entry.x, level, entry.z), entry.fixture, guid, repaired.stageDay, repaired.stageCycleTime);
+
+        return changed;
     }
 
 
@@ -260,7 +288,7 @@ public class EntityManager : MonoBehaviour
                 continue;
             }
 
-            if (Spawn(fixture.item, new Vector3Int(fixture.column.x, level, fixture.column.y), true) != null) seeded++;
+            if (Spawn(fixture.item, new Vector3Int(fixture.column.x, level, fixture.column.y), new SpawnInfo { fixture = true }) != null) seeded++;
         }
 
         manager.AcknowledgeNewWorld();
@@ -277,12 +305,13 @@ public class EntityManager : MonoBehaviour
 
     public GameObject Spawn(GameItem item, Vector3Int cell)
     {
-        return Spawn(item, cell, false);
+        return Spawn(item, cell, default);
     }
 
 
-    // fixture: one of the world's own starting entities rather than something the player placed
-    private GameObject Spawn(GameItem item, Vector3Int cell, bool fixture)
+    // info.fixture: one of the world's own starting entities rather than something the player placed.
+    // info.guid: the identity to carry on (a growth keeps its seed's), or null for a new one
+    public GameObject Spawn(GameItem item, Vector3Int cell, SpawnInfo info)
     {
         EnsureLoaded();
 
@@ -307,7 +336,12 @@ public class EntityManager : MonoBehaviour
         // logs and gives up if the item is not in the registry
         if (registry == null || !registry.TryGetIdByEntry(item, out string id)) return null;
 
-        EntityId entityId = CreateInstance(item, cell, fixture);
+        int stageDay = info.stageDay;
+        float stageCycleTime = info.stageCycleTime;
+
+        if (stageDay <= 0) CurrentClock(out stageDay, out stageCycleTime);
+
+        EntityId entityId = CreateInstance(item, cell, info.fixture, info.guid, stageDay, stageCycleTime);
 
         if (world != null && world.entities != null)
         {
@@ -321,7 +355,10 @@ public class EntityManager : MonoBehaviour
                 // reading the guid here is what gives a freshly spawned entity its identity
                 guid = entityId.Guid,
 
-                fixture = fixture,
+                fixture = info.fixture,
+
+                stageDay = stageDay,
+                stageCycleTime = stageCycleTime,
             });
         }
 
@@ -330,12 +367,13 @@ public class EntityManager : MonoBehaviour
 
 
     // returns true if there is *any* entity at that cell
-    // false if there isn't
-    public bool HasEntityAt(Vector3Int cell)
+    // false if there isn't. except is left out, for an entity that's about to be replaced
+    public bool HasEntityAt(Vector3Int cell, EntityId except = null)
     {
         for (int i = 0; i < live.Count; i++)
         {
             if (live[i].cell != cell) continue;
+            if (except != null && live[i].entityId == except) continue;
 
             return true;
         }
@@ -393,7 +431,7 @@ public class EntityManager : MonoBehaviour
     // Fills results with the GameItems standing on a cell, so that a change to the ground under them
     // can be tested against their own placement rules. Takes the caller's list because this runs once
     // a frame while a placement drag is live.
-    public void CollectEntitiesAt(Vector3Int cell, List<GameItem> results)
+    public void CollectEntitiesAt(Vector3Int cell, List<GameItem> results, EntityId except = null)
     {
         results.Clear();
 
@@ -401,9 +439,67 @@ public class EntityManager : MonoBehaviour
         {
             if (live[i].cell != cell) continue;
             if (live[i].item == null) continue;
+            if (except != null && live[i].entityId == except) continue;
 
             results.Add(live[i].item);
         }
+    }
+
+
+    // Every live entity, into the caller's list, so a scan can change the world while walking it
+    public void CollectLive(List<LiveEntity> results)
+    {
+        results.Clear();
+
+        for (int i = 0; i < live.Count; i++) results.Add(live[i]);
+    }
+
+
+    public bool TryGetLive(EntityId entityId, out LiveEntity entity)
+    {
+        entity = default;
+        if (entityId == null) return false;
+
+        int index = IndexOfLive(entityId);
+        if (index < 0) return false;
+
+        entity = live[index];
+        return true;
+    }
+
+
+    // MARK: despawn
+
+
+    // Takes an entity out of the world and the save at once, without saving: the caller's own flush
+    // covers it, so a growth's removal and addition reach disk together. It leaves live straight away
+    // rather than when Destroy lands at the end of the frame, so the cell is free for its replacement
+    public bool Despawn(EntityId entityId)
+    {
+        int index = IndexOfLive(entityId);
+        if (index < 0) return false;
+
+        GameObject removed = live[index].gameObject;
+
+        live.RemoveAt(index);
+        entityId.Destroyed -= OnEntityDestroyed;
+
+        if (entityId.HasGuid && world != null && world.entities != null)
+        {
+            List<EntitySave> saved = world.entities.entities;
+
+            for (int i = saved.Count - 1; i >= 0; i--)
+            {
+                if (saved[i].guid != entityId.Guid) continue;
+
+                saved.RemoveAt(i);
+                break;
+            }
+        }
+
+        if (removed != null) Destroy(removed);
+
+        return true;
     }
 
 
@@ -448,7 +544,8 @@ public class EntityManager : MonoBehaviour
     // MARK: internals
 
 
-    private EntityId CreateInstance(GameItem item, Vector3Int cell, bool fixture)
+    // guid null makes a new one on first read; anything else is assigned before anything can read it
+    private EntityId CreateInstance(GameItem item, Vector3Int cell, bool fixture, string guid, int stageDay, float stageCycleTime)
     {
         GameObject instance = Instantiate(item.Prefab, terrainManager.CellToWorld(cell), item.Prefab.transform.rotation, entityParent);
         instance.name = item.Prefab.name;
@@ -458,11 +555,55 @@ public class EntityManager : MonoBehaviour
 
         if (entityId == null) entityId = instance.AddComponent<EntityId>();
 
+        if (!string.IsNullOrEmpty(guid)) entityId.Assign(guid);
+
         entityId.Destroyed += OnEntityDestroyed;
 
-        live.Add(new LiveEntity { gameObject = instance, entityId = entityId, item = item, cell = cell, fixture = fixture });
+        live.Add(new LiveEntity
+        {
+            gameObject = instance,
+            entityId = entityId,
+            item = item,
+            cell = cell,
+            fixture = fixture,
+            stageDay = stageDay,
+            stageCycleTime = stageCycleTime,
+        });
 
         return entityId;
+    }
+
+
+    private int IndexOfLive(EntityId entityId)
+    {
+        if (entityId == null) return -1;
+
+        for (int i = 0; i < live.Count; i++)
+        {
+            if (live[i].entityId == entityId) return i;
+        }
+
+        return -1;
+    }
+
+
+    // The clock as it stands. Loading runs in Awake, possibly before the clock's own, but the clock
+    // restores itself from this same section, so reading it straight gives the same answer
+    private void CurrentClock(out int day, out float cycleTime)
+    {
+        WorldStateManager clock = WorldStateManager.Instance;
+
+        if (clock != null)
+        {
+            day = clock.Day;
+            cycleTime = clock.CycleTime;
+            return;
+        }
+
+        TimeSaveData time = world != null ? world.time : null;
+
+        day = time != null ? Mathf.Max(1, time.day) : 1;
+        cycleTime = time != null ? time.elapsedInCycle : 0f;
     }
 
 
