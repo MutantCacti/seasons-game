@@ -171,6 +171,11 @@ public class GameItemRegistryEditor : Editor
             problems++;
         }
 
+        foreach (GameItem item in seen.Values)
+        {
+            problems += ValidateGrowth(item, registered);
+        }
+
         if (problems == 0)
         {
             Debug.Log($"GameItemRegistry: {seen.Count} items, all ids present and unique", registry);
@@ -181,6 +186,91 @@ public class GameItemRegistryEditor : Editor
         }
 
         return problems;
+    }
+
+
+    // MARK: growth
+
+
+    // Growth replaces one placed entity with another, so both ends need a prefab and the grown one can't
+    // be a tile. Returns the number of problems. Tags the grown item needs but the source doesn't are
+    // only a warning: the growth waits until the ground suits it, which may be never
+    private static int ValidateGrowth(GameItem item, HashSet<GameItem> registered)
+    {
+        GameItem into = item.GrowsInto;
+        if (into == null) return 0;
+
+        int problems = 0;
+
+        if (item.Prefab == null)
+        {
+            Debug.LogError($"GameItemRegistry: '{item.name}' grows into '{into.name}' but has no prefab, so it " +
+                $"is never an entity that could grow", item);
+            problems++;
+        }
+
+        if (into.Prefab == null || into.Tile != null)
+        {
+            Debug.LogError($"GameItemRegistry: '{item.name}' grows into '{into.name}', which needs a prefab and " +
+                $"no tile to replace an entity", item);
+            problems++;
+        }
+
+        if (!registered.Contains(into))
+        {
+            Debug.LogError($"GameItemRegistry: '{item.name}' grows into '{into.name}', which is not in this " +
+                $"registry, so the grown entity could never be saved", item);
+            problems++;
+        }
+
+        // a chain that comes back round would grow forever
+        HashSet<GameItem> chain = new HashSet<GameItem> { item };
+
+        for (GameItem step = into; step != null; step = step.GrowsInto)
+        {
+            if (chain.Add(step)) continue;
+
+            Debug.LogError($"GameItemRegistry: '{item.name}' grows round in a loop back to '{step.name}'", item);
+            problems++;
+            break;
+        }
+
+        WarnAboutTags(item, into, "placedOnTags", "needs", "doesn't");
+        WarnAboutTags(item, into, "antiPlacedOnTags", "is kept off", "isn't");
+
+        return problems;
+    }
+
+
+    // warns for each tag in into's list that item's own list lacks
+    private static void WarnAboutTags(GameItem item, GameItem into, string field, string verb, string negation)
+    {
+        HashSet<string> own = new HashSet<string>(ReadTags(item, field));
+
+        foreach (string tag in ReadTags(into, field))
+        {
+            if (own.Contains(tag)) continue;
+
+            Debug.LogWarning($"GameItemRegistry: '{into.name}' {verb} tag '{tag}' but '{item.name}', which " +
+                $"grows into it, {negation}, so the growth may wait for ground that never comes", item);
+        }
+    }
+
+
+    private static List<string> ReadTags(GameItem item, string field)
+    {
+        List<string> tags = new List<string>();
+
+        SerializedProperty list = new SerializedObject(item).FindProperty(field);
+        if (list == null) return tags;
+
+        for (int i = 0; i < list.arraySize; i++)
+        {
+            string tag = list.GetArrayElementAtIndex(i).stringValue;
+            if (!string.IsNullOrEmpty(tag)) tags.Add(tag);
+        }
+
+        return tags;
     }
 
 

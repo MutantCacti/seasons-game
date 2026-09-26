@@ -44,6 +44,28 @@ public class WorldEvents : MonoBehaviour, WorldContext
 
 
     public TerrainManager Terrain { get { return terrainManager != null ? terrainManager : TerrainManager.Instance; } }
+
+
+    public bool IsReady { get { return ready; } }
+
+
+    // Sticky: raised once every listener has heard OnLoaded, i.e. from when the loaded world may
+    // change. A late subscriber hears it straight away
+    public event Action Ready
+    {
+        add
+        {
+            readied += value;
+            if (ready && value != null) value();
+        }
+        remove
+        {
+            readied -= value;
+        }
+    }
+
+
+    private event Action readied;
     public WorldStateManager States { get { return worldStates; } }
 
 
@@ -173,6 +195,8 @@ public class WorldEvents : MonoBehaviour, WorldContext
         ready = true;
 
         Dispatch(listener => listener.OnLoaded(this));
+
+        readied?.Invoke();
     }
 
 

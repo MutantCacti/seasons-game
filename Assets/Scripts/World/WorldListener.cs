@@ -78,7 +78,8 @@ public abstract class WorldListener : ScriptableObject
     }
 
 
-    // after a placement has been committed, consumed and saved
+    // after a placement has been committed, consumed (if it came from the inventory) and saved. A growth
+    // is a placement too: this hears the grown item, and nothing hears the old one leave
     public virtual void OnItemPlaced(WorldContext context, GameItem item, Vector3Int cell)
     {
     }
