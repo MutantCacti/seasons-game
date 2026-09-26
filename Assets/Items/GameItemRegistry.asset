@@ -16,4 +16,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7a2a903dc6c1d4e029e4c1ba97e0cba8, type: 2}
   - {fileID: 11400000, guid: 2a41064d6f74dcdd8bc0c4ced089210d, type: 2}
   - {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
+  - {fileID: 11400000, guid: 094ecffb17153e02fb86e9c15e48a83b, type: 2}
+  - {fileID: 11400000, guid: 641663caa22cd29a68165a82bcc24891, type: 2}
+  - {fileID: 11400000, guid: 194053dd46cc844d890f12c6cfae168b, type: 2}
+  - {fileID: 11400000, guid: bd6e914e243fb49b28c60794bff562bb, type: 2}
   puzzleRegistry: {fileID: 11400000, guid: 11fca8477c0b4b219b4793fb3e097a9a, type: 2}

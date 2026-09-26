@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a447734dfd8a20878da909dc174cacf, type: 3}
+  m_Name: Morning Glory
+  m_EditorClassIdentifier: Assembly-CSharp::GameItem
+  id: morning_glory
+  description: Named because our flowers open to greet the sun every new day.
+  icon: {fileID: 1888610377, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  tile: {fileID: 0}
+  prefab: {fileID: 6509543229248343671, guid: f481e5f0babe7924aaf4eeba9ccd4ac2, type: 3}
+  placeSound: {fileID: 0}
+  placedOnTags:
+  - grass
+  antiPlacedOnTags: []
+  growsInto: {fileID: 0}
+  growthDays: 1
+  growSound: {fileID: 0}
