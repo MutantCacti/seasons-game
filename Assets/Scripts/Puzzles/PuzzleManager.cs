@@ -22,6 +22,44 @@ public readonly struct IngredientGrant
     }
 }
 
+
+// Where a batch of granted ingredients flies from: what completed the puzzle that unlocked them. An
+// entity is read where it is when the fliers launch, so a moving animal is followed; a credited cell
+// is a fixed point. None for the starting puzzles, which nothing completed
+public readonly struct GrantOrigin
+{
+    public readonly EntityId entity;
+    public readonly bool hasPoint;
+    public readonly Vector3 point;
+
+
+    private GrantOrigin(EntityId entity, bool hasPoint, Vector3 point)
+    {
+        this.entity = entity;
+        this.hasPoint = hasPoint;
+        this.point = point;
+    }
+
+
+    public static GrantOrigin None { get { return default; } }
+    public static GrantOrigin Entity(EntityId entity) { return new GrantOrigin(entity, false, default); }
+    public static GrantOrigin Point(Vector3 point) { return new GrantOrigin(null, true, point); }
+
+
+    // false for none, and for an entity that has since gone
+    public bool TryGetPosition(out Vector3 position)
+    {
+        if (entity != null)
+        {
+            position = entity.transform.position;
+            return true;
+        }
+
+        position = point;
+        return hasPoint;
+    }
+}
+
 public class PuzzleManager : MonoBehaviour
 {
     private static PuzzleManager instance;
@@ -49,7 +87,7 @@ public class PuzzleManager : MonoBehaviour
     // it outlives the scene: every subscriber MUST += in OnEnable and -= in OnDisable, or a reload
     // leaves a dead listener behind. While anyone listens, grants defer their hotbar display until the
     // listener calls InventoryManager.ReleaseDisplay, so a listener must release everything it holds.
-    public static event Action<EntityId, IReadOnlyList<IngredientGrant>> IngredientsGranted;
+    public static event Action<GrantOrigin, IReadOnlyList<IngredientGrant>> IngredientsGranted;
 
 
     // Raised once puzzle state has been restored, which is the one safe moment for a world script to
@@ -95,7 +133,7 @@ public class PuzzleManager : MonoBehaviour
 
     // who the current GrantUnlocks is paying out for, and what the current batch has granted.
     // both are saved and restored around nesting like batching is
-    private EntityId grantSource;
+    private GrantOrigin grantSource;
     private List<IngredientGrant> grants;
 
     // puzzles the manager has settled on being stuck, and therefore announced
@@ -240,6 +278,15 @@ public class PuzzleManager : MonoBehaviour
         if (EntityManager.Instance == null) return false;
 
         return EntityManager.Instance.TryGetEntity(guid, out entity);
+    }
+
+
+    // the fliers for what a completion unlocks come from whatever completed it, entity or cell
+    private GrantOrigin CreditOrigin(Puzzle puzzle)
+    {
+        if (!TryGetCreditTarget(puzzle, out EntityId entity, out Vector3 point)) return GrantOrigin.None;
+
+        return entity != null ? GrantOrigin.Entity(entity) : GrantOrigin.Point(point);
     }
 
 
@@ -402,8 +449,8 @@ public class PuzzleManager : MonoBehaviour
             candidates.Add(unlocks[i]);
         }
 
-        EntityId outerSource = grantSource;
-        grantSource = TryGetCompletedBy(completedPuzzle, out EntityId source) ? source : null;
+        GrantOrigin outerSource = grantSource;
+        grantSource = CreditOrigin(completedPuzzle);
 
         try
         {
@@ -424,7 +471,7 @@ public class PuzzleManager : MonoBehaviour
 
         List<Puzzle> newlyUnlocked = new List<Puzzle>();
 
-        EntityId source = grantSource;
+        GrantOrigin source = grantSource;
         List<IngredientGrant> outerGrants = grants;
         List<IngredientGrant> batchGrants = new List<IngredientGrant>();
         grants = batchGrants;
