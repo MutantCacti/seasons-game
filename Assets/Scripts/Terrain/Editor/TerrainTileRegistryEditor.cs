@@ -39,8 +39,14 @@ public class TerrainTileRegistryEditor : Editor
     // MARK: actions
 
 
-    private static void GatherAllTiles(TerrainTileRegistry registry)
+    internal static void GatherAllTiles(TerrainTileRegistry registry)
     {
+        if (registry == null)
+        {
+            Debug.LogError("TerrainTileRegistryEditor: no registry to gather into, so nothing was gathered");
+            return;
+        }
+
         List<TerrainTile> found = FindAllTiles();
 
         // deterministic order
@@ -65,7 +71,7 @@ public class TerrainTileRegistryEditor : Editor
     }
 
 
-    private static void AssignMissingIds(TerrainTileRegistry registry)
+    internal static void AssignMissingIds(TerrainTileRegistry registry)
     {
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("tiles");
@@ -100,8 +106,14 @@ public class TerrainTileRegistryEditor : Editor
     }
 
 
-    private static void Validate(TerrainTileRegistry registry)
+    internal static int Validate(TerrainTileRegistry registry)
     {
+        if (registry == null)
+        {
+            Debug.LogError("TerrainTileRegistryEditor: no registry to validate, so nothing was validated");
+            return 1;
+        }
+
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("tiles");
 
@@ -158,6 +170,8 @@ public class TerrainTileRegistryEditor : Editor
         {
             Debug.LogError($"TerrainTileRegistry: {problems} problem(s) found", registry);
         }
+
+        return problems;
     }
 
 

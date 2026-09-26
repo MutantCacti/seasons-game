@@ -47,6 +47,13 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     private RectTransform rectTransform;
 
     private EntityId target;
+
+    // A target that is a terrain cell (a puzzle credited to the dirt that finished it) rather than an
+    // entity: resolved once, in Init, to the cell's top, and it counts as a target from then on. It
+    // never goes through the entity retry and never parks
+    private bool cellTarget;
+    private bool hasCell;
+    private Vector3 cellPoint;
     private Renderer[] renderers;
     private float nextResolveAt;
 
@@ -76,9 +83,9 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public string PuzzleId { get { return puzzleId; } }
     public bool IsExiting { get { return exiting; } }
     public bool IsOnScreen { get { return onScreen; } }
-    public bool HasTarget { get { return target != null; } }
-    public bool IsParked { get { return target == null && !exiting; } }
-    public Vector3 TargetPosition { get { return target != null ? Anchor() : transform.position; } }
+    public bool HasTarget { get { return target != null || hasCell; } }
+    public bool IsParked { get { return !HasTarget && !exiting; } }
+    public Vector3 TargetPosition { get { return HasTarget ? Anchor() : transform.position; } }
 
 
     public void Init(NotificationManager owner, NotificationType notificationType, string entityGuid, string id,
@@ -87,6 +94,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
         manager = owner;
         type = notificationType;
         targetGuid = entityGuid;
+        cellTarget = PuzzleCredit.IsCellKey(entityGuid);
         puzzleId = id;
 
         rectTransform = transform as RectTransform;
@@ -152,13 +160,14 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
         if (exiting || manager == null) return;
 
         // over its target (or parked, with nowhere to go) it opens; at the edge it takes you there
-        if (target == null || hoverBlend > 0.5f)
+        if (!HasTarget || hoverBlend > 0.5f)
         {
             manager.OnPingClicked(this);
             return;
         }
 
-        manager.PanTo(target.transform);
+        if (hasCell) manager.PanToPoint(cellPoint);
+        else manager.PanTo(target.transform);
     }
 
 
@@ -270,7 +279,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     {
         if (manager == null) return;
 
-        if (target == null && !exiting && Time.time >= nextResolveAt)
+        if (target == null && !cellTarget && !exiting && Time.time >= nextResolveAt)
         {
             nextResolveAt = Time.time + RESOLVE_INTERVAL;
             TryResolve();
@@ -293,7 +302,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
         float hoverPixels;
         bool wantHover = false;
 
-        if (target != null)
+        if (HasTarget)
         {
             Vector3 tip = Anchor() + Vector3.up * manager.HoverGap;
             Vector3 tipScreen = viewCamera.WorldToScreenPoint(tip);
@@ -475,6 +484,8 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     // entity is still growing in.
     private Vector3 Anchor()
     {
+        if (hasCell) return cellPoint;
+
         Vector3 fallback = target.transform.position;
 
         if (renderers == null) return fallback;
@@ -506,6 +517,16 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     private void TryResolve()
     {
+        if (cellTarget)
+        {
+            hasCell = PuzzleCredit.TryResolveCellKey(targetGuid, TerrainManager.Instance, out cellPoint);
+
+            if (!hasCell) Debug.LogError($"NotificationPing: the cell '{targetGuid}' is not on this terrain, so " +
+                $"this ping waits above the inventory instead", this);
+
+            return;
+        }
+
         EntityId found = null;
 
         if (!string.IsNullOrEmpty(targetGuid) && EntityManager.Instance != null)

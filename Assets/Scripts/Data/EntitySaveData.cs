@@ -54,4 +54,8 @@ public struct EntitySave
     public int z;           // absolute terrain cell z
     public int levelY;      // level world y in millimetres
     public string guid;     // this instance's EntityId, so a puzzle can name the entity that completed it
+
+    // one the world started with (a WorldFixtures entry) rather than one the player placed, so it never
+    // counts towards a puzzle that wants things placed
+    public bool fixture;
 }

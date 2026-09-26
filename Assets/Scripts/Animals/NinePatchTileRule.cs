@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 
@@ -31,15 +32,30 @@ public class NinePatchTileRule : AnimalSpawnRule
     [SerializeField] private TerrainTile requiredTileToBePlaced;
     [SerializeField] private TerrainTile desiredNeighbouringTile;
 
+    // The terrain does not remember which tiles were placed, so catching up on a load or an unlock
+    // counts the level's own tiles too: a lake with a 3x3 of water in it would spawn the animal at
+    // once. Off, the rule only reacts to placements, as it always has
+    [SerializeField] private bool catchUpFromWorld = false;
 
-    public override void OnItemPlaced(AnimalSpawnContext context, GameItem itemOrTileJustPlaced, Vector3Int cell) {
+    [System.NonSerialized] private List<Vector3Int> candidates;
+
+
+    public override void OnLoaded(WorldContext context) {
+        if (catchUpFromWorld) base.OnLoaded(context);
+    }
+
+
+    public override void OnPuzzleUnlocked(WorldContext context) {
+        if (catchUpFromWorld) base.OnPuzzleUnlocked(context);
+    }
+
+
+    public override void OnItemPlaced(WorldContext context, GameItem itemOrTileJustPlaced, Vector3Int cell) {
         if (context == null || itemOrTileJustPlaced == null) return;
         if (requiredTileToBePlaced == null || desiredNeighbouringTile == null) return;
 
         // tiles are matched rather than items, so a tile-only item like Water works
         if (itemOrTileJustPlaced.Tile != requiredTileToBePlaced) return;
-
-        if (context.HasFired(this)) return;
 
         TerrainManager terrain = context.Terrain;
         if (terrain == null) return;
@@ -49,29 +65,47 @@ public class NinePatchTileRule : AnimalSpawnRule
             //assume the center of the 3x3 is one of the neighbouring tiles to the one just placed
             Vector3Int center = cell + CENTRE_OFFSETS[i];
 
-            //check if our new center is itself valid
-            if (terrain.GetTile(center) != requiredTileToBePlaced) continue;
-
-
-            //assume the center we have picked is surrounded by valid neighbours
-            bool valid = true;
-
-            //find potential center
-            for (int j = 0; j < CENTRE_OFFSETS.Length; j++) {
-                //try to prove assumption false by check surrounding (3x3) for an incorrect tile
-                if (terrain.GetTile(center + CENTRE_OFFSETS[j]) != desiredNeighbouringTile) {
-                    valid = false;
-                    //every tile needs to pass the check, so if it fails once we can immediately stop
-                    break;
-                }
-            }
-            
-            
-            if (!valid) continue;
+            if (!IsValidCentre(terrain, center)) continue;
 
             context.Spawn(this, terrain.CellToWorld(center));
             return;
         }
     }
-    
+
+
+    // any valid 3x3 anywhere, for catching up on a load or an unlock
+    protected override bool TryFindSpawn(WorldContext context, out Vector3 position) {
+        position = default;
+        if (requiredTileToBePlaced == null || desiredNeighbouringTile == null) return false;
+
+        TerrainManager terrain = context.Terrain;
+        if (terrain == null) return false;
+
+        if (candidates == null) candidates = new List<Vector3Int>();
+
+        terrain.CollectCellsOf(requiredTileToBePlaced, candidates);
+
+        for (int i = 0; i < candidates.Count; i++) {
+            if (!IsValidCentre(terrain, candidates[i])) continue;
+
+            position = terrain.CellToWorld(candidates[i]);
+            return true;
+        }
+
+        return false;
+    }
+
+
+    private bool IsValidCentre(TerrainManager terrain, Vector3Int center) {
+        //check if our new center is itself valid
+        if (terrain.GetTile(center) != requiredTileToBePlaced) return false;
+
+        //try to prove it false by checking the surrounding 3x3 for an incorrect tile
+        for (int j = 0; j < CENTRE_OFFSETS.Length; j++) {
+            //every tile needs to pass the check, so if it fails once we can immediately stop
+            if (terrain.GetTile(center + CENTRE_OFFSETS[j]) != desiredNeighbouringTile) return false;
+        }
+
+        return true;
+    }
 }

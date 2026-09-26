@@ -13,6 +13,7 @@ public class WorldState
     public NotificationSaveData notifications;
     public AnimalSaveData animals;
     public TimeSaveData time;
+    public WorldStatesSaveData states;
 
 
     // default constructor
@@ -25,6 +26,7 @@ public class WorldState
         notifications = new NotificationSaveData();
         animals = new AnimalSaveData();
         time = new TimeSaveData();
+        states = new WorldStatesSaveData();
     }
 
 
@@ -38,6 +40,7 @@ public class WorldState
         if (notifications == null) notifications = new NotificationSaveData();
         if (animals == null) animals = new AnimalSaveData();
         if (time == null) time = new TimeSaveData();
+        if (states == null) states = new WorldStatesSaveData();
     }
 
 
@@ -66,6 +69,7 @@ public class WorldState
         if (puzzles != null) puzzles.Sort();
         if (notifications != null) notifications.Sort();
         if (animals != null) animals.Sort();
+        if (states != null) states.Sort();
 
         // inventory is not sorted: JsonUtility writes it through the dictionary's own serialized
         // key/value lists, so its file order is whatever the dictionary enumerated

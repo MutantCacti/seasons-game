@@ -1,0 +1,278 @@
+fileFormatVersion: 2
+guid: 2dd9df050e6d6d16bad3b5822c6c2fc9
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1671753851669939506
+    second: plantlife alt_0
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: plantlife alt_30
+      rect:
+        serializedVersion: 2
+        x: 104
+        y: 97
+        width: 14
+        height: 18
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9db6ffdce0257df029df9953c37c3d47
+      internalID: 1726997189
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: plantlife alt_31
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 97
+        width: 16
+        height: 19
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cdbc44248b6a6b7f1b0a93d0d0c6937e
+      internalID: -1749137092
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: plantlife alt_32
+      rect:
+        serializedVersion: 2
+        x: 166
+        y: 96
+        width: 20
+        height: 21
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d1147438ba4b681c288ba710425ef0d2
+      internalID: 757395884
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: plantlife alt_33
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 96
+        width: 25
+        height: 18
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 13609f499ebde206685c044bf203436e
+      internalID: -400136779
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 0ce359f78f79d1a08bf53c0ae9405d16
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      plantlife alt_0: 1671753851669939506
+      plantlife alt_1: 1772816474
+      plantlife alt_10: 800176311
+      plantlife alt_11: 47520577
+      plantlife alt_12: 379352171
+      plantlife alt_13: -412120773
+      plantlife alt_14: -796685213
+      plantlife alt_15: -1087182066
+      plantlife alt_16: 247334434
+      plantlife alt_17: -1516710858
+      plantlife alt_18: 1043817537
+      plantlife alt_19: 1514799960
+      plantlife alt_2: -1110925963
+      plantlife alt_20: -1963643449
+      plantlife alt_21: 164755000
+      plantlife alt_22: -1171000598
+      plantlife alt_23: -1141960355
+      plantlife alt_24: 895680070
+      plantlife alt_25: 1575157981
+      plantlife alt_26: 17385846
+      plantlife alt_27: 1774366878
+      plantlife alt_28: -1213662484
+      plantlife alt_29: -638108983
+      plantlife alt_3: 677395783
+      plantlife alt_30: 1726997189
+      plantlife alt_31: -1749137092
+      plantlife alt_32: 757395884
+      plantlife alt_33: -400136779
+      plantlife alt_34: 304852990
+      plantlife alt_35: 1969982292
+      plantlife alt_36: -1914396802
+      plantlife alt_37: 1460558625
+      plantlife alt_38: -1233087710
+      plantlife alt_39: 1001315110
+      plantlife alt_4: -1605054643
+      plantlife alt_40: 1805959051
+      plantlife alt_41: 1255922034
+      plantlife alt_42: -1697430615
+      plantlife alt_43: -1011677917
+      plantlife alt_44: 462820437
+      plantlife alt_45: 826792708
+      plantlife alt_46: 792430280
+      plantlife alt_47: -565302463
+      plantlife alt_48: -1113916698
+      plantlife alt_49: 313141594
+      plantlife alt_5: 687274886
+      plantlife alt_50: 194780993
+      plantlife alt_51: -850616968
+      plantlife alt_52: -1117077680
+      plantlife alt_53: -2140372640
+      plantlife alt_54: -1240666663
+      plantlife alt_6: 46285265
+      plantlife alt_7: -737477931
+      plantlife alt_8: -1812819110
+      plantlife alt_9: -1430007321
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

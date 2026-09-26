@@ -74,9 +74,6 @@ public class NotificationManager : MonoBehaviour
     private Camera viewCamera;
     private Transform listener;
 
-    // the book whose Opened this is subscribed to; it is an entity, so it may arrive after this does
-    private BookAnimator subscribedBook;
-
     private readonly Vector3[] corners = new Vector3[4];
     private Rect usableArea;
     private Rect inventoryRect;
@@ -143,7 +140,6 @@ public class NotificationManager : MonoBehaviour
         }
 
         ResolveCamera();
-        TrackBook();
 
         if (PuzzleManager.Instance == null)
         {
@@ -161,9 +157,6 @@ public class NotificationManager : MonoBehaviour
     {
         if (PuzzleManager.Instance != null) PuzzleManager.Instance.OnPuzzlesLoaded -= RestorePings;
 
-        if (subscribedBook != null) subscribedBook.Opened -= OnBookOpened;
-        subscribedBook = null;
-
         if (suppressTween != null) suppressTween.Kill();
 
         if (instance == this) instance = null;
@@ -175,7 +168,6 @@ public class NotificationManager : MonoBehaviour
     private void LateUpdate()
     {
         ResolveCamera();
-        TrackBook();
         UpdateSuppressed();
         RefreshLayout();
 
@@ -259,10 +251,20 @@ public class NotificationManager : MonoBehaviour
 
     // Clear and save first, handle second: the unlock a CompletePuzzle handler grants takes a
     // checkpoint, and that checkpoint must not still hold the notification that was just used up.
+    //
+    // A fail ping is never used up by a click: it stays for as long as its puzzle is soft locked, and
+    // only Withdraw (the puzzle completed) or a reload of a checkpoint without it takes it away.
     public void OnPingClicked(NotificationPing ping)
     {
         if (suppressed) return;
         if (ping == null || ping.IsExiting) return;
+
+        if (ping.Type == NotificationType.FailPuzzle)
+        {
+            PlaySound(OpenSoundFor(ping.Type), ping);
+            Handle(ping.Type, ping.PuzzleId);
+            return;
+        }
 
         int index = saved.IndexOf(ping.Type, ping.PuzzleId);
 
@@ -308,12 +310,14 @@ public class NotificationManager : MonoBehaviour
 
             case NotificationType.FailPuzzle:
             {
-                // TODO: a later branch makes the book open on the failed puzzle's page
                 if (BookAnimator.Instance == null)
                 {
                     Debug.LogError("NotificationManager: no BookAnimator, so a soft lock notification cannot open the book", this);
                     return;
                 }
+
+                // this ping's puzzle, not just the first soft locked one, is the page the book opens on
+                PuzzleTabManager.RequestPuzzle(puzzleId);
 
                 BookAnimator.Instance.Open();
                 break;
@@ -323,50 +327,6 @@ public class NotificationManager : MonoBehaviour
                 Debug.LogError($"NotificationManager: no handler for notification type {type}", this);
                 break;
         }
-    }
-
-
-    // However the book was opened, the player is now looking at it, so every soft lock waiting to
-    // point them there is done. The fail handler is not run: the book is already opening.
-    //
-    // A fail ping click reaches here too, through its handler's Open(). By then that ping's entry is
-    // gone and the ping is exiting, so only the others are consumed.
-    private void OnBookOpened()
-    {
-        bool removed = false;
-
-        for (int i = saved.pending.Count - 1; i >= 0; i--)
-        {
-            NotificationSave entry = saved.pending[i];
-            if (entry == null || entry.type != NotificationType.FailPuzzle) continue;
-
-            saved.pending.RemoveAt(i);
-            removed = true;
-        }
-
-        if (removed) Save();
-
-        for (int i = 0; i < pings.Count; i++)
-        {
-            NotificationPing ping = pings[i];
-            if (ping == null || ping.IsExiting) continue;
-
-            if (ping.Type == NotificationType.FailPuzzle) ping.Exit();
-        }
-    }
-
-
-    private void TrackBook()
-    {
-        BookAnimator book = BookAnimator.Instance;
-
-        if (book == subscribedBook) return;
-
-        if (subscribedBook != null) subscribedBook.Opened -= OnBookOpened;
-
-        subscribedBook = book;
-
-        if (subscribedBook != null) subscribedBook.Opened += OnBookOpened;
     }
 
 
@@ -381,6 +341,19 @@ public class NotificationManager : MonoBehaviour
         }
 
         cameraController.PanToTransform(target);
+    }
+
+
+    // a ping whose target is a terrain cell rather than an entity
+    public void PanToPoint(Vector3 point)
+    {
+        if (cameraController == null)
+        {
+            Debug.LogError("NotificationManager: no CameraController, so the camera cannot pan to this ping", this);
+            return;
+        }
+
+        cameraController.PanToPoint(point);
     }
 
 

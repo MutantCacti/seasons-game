@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
-// Lays out and drives the on-screen clock from the frame's rect and DayNightManager's time API.
+// Lays out and drives the on-screen clock from the frame's rect, WorldStateManager's time API and
+// DayNightManager's daylight.
 // The human only nests the objects and drags references; every position and size is computed here,
 // so none of them need to be typed in the Inspector.
 public class Clock : MonoBehaviour
@@ -55,6 +56,7 @@ public class Clock : MonoBehaviour
     [SerializeField] [Range(0.1f, 1.0f)] private float celestialSize = 0.4f;
 
 
+    private WorldStateManager clock;
     private DayNightManager dayNight;
     private bool validationLogged;
 
@@ -83,35 +85,38 @@ public class Clock : MonoBehaviour
 
     private void Start()
     {
+        clock = WorldStateManager.Instance;
         dayNight = DayNightManager.Instance;
 
-        if (dayNight == null)
+        if (clock == null)
         {
-            Debug.LogError("Clock: no DayNightManager in the scene, so the clock cannot run", this);
+            Debug.LogError("Clock: no WorldStateManager in the scene, so the clock cannot run", this);
             enabled = false;
             return;
         }
 
+        if (dayNight == null) Debug.LogError("Clock: no DayNightManager in the scene, so the border never switches between day and night", this);
+
         ApplyColours();
 
-        if (dayText != null) dayText.text = $"Day {dayNight.Day}";
+        if (dayText != null) dayText.text = $"Day {clock.Day}";
 
-        dayNight.DayStarted += OnDayStarted;
+        clock.DayStarted += OnDayStarted;
     }
 
 
     private void OnDestroy()
     {
-        if (dayNight != null) dayNight.DayStarted -= OnDayStarted;
+        if (clock != null) clock.DayStarted -= OnDayStarted;
     }
 
 
     private void Update()
     {
-        if (dayNight == null || dial == null) return;
+        if (clock == null || dial == null) return;
 
         // positive Z is counter-clockwise in screen space
-        dial.localRotation = Quaternion.Euler(0f, 0f, dayNight.DialAngleDegrees);
+        dial.localRotation = Quaternion.Euler(0f, 0f, clock.DialAngleDegrees);
 
         ApplyBorderColour();
     }
@@ -119,7 +124,7 @@ public class Clock : MonoBehaviour
 
     private void ApplyBorderColour()
     {
-        if (border == null) return;
+        if (border == null || dayNight == null) return;
 
         float half = borderSwitchWidth * 0.5f;
         float t = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(borderSwitchAt - half, borderSwitchAt + half, dayNight.Daylight01));
@@ -130,7 +135,7 @@ public class Clock : MonoBehaviour
 
     private void OnDayStarted()
     {
-        if (dayText != null) dayText.text = $"Day {dayNight.Day}";
+        if (dayText != null) dayText.text = $"Day {clock.Day}";
     }
 
 

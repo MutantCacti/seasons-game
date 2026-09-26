@@ -96,6 +96,19 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -1398,35 +1411,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: worm
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 0
-        width: 32
-        height: 32
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: cc08fa4f1b53486499705833b3c1ef36
-      internalID: 340263915
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
       name: plantlife 1_75
       rect:
         serializedVersion: 2
-        x: 32
-        y: 0
-        width: 32
-        height: 32
+        x: 31
+        y: 1
+        width: 30
+        height: 25
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -1437,6 +1428,28 @@ TextureImporter:
       bones: []
       spriteID: ad2b4907e6661e94f9f1f43b71670a15
       internalID: -737745376
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: plantlife_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 9
+        width: 30
+        height: 11
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7fb77df23538377b3a067de43727b53c
+      internalID: -71970068
       vertices: []
       indices: 
       edges: []
@@ -1514,6 +1527,7 @@ TextureImporter:
       plantlife 1_73: 449790148
       plantlife 1_75: -737745376
       plantlife 1_9: 194842468
+      plantlife_0: -71970068
       rock_collection: 2034490687
       rock_large: 1113906830
       rock_small: -476533922

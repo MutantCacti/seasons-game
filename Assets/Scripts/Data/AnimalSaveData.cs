@@ -12,18 +12,21 @@ public class AnimalSave
 
     // all zero in a save from before rotation was written, which reads as "use the prefab's"
     public Quaternion rotation;
+
+    // what the player named this one; empty is the species name
+    public string customName;
+
+    // starred in its status panel, which makes it glow
+    public bool highlighted;
 }
 
 
-// Every animal in the world, and which spawn rules have already had their turn. Both live in the
-// world, so a checkpoint reset takes the animals away and lets their rules fire again.
+// Every animal in the world. It lives in the world, so a checkpoint reset takes the animals away, and
+// their rules can spawn them again because each animal's mob cap has room once more.
 [System.Serializable]
 public class AnimalSaveData
 {
     public List<AnimalSave> animals = new List<AnimalSave>();
-
-    // AnimalSpawnRule ids; a rule fires at most once per world
-    public List<string> firedRules = new List<string>();
 
 
     // Deterministic output (identical worlds write identical files)
@@ -39,7 +42,5 @@ public class AnimalSaveData
                 return string.CompareOrdinal(a != null ? a.guid : "", b != null ? b.guid : "");
             });
         }
-
-        if (firedRules != null) firedRules.Sort(string.CompareOrdinal);
     }
 }

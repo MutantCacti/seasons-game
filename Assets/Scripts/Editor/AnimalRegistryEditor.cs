@@ -35,8 +35,14 @@ public class AnimalRegistryEditor : Editor
     // MARK: actions
 
 
-    private static void GatherAllAnimals(AnimalRegistry registry)
+    internal static void GatherAllAnimals(AnimalRegistry registry)
     {
+        if (registry == null)
+        {
+            Debug.LogError("AnimalRegistryEditor: no registry to gather into, so nothing was gathered");
+            return;
+        }
+
         List<Animal> found = FindAllAnimals();
 
         List<Animal> ordered = OrderAnimals(registry, found, out int unrankedCount);
@@ -61,7 +67,7 @@ public class AnimalRegistryEditor : Editor
     }
 
 
-    private static void AssignMissingIds(AnimalRegistry registry)
+    internal static void AssignMissingIds(AnimalRegistry registry)
     {
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("animals");
@@ -101,8 +107,14 @@ public class AnimalRegistryEditor : Editor
     }
 
 
-    private static void Validate(AnimalRegistry registry)
+    internal static int Validate(AnimalRegistry registry)
     {
+        if (registry == null)
+        {
+            Debug.LogError("AnimalRegistryEditor: no registry to validate, so nothing was validated");
+            return 1;
+        }
+
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("animals");
 
@@ -151,11 +163,16 @@ public class AnimalRegistryEditor : Editor
             problems++;
         }
 
-        // rule ids key the save's fired list, so two rules sharing one would fire only once between them
+        // rule ids key the registry's lookup, so of two rules sharing one, only the first could be found by id
         Dictionary<string, AnimalSpawnRule> ruleIds = new Dictionary<string, AnimalSpawnRule>();
 
         foreach (AnimalSpawnRule rule in FindAllRules())
         {
+            // Deliberately AssetDatabase rather than the AnimalSpawnRuleRegistry: this pass checks the
+            // rule set against project truth, so a rule asset that was never gathered still gets
+            // reported here. Reading the registry instead would make animal ordering depend on whether
+            // someone remembered to press Gather on a different asset first, and would quietly order
+            // by nothing when that registry is empty.
             if (rule.Animal != null && !registered.Contains(rule.Animal))
             {
                 Debug.LogError($"AnimalRegistry: rule '{rule.name}' spawns '{rule.Animal.name}', " +
@@ -183,6 +200,8 @@ public class AnimalRegistryEditor : Editor
         {
             Debug.LogError($"AnimalRegistry: {problems} problem(s) found", registry);
         }
+
+        return problems;
     }
 
 
@@ -284,7 +303,9 @@ public class AnimalRegistryEditor : Editor
     }
 
 
-    private static List<AnimalSpawnRule> FindAllRules()
+    // internal rather than private so AnimalSpawnRuleRegistryEditor and the Tools > Registries menu can
+    // ask the same question without a second copy of the scan drifting from this one
+    internal static List<AnimalSpawnRule> FindAllRules()
     {
         List<AnimalSpawnRule> found = new List<AnimalSpawnRule>();
 

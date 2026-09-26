@@ -29,8 +29,14 @@ public class GlobalOptionsRegistryEditor : Editor
     // MARK: actions
 
 
-    private static void GatherAllOptions(GlobalOptionsRegistry registry)
+    internal static void GatherAllOptions(GlobalOptionsRegistry registry)
     {
+        if (registry == null)
+        {
+            Debug.LogError("GlobalOptionsRegistryEditor: no registry to gather into, so nothing was gathered");
+            return;
+        }
+
         List<GlobalOption> found = FindAllOptions();
 
         // idempotent: a plain A->Z sort by asset name, so gathering twice changes nothing
@@ -55,8 +61,14 @@ public class GlobalOptionsRegistryEditor : Editor
     }
 
 
-    private static void Validate(GlobalOptionsRegistry registry)
+    internal static int Validate(GlobalOptionsRegistry registry)
     {
+        if (registry == null)
+        {
+            Debug.LogError("GlobalOptionsRegistryEditor: no registry to validate, so nothing was validated");
+            return 1;
+        }
+
         SerializedObject serialized = new SerializedObject(registry);
         SerializedProperty list = serialized.FindProperty("options");
 
@@ -113,6 +125,8 @@ public class GlobalOptionsRegistryEditor : Editor
         {
             Debug.LogError($"GlobalOptionsRegistry: {problems} problem(s) found", registry);
         }
+
+        return problems;
     }
 
 

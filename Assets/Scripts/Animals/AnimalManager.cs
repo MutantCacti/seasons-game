@@ -4,17 +4,21 @@ using UnityEngine;
 
 
 // Owns the animals in the world, their section of the save, and the spawn rules that bring them in.
-// Rules are data (AnimalSpawnRule assets); this forwards world events to them and does the spawning
-// on their behalf, so every animal is saved, registered and credited the same way.
-public class AnimalManager : MonoBehaviour, AnimalSpawnContext
+// Rules are AnimalSpawnRule assets that hear world events through WorldEvents; this does the spawning
+// on their behalf, so every animal is gated, saved, registered and credited the same way.
+public class AnimalManager : MonoBehaviour
 {
     private static AnimalManager instance;
     public static AnimalManager Instance { get { return instance; } }
 
 
     [SerializeField] private AnimalRegistry registry;
+
+    // the rules live in a registry asset rather than on this component, so an editor can gather and
+    // validate them the way every other id-keyed list in the project is gathered and validated
+    [SerializeField] private AnimalSpawnRuleRegistry ruleRegistry;
+
     [SerializeField] private TerrainManager terrainManager;
-    [SerializeField] private List<AnimalSpawnRule> rules = new List<AnimalSpawnRule>();
 
     // if this is null, AnimalManager creates a new empty at the scene root
     [SerializeField] private Transform animalParent;
@@ -32,6 +36,7 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
         public Animal animal;
         public EntityId entityId;
         public Transform transform;
+        public AnimalController controller;
 
         // the row this animal's transform is copied into. AnimalSaveData.Sort reorders the list but
         // never replaces the rows, so this stays the one in the save
@@ -45,10 +50,8 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
     // swaps SaveData.world out, and both reload the scene
     private WorldState world;
 
-    private PlacementController placementController;
-
-
-    public TerrainManager Terrain { get { return terrainManager; } }
+    // every spawn rule, for WorldEvents to fan events out to
+    public IReadOnlyList<AnimalSpawnRule> SpawnRules { get { return ruleRegistry != null ? ruleRegistry.Entries : null; } }
 
 
     private void Awake()
@@ -67,7 +70,15 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
             Debug.LogError("AnimalManager: no AnimalRegistry, so no animal can be spawned, saved or loaded", this);
         }
 
+        if (ruleRegistry == null)
+        {
+            Debug.LogError("AnimalManager: no AnimalSpawnRuleRegistry, so no spawn rule can ever fire", this);
+        }
+
         if (animalParent == null) animalParent = new GameObject("Animals").transform;
+
+        // the rules hear the world through it
+        WorldEvents.Ensure();
 
         ResolveWorld();
 
@@ -115,19 +126,12 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
             Debug.LogError("AnimalManager: no EntityManager, so a puzzle completed by an animal cannot find it", this);
         }
 
-        placementController = PlacementController.Instance;
-
-        if (placementController != null) placementController.ItemPlaced += OnItemPlaced;
-        else Debug.LogError("AnimalManager: no PlacementController, so placement-based spawn rules can never fire", this);
-
         AnimalsChanged?.Invoke();
     }
 
 
     private void OnDestroy()
     {
-        if (placementController != null) placementController.ItemPlaced -= OnItemPlaced;
-
         if (instance == this) instance = null;
     }
 
@@ -151,6 +155,16 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
     // MARK: queries
 
 
+    // every live animal, for things that look them all over (picking one under the pointer)
+    public int LiveCount { get { return live.Count; } }
+
+
+    public AnimalController LiveAt(int index)
+    {
+        return index >= 0 && index < live.Count ? live[index].controller : null;
+    }
+
+
     // true when at least one live animal of this kind exists in the world
     public bool HasAnimalOf(Animal animal)
     {
@@ -165,46 +179,80 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
     }
 
 
-    public bool HasFired(AnimalSpawnRule rule)
+    public int Count(Animal animal)
     {
-        if (rule == null) return false;
-        if (world == null || world.animals == null || world.animals.firedRules == null) return false;
+        if (animal == null) return 0;
 
-        return world.animals.firedRules.Contains(rule.Id);
+        int count = 0;
+
+        for (int i = 0; i < live.Count; i++)
+        {
+            if (live[i].animal == animal) count++;
+        }
+
+        return count;
+    }
+
+
+    public bool CanSpawn(AnimalSpawnRule rule)
+    {
+        if (rule == null || rule.Animal == null) return false;
+        if (!IsRegistered(rule)) return false;
+        if (!IsUnlocked(rule)) return false;
+
+        return Count(rule.Animal) < rule.Animal.MobCap;
+    }
+
+
+    // a completed puzzle stays unlocked, so this holds from the unlock on. with no PuzzleManager (a test
+    // scene) nothing is gated, so progress never stalls. Read fresh rather than cached in Start: the
+    // rules can hear OnLoaded, and spawn, before this manager's own Start has run
+    private bool IsUnlocked(AnimalSpawnRule rule)
+    {
+        if (rule.Completes == null) return true;
+
+        PuzzleManager puzzles = PuzzleManager.Instance;
+        if (puzzles == null) return true;
+
+        return puzzles.IsUnlocked(rule.Completes);
     }
 
 
     // MARK: rules
 
 
-    private void OnItemPlaced(GameItem item, Vector3Int cell, GameObject instance)
+    // registry.Entries is an IReadOnlyList, which has no Contains, so this is the plain loop
+    private bool IsRegistered(AnimalSpawnRule rule)
     {
+        if (rule == null || ruleRegistry == null) return false;
+
+        IReadOnlyList<AnimalSpawnRule> rules = ruleRegistry.Entries;
+
         for (int i = 0; i < rules.Count; i++)
         {
-            AnimalSpawnRule rule = rules[i];
-            if (rule == null) continue;
-
-            rule.OnItemPlaced(this, item, cell);
+            if (rules[i] == rule) return true;
         }
+
+        return false;
     }
 
 
     // MARK: spawn
 
 
-    // The one way a new animal enters the world. Marks the rule as fired, saves, and only then submits
-    // the rule's puzzle, so the completion's guid already resolves and the save already holds the animal.
+    // The one way a new animal enters the world. Gates it (registered, puzzle unlocked, under the mob
+    // cap), saves, and only then submits the rule's puzzle, so the completion's guid already resolves
+    // and the save already holds the animal. Completing an already completed puzzle does nothing, so
+    // every spawn after the first just adds an animal.
     public bool Spawn(AnimalSpawnRule rule, Vector3 position)
     {
         if (rule == null) return false;
 
-        if (!rules.Contains(rule))
+        if (!IsRegistered(rule))
         {
             Debug.LogError($"AnimalManager: '{rule.name}' tried to spawn but is not in the rules list", rule);
             return false;
         }
-
-        if (HasFired(rule)) return false;
 
         Animal animal = rule.Animal;
 
@@ -213,6 +261,9 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
             Debug.LogError($"AnimalManager: '{rule.name}' has no animal, so there is nothing to spawn", rule);
             return false;
         }
+
+        if (!IsUnlocked(rule)) return false;
+        if (Count(animal) >= animal.MobCap) return false;
 
         // logs and gives up if the animal is not in the registry
         if (registry == null || !registry.TryGetIdByEntry(animal, out string animalId)) return false;
@@ -228,8 +279,6 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
 
         world.animals.animals.Add(save);
 
-        world.animals.firedRules.Add(rule.Id);
-
         if (EntityManager.Instance != null) EntityManager.Instance.RegisterExternal(entityId);
 
         if (SaveDataManager.Instance != null) SaveDataManager.Instance.Save();
@@ -243,6 +292,8 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
             else Debug.LogError($"AnimalManager: no PuzzleManager, so '{animal.name}' spawning did not " +
                 $"complete '{rule.Completes.name}'", this);
         }
+
+        if (WorldEvents.Instance != null) WorldEvents.Instance.RaiseAnimalSpawned(animal, entityId);
 
         return true;
     }
@@ -374,7 +425,7 @@ public class AnimalManager : MonoBehaviour, AnimalSpawnContext
 
         entityId.Destroyed += OnAnimalDestroyed;
 
-        live.Add(new LiveAnimal { animal = animal, entityId = entityId, transform = instance.transform, save = save });
+        live.Add(new LiveAnimal { animal = animal, entityId = entityId, transform = instance.transform, controller = controller, save = save });
 
         return entityId;
     }

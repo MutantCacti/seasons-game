@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -12,6 +13,7 @@ public enum CursorType
     Default,
     Disabled,
     Pointer,
+    Text,
 }
 
 
@@ -35,6 +37,9 @@ public class CursorManager : MonoBehaviour
     [SerializeField] private Texture2D pointerCursor;
     // the fingertip is the top-left of cpointer32, pointing up-left
     [SerializeField] private Vector2 pointerHotSpot = new Vector2(2, 1);
+    // the I-beam over a text field; the hotspot is usually its middle
+    [SerializeField] private Texture2D textCursor;
+    [SerializeField] private Vector2 textHotSpot;
 
     [SerializeField] private CursorMode cursorMode = CursorMode.Auto;
     [SerializeField] private Vector2 fallbackHotSpot = Vector2.zero;
@@ -71,18 +76,25 @@ public class CursorManager : MonoBehaviour
         {
             { CursorType.Default, defaultCursor },
             { CursorType.Disabled, disabledCursor },
-            { CursorType.Pointer, pointerCursor }
+            { CursorType.Pointer, pointerCursor },
+            { CursorType.Text, textCursor }
         };
         cursorHotSpots = new Dictionary<CursorType, Vector2>()
         {
             { CursorType.Default, defaultHotSpot },
             { CursorType.Disabled, disabledHotSpot },
-            { CursorType.Pointer, pointerHotSpot }
+            { CursorType.Pointer, pointerHotSpot },
+            { CursorType.Text, textHotSpot }
         };
 
         if (pointerCursor == null)
         {
             Debug.LogError("CursorManager: no pointerCursor assigned, so buttons and slots keep the default cursor on hover", this);
+        }
+
+        if (textCursor == null)
+        {
+            Debug.LogError("CursorManager: no textCursor assigned, so text fields show the pointer cursor on hover", this);
         }
 
         // enough for the editor and standalone. web resets it right after, see Start
@@ -158,7 +170,12 @@ public class CursorManager : MonoBehaviour
     {
         if (hasOverride) return overrideCursor;
 
-        if (pointerCursor != null && IsHoveringInteractive()) return CursorType.Pointer;
+        if (IsHoveringInteractive())
+        {
+            // a text field is a Selectable too, but wants the I-beam rather than the hand
+            if (textCursor != null && hoveredSelectable is TMP_InputField) return CursorType.Text;
+            if (pointerCursor != null) return CursorType.Pointer;
+        }
 
         return CursorType.Default;
     }
