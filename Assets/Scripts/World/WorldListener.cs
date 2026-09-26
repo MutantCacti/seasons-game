@@ -85,6 +85,14 @@ public abstract class WorldListener : ScriptableObject
     }
 
 
+    // the placement's presentation is over: its tile transition finished, or nothing played. A rule
+    // that reacts to what has just appeared hears it here, so it never fires while the ground is still
+    // changing. Raised for every placement, exactly once
+    public virtual void OnItemShown(WorldContext context, GameItem item, Vector3Int cell)
+    {
+    }
+
+
     // any spawn rule's spawn
     public virtual void OnAnimalSpawned(WorldContext context, Animal spawned, EntityId entity)
     {

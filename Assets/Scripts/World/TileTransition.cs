@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
@@ -23,6 +24,12 @@ public class TileTransition : MonoBehaviour
     private const int QUADS_PER_PIECE = 3;
 
 
+    // Every block has grown, so the cover matches the terrain underneath and is about to destroy
+    // itself. Raised from the tween alone, never from OnDestroy: a scene unload kills a cover
+    // mid-tween, and a listener must not act on a dying scene. Fires at most once
+    public event Action Finished;
+
+
     // one block, or the part of it that the cell's top quads keep. All in texels inside the slice
     private struct Piece
     {
@@ -43,6 +50,7 @@ public class TileTransition : MonoBehaviour
     private Vector2 newOrigin;
     private Vector2 atlasSize;
     private uint seed;
+    private bool finished;
 
 
     // cellOrigin is the cell's (x0, height, z0) corner in world space. texelRects are the cell's top
@@ -71,7 +79,7 @@ public class TileTransition : MonoBehaviour
     private void Build(Sprite oldSprite, Sprite newSprite, List<Vector4> texelRects, int pixelsPerTile,
         Material material, float duration, float blockDuration, float jitter)
     {
-        seed = (uint)Random.Range(int.MinValue, int.MaxValue);
+        seed = (uint)UnityEngine.Random.Range(int.MinValue, int.MaxValue);
         this.blockDuration = Mathf.Max(0.0001f, blockDuration);
         this.pixelsPerTile = pixelsPerTile;
 
@@ -195,7 +203,24 @@ public class TileTransition : MonoBehaviour
         DOVirtual.Float(0.0f, duration, duration, WriteAndUpload)
             .SetEase(Ease.Linear)
             .SetLink(gameObject)
-            .OnComplete(() => Destroy(gameObject));
+            .OnComplete(Finish);
+    }
+
+
+    // the one completion, and it never looks back: the event is dropped so a late subscriber cannot
+    // fire it, and the guard covers a stray second OnComplete
+    private void Finish()
+    {
+        if (finished) return;
+
+        finished = true;
+
+        Action listeners = Finished;
+        Finished = null;
+
+        if (listeners != null) listeners();
+
+        Destroy(gameObject);
     }
 
 

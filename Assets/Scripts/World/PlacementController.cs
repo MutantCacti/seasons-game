@@ -21,6 +21,10 @@ public class PlacementController : MonoBehaviour
     private static PlacementController instance;
     public static PlacementController Instance { get { return instance; } }
 
+    // True while a ground change is still animating. A puzzle can look spent while the tile under it
+    // is still growing, so PuzzleManager holds its judgement until this clears
+    public bool IsPresenting { get { return presentationsInFlight > 0; } }
+
     // we can't have ghosts running their prefab behaviours so any component
     // that isn't of this type (or a Transform) gets destroyed
     private static readonly HashSet<Type> ghostWhitelist = new HashSet<Type>()
@@ -93,6 +97,9 @@ public class PlacementController : MonoBehaviour
 
     private readonly List<Vector4> transitionRects = new List<Vector4>();
 
+    // tile transitions still playing, so a puzzle is not judged while the ground is changing
+    private int presentationsInFlight;
+
 
     // what a growth hands to its animation, measured before the old entity went
     private struct GrowthPop
@@ -107,6 +114,12 @@ public class PlacementController : MonoBehaviour
 
     // Raised once a placement is fully committed and saved
     public event Action<GameItem, Vector3Int, GameObject> ItemPlaced;
+
+
+    // Raised once a placement has finished being shown: after its tile transition, or straight away
+    // when nothing was worth waiting for. A growth and a silent load catch-up raise it too, so a rule
+    // that hears this instead of ItemPlaced never misses a placement
+    public event Action<GameItem, Vector3Int> ItemShown;
 
 
     private void Awake()
@@ -458,13 +471,40 @@ public class PlacementController : MonoBehaviour
 
         ItemPlaced?.Invoke(item, cell, instance);
 
+        TileTransition transition = null;
+
         switch (feel)
         {
-            case PlaceFeel.Player: PlayPlacementAnimation(item, cell, instance, previousTile); break;
+            case PlaceFeel.Player: transition = PlayPlacementAnimation(item, cell, instance, previousTile); break;
             case PlaceFeel.Growth: PlayGrowthAnimation(item, cell, instance, pop); break;
 
             // Silent: it's simply there
         }
+
+        // Only a real ground change is worth waiting for. A growth has no tile to grow, and a skipped
+        // transition is over before it began, so both are shown at once
+        if (transition == null)
+        {
+            ItemShown?.Invoke(item, cell);
+            return;
+        }
+
+        // in flight until the cover says it has finished, which is also when listeners hear ItemShown.
+        // A scene unload kills the cover mid-tween and leaves this counted; the controller dies with
+        // that same scene, so nobody is left waiting on it
+        presentationsInFlight++;
+
+        transition.Finished += () => CompletePresentation(item, cell);
+    }
+
+
+    // The cover is gone, so the ground finally shows what the world already holds. The count drops
+    // first, so a soft-lock judgement queued from ItemShown sees the ground as settled
+    private void CompletePresentation(GameItem item, Vector3Int cell)
+    {
+        presentationsInFlight = Mathf.Max(0, presentationsInFlight - 1);
+
+        ItemShown?.Invoke(item, cell);
     }
 
 
@@ -654,17 +694,20 @@ public class PlacementController : MonoBehaviour
 
     // Everything is committed by the time this runs: An animation started here
     // can therefore assume the world is already in its final state
-    // instance is null for a tile-only item.
-    private void PlayPlacementAnimation(GameItem item, Vector3Int cell, GameObject instance, TerrainTile previousTile)
+    // instance is null for a tile-only item. Returns the ground change still playing, or null for
+    // everything that has nothing left to wait for
+    private TileTransition PlayPlacementAnimation(GameItem item, Vector3Int cell, GameObject instance, TerrainTile previousTile)
     {
         Vector3 worldPosition = terrainManager != null ? terrainManager.CellToWorld(cell) : Vector3.zero;
 
         if (instance != null) GrowFromBase(instance);
 
+        TileTransition transition = null;
+
         if (item.Tile != null)
         {
             SpawnRipple(worldPosition);
-            PlayTileTransition(cell, previousTile);
+            transition = PlayTileTransition(cell, previousTile);
         }
 
         PlayPlaceSound(item, worldPosition);
@@ -677,6 +720,8 @@ public class PlacementController : MonoBehaviour
 
             for (int i = 0; i < animations.Length; i++) animations[i].Play();
         }
+
+        return transition;
     }
 
 
@@ -807,33 +852,34 @@ public class PlacementController : MonoBehaviour
 
     // Covers a cell that has JUST been remapped with a picture of the tile it held before, which the
     // new one then grows over. Call it after TerrainManager.Remap, from anything that changes a tile:
-    // the new tile is read back from the terrain, so it works for any old -> new pair
-    public void PlayTileTransition(Vector3Int cell, TerrainTile from)
+    // the new tile is read back from the terrain, so it works for any old -> new pair. Returns the
+    // cover still playing, or null when there is nothing to wait for
+    public TileTransition PlayTileTransition(Vector3Int cell, TerrainTile from)
     {
-        if (terrainManager == null || from == null) return;
+        if (terrainManager == null || from == null) return null;
 
         TerrainTile to = terrainManager.GetTile(cell);
-        if (to == null || to == from) return;
+        if (to == null || to == from) return null;
 
         if (tileTransitionMaterial == null)
         {
             WarnOnce(ref warnedAboutMissingTransition, "no tileTransitionMaterial assigned, so tile changes pop instead of transitioning");
-            return;
+            return null;
         }
 
         Sprite oldSprite = terrainManager.ResolveCellSprite(cell, from);
         Sprite newSprite = terrainManager.ResolveCellSprite(cell, to);
-        if (oldSprite == null || newSprite == null) return;
+        if (oldSprite == null || newSprite == null) return null;
 
         // one shared material means one atlas; a sprite from anywhere else would draw the wrong texels
-        if (!IsOnTransitionAtlas(from, oldSprite) || !IsOnTransitionAtlas(to, newSprite)) return;
+        if (!IsOnTransitionAtlas(from, oldSprite) || !IsOnTransitionAtlas(to, newSprite)) return null;
 
         // no baked top quads means nothing on screen to cover (e.g. a stale bake)
-        if (!terrainManager.TryGetTopTexelRects(cell, transitionRects, out int pixelsPerTile)) return;
+        if (!terrainManager.TryGetTopTexelRects(cell, transitionRects, out int pixelsPerTile)) return null;
 
         Vector3 cellOrigin = new Vector3(cell.x, terrainManager.GetLevelHeight(cell.y), cell.z);
 
-        TileTransition.Spawn(cellOrigin, oldSprite, newSprite, transitionRects, pixelsPerTile, tileTransitionMaterial,
+        return TileTransition.Spawn(cellOrigin, oldSprite, newSprite, transitionRects, pixelsPerTile, tileTransitionMaterial,
             tileTransitionDuration, tileTransitionBlockDuration, tileTransitionJitter);
     }
 

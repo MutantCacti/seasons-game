@@ -70,6 +70,8 @@ public class PuzzleManager : MonoBehaviour
 
     [SerializeField] private InventoryManager inventoryManager;
 
+    [SerializeField] private PlacementController placementController;
+
     // How long the manager waits after the last consumption before deciding a puzzle is stuck
     [SerializeField] private float softLockGraceSeconds = 0.5f;
 
@@ -199,6 +201,18 @@ public class PuzzleManager : MonoBehaviour
             inventoryManager.ItemConsumed += OnItemConsumed;
         }
 
+        if (placementController == null) placementController = PlacementController.Instance;
+
+        if (placementController == null)
+        {
+            Debug.LogError("PuzzleManager: no PlacementController, so a soft-lock judgement cannot wait for a " +
+                "tile transition to finish and may fail a puzzle that is still growing", this);
+        }
+        else
+        {
+            placementController.ItemShown += OnPlacementShown;
+        }
+
         LoadFromSave();
     }
 
@@ -206,6 +220,7 @@ public class PuzzleManager : MonoBehaviour
     private void OnDestroy()
     {
         if (inventoryManager != null) inventoryManager.ItemConsumed -= OnItemConsumed;
+        if (placementController != null) placementController.ItemShown -= OnPlacementShown;
 
         if (instance == this) instance = null;
     }
@@ -668,6 +683,14 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
+    // The ground has settled after a placement, so a puzzle held back while its tile grew is judged
+    // now, against the world the player can finally see
+    private void OnPlacementShown(GameItem item, Vector3Int cell)
+    {
+        ScheduleSoftLockCheck();
+    }
+
+
     // Queues every active puzzle to be judged once the world has settled. Re-queueing one that is
     // already flagged is harmless, because the flag is only raised on the transition. Public so growth
     // can have a puzzle that was waiting on it judged again once the grown things exist
@@ -712,6 +735,11 @@ public class PuzzleManager : MonoBehaviour
             // yet. GrowthManager asks again once anything grows. An existing flag or ping is left alone
             if (IsGrowthPending(puzzle)) continue;
 
+            // Spent, but the ground under it is still changing, so the thing that completes it may not
+            // have appeared yet. ItemShown asks again once the world has settled. An existing flag or
+            // ping is left alone
+            if (IsPresenting()) continue;
+
             if (!softLocked.Add(puzzle)) continue;
 
             Debug.LogWarning($"PuzzleManager: '{puzzle.name}' has spent every ingredient it was given " +
@@ -732,6 +760,13 @@ public class PuzzleManager : MonoBehaviour
         }
 
         pendingSoftLockChecks.Clear();
+    }
+
+
+    // True while a placement's tile transition is still growing the ground a puzzle stands on
+    private bool IsPresenting()
+    {
+        return placementController != null && placementController.IsPresenting;
     }
 
 

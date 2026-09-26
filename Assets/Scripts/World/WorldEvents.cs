@@ -102,6 +102,8 @@ public class WorldEvents : MonoBehaviour, WorldContext
         if (placementController != null) placementController.ItemPlaced += OnItemPlaced;
         else Debug.LogError("WorldEvents: no PlacementController, so no listener hears a placement", this);
 
+        if (placementController != null) placementController.ItemShown += OnItemShown;
+
         Subscribe();
     }
 
@@ -153,6 +155,7 @@ public class WorldEvents : MonoBehaviour, WorldContext
     private void OnDestroy()
     {
         if (placementController != null) placementController.ItemPlaced -= OnItemPlaced;
+        if (placementController != null) placementController.ItemShown -= OnItemShown;
 
         if (saveManager != null) saveManager.NewWorldConstructed -= TryBecomeReady;
 
@@ -289,6 +292,12 @@ public class WorldEvents : MonoBehaviour, WorldContext
     private void OnItemPlaced(GameItem item, Vector3Int cell, GameObject placed)
     {
         Dispatch(listener => listener.OnItemPlaced(this, item, cell));
+    }
+
+
+    private void OnItemShown(GameItem item, Vector3Int cell)
+    {
+        Dispatch(listener => listener.OnItemShown(this, item, cell));
     }
 
 

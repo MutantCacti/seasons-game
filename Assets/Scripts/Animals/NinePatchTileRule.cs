@@ -50,7 +50,7 @@ public class NinePatchTileRule : AnimalSpawnRule
     }
 
 
-    public override void OnItemPlaced(WorldContext context, GameItem itemOrTileJustPlaced, Vector3Int cell) {
+    public override void OnItemShown(WorldContext context, GameItem itemOrTileJustPlaced, Vector3Int cell) {
         if (context == null || itemOrTileJustPlaced == null) return;
         if (requiredTileToBePlaced == null || desiredNeighbouringTile == null) return;
 
