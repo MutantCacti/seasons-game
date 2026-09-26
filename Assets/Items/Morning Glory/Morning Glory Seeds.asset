@@ -16,7 +16,7 @@ MonoBehaviour:
   description: One day these humble seedlings will bring blue-tinted joy.
   icon: {fileID: -131840173, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 0}
-  prefab: {fileID: 9101707734154989034, guid: 89ed4284c2c213e0f8736e3f2870583e, type: 3}
+  prefab: {fileID: 9101707734154989034, guid: f7cab45899b8ae640b27a5d5b1fb4ffc, type: 3}
   placeSound: {fileID: 11400000, guid: 756fa5864d79864498977474a2d1b2f1, type: 2}
   placedOnTags:
   - grass
