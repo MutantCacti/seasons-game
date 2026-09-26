@@ -13,6 +13,11 @@ public interface WorldContext
     // null in a scene without one; a listener that gates on a season or condition then never acts
     WorldStateManager States { get; }
 
+    // True while a placement's tile transition is still growing the ground over a cell. The world is
+    // remapped the moment a tile is placed, so a listener that acts on what the player can see has to
+    // wait for this to clear before it fires
+    bool IsPresenting { get; }
+
     // live animals of this kind
     int Count(Animal animal);
 
