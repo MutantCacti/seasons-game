@@ -48,6 +48,13 @@ public class PlacementController : MonoBehaviour
     [SerializeField] private float shakeMagnitude = 0.02f;
     [SerializeField] private float shakeDuration = 0.08f;
 
+    [Header("Tile transition")]
+    [Tooltip("TerrainTop's twin with Alpha Clipping ticked, sharing its atlas")]
+    [SerializeField] private Material tileTransitionMaterial;
+    [SerializeField] private float tileTransitionDuration = 0.45f;
+    [SerializeField] private float tileTransitionBlockDuration = 0.14f;
+    [SerializeField] private float tileTransitionJitter = 0.08f;
+
     private const float RIPPLE_OFFSET = 0.002f;
     private const float RIPPLE_START_SCALE = 0.2f;
 
@@ -60,10 +67,14 @@ public class PlacementController : MonoBehaviour
     private bool warnedAboutMissingCursor;
     private bool warnedAboutMissingSound;
     private bool warnedAboutMissingRipple;
+    private bool warnedAboutMissingTransition;
+    private bool warnedAboutTransitionAtlas;
     private Transform ghostStaging;
 
     private Vector3Int previewCell;
     private bool hasPreview;
+
+    private readonly List<Vector4> transitionRects = new List<Vector4>();
 
 
     // Raised once a placement is fully committed and saved
@@ -241,11 +252,12 @@ public class PlacementController : MonoBehaviour
         GameItem item = dragging;
         GameObject instance = null;
         Vector3Int cell = default;
+        TerrainTile previousTile = null;
         bool placed = false;
 
         if (TryResolveTarget(screenPosition, out cell))
         {
-            placed = Commit(item, cell, out instance);
+            placed = Commit(item, cell, out instance, out previousTile);
         }
 
         // clears the tile patch and destroys the ghost
@@ -263,7 +275,7 @@ public class PlacementController : MonoBehaviour
 
         ItemPlaced?.Invoke(item, cell, instance);
 
-        PlayPlacementAnimation(item, cell, instance);
+        PlayPlacementAnimation(item, cell, instance, previousTile);
 
         return true;
     }
@@ -370,14 +382,21 @@ public class PlacementController : MonoBehaviour
     // MARK: commit
 
 
-    private bool Commit(GameItem item, Vector3Int cell, out GameObject instance)
+    // previousTile is what the cell held before a remap, for the tile transition. It comes from the
+    // state, which a drag preview never touches, so it's the real old tile and not the previewed one
+    private bool Commit(GameItem item, Vector3Int cell, out GameObject instance, out TerrainTile previousTile)
     {
         instance = null;
+        previousTile = null;
 
         // Tile first, because it can fail but spawn cannot
         if (item.Tile != null)
         {
-            if (terrainManager == null || !terrainManager.Remap(cell, item.Tile)) return false;
+            if (terrainManager == null) return false;
+
+            previousTile = terrainManager.GetTile(cell);
+
+            if (!terrainManager.Remap(cell, item.Tile)) return false;
         }
 
         if (item.Prefab != null && entityManager != null)
@@ -531,13 +550,17 @@ public class PlacementController : MonoBehaviour
     // Everything is committed by the time this runs: An animation started here
     // can therefore assume the world is already in its final state
     // instance is null for a tile-only item.
-    private void PlayPlacementAnimation(GameItem item, Vector3Int cell, GameObject instance)
+    private void PlayPlacementAnimation(GameItem item, Vector3Int cell, GameObject instance, TerrainTile previousTile)
     {
         Vector3 worldPosition = terrainManager != null ? terrainManager.CellToWorld(cell) : Vector3.zero;
 
         if (instance != null) GrowFromBase(instance);
 
-        if (item.Tile != null) SpawnRipple(worldPosition);
+        if (item.Tile != null)
+        {
+            SpawnRipple(worldPosition);
+            PlayTileTransition(cell, previousTile);
+        }
 
         PlayPlaceSound(item, worldPosition);
 
@@ -589,6 +612,47 @@ public class PlacementController : MonoBehaviour
 
         ripple.transform.DOScale(Vector3.one * rippleDiameter, rippleDuration).SetEase(Ease.OutQuad);
         rippleRenderer.DOFade(0.0f, rippleDuration).SetEase(Ease.InQuad).OnComplete(() => Destroy(ripple));
+    }
+
+
+    // Covers a cell that has JUST been remapped with a picture of the tile it held before, which then
+    // breaks up to reveal the new one. Call it after TerrainManager.Remap, from anything that changes a
+    // tile: the cover only ever shows the old tile, so it works for any old -> new pair
+    public void PlayTileTransition(Vector3Int cell, TerrainTile from)
+    {
+        if (terrainManager == null || from == null) return;
+        if (from == terrainManager.GetTile(cell)) return;
+
+        if (tileTransitionMaterial == null)
+        {
+            WarnOnce(ref warnedAboutMissingTransition, "no tileTransitionMaterial assigned, so tile changes pop instead of transitioning");
+            return;
+        }
+
+        Sprite oldSprite = terrainManager.ResolveCellSprite(cell, from);
+        if (oldSprite == null) return;
+
+        // one shared material means one atlas; a sprite from anywhere else would draw the wrong texels
+        if (oldSprite.texture != tileTransitionMaterial.mainTexture)
+        {
+            if (!warnedAboutTransitionAtlas)
+            {
+                warnedAboutTransitionAtlas = true;
+                Debug.LogError($"PlacementController: '{from.name}' sprite '{oldSprite.name}' is on " +
+                    $"'{oldSprite.texture.name}', not the transition material's atlas, so its transitions " +
+                    $"are skipped. Move the art into the terrain atlas", from);
+            }
+
+            return;
+        }
+
+        // no baked top quads means nothing on screen to cover (e.g. a stale bake)
+        if (!terrainManager.TryGetTopTexelRects(cell, transitionRects, out int pixelsPerTile)) return;
+
+        Vector3 cellOrigin = new Vector3(cell.x, terrainManager.GetLevelHeight(cell.y), cell.z);
+
+        TileTransition.Spawn(cellOrigin, oldSprite, transitionRects, pixelsPerTile, tileTransitionMaterial,
+            tileTransitionDuration, tileTransitionBlockDuration, tileTransitionJitter);
     }
 
 

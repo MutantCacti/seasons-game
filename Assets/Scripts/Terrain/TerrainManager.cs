@@ -463,6 +463,16 @@ public partial class TerrainManager : MonoBehaviour
     {
         if (visuals == null || tile == null) return;
 
+        visuals.Patch(cell, ResolveCellSprite(cell, tile));
+    }
+
+
+    // The sprite this tile shows at this cell, exactly as SetCellVisual would patch it in. A tile
+    // transition uses it to picture the tile a cell held before a remap
+    public Sprite ResolveCellSprite(Vector3Int cell, TerrainTile tile)
+    {
+        if (tile == null) return null;
+
         // Resolved against the tilemap's own occupancy rather than this class's state, so the
         // sprite comes out exactly as the bake resolved it: same neighbour mask, same slot.
         //
@@ -470,13 +480,34 @@ public partial class TerrainManager : MonoBehaviour
         // terrain cell - passing the terrain cell would pick a different random variant than the
         // bake did and the tile would change appearance on load.
         Vector3Int tilemapCell = ToTilemapCell(cell);
-        Tilemap tilemap = GetTilemap(cell.y);
+        Tilemap tilemap = cell.y >= 0 && cell.y < Levels.Count ? GetTilemap(cell.y) : null;
 
-        Sprite sprite = tilemap != null
+        return tilemap != null
             ? tile.SpriteFor(tilemapCell, tilemap)
             : tile.VariantFor(tilemapCell);
+    }
 
-        visuals.Patch(cell, sprite);
+
+    // Fills results with the texel rects (x0, y0, x1, y1, inside the cell's 32px slice) of the baked
+    // top quads that draw this cell, i.e. the cell's real visible shape: a trimmed edge or a corner
+    // partly covered by the level above is smaller than the full square. Empty when nothing is baked
+    public bool TryGetTopTexelRects(Vector3Int cell, List<Vector4> results, out int pixelsPerTile)
+    {
+        results.Clear();
+        pixelsPerTile = 0;
+
+        TerrainQuadMap map = visuals != null ? visuals.TopQuadMap : null;
+        if (map == null || map.quadTexelOffsets == null) return false;
+        if (!map.TryGetQuads(cell, out int first, out int count)) return false;
+
+        pixelsPerTile = map.pixelsPerTile;
+
+        for (int quad = 0; quad < count; quad++)
+        {
+            results.Add(map.quadTexelOffsets[first + quad]);
+        }
+
+        return results.Count > 0 && pixelsPerTile > 0;
     }
 
 
