@@ -90,9 +90,6 @@ public class PlacementController : MonoBehaviour
 
     private readonly List<GameItem> residents = new List<GameItem>();
 
-    // scratch for resolving the entity a reagent is about to land on
-    private readonly List<EntityId> reactionScratch = new List<EntityId>();
-
     private bool warnedAboutMissingCursor;
     private bool warnedAboutMissingSound;
     private bool warnedAboutMissingRipple;
@@ -647,27 +644,19 @@ public class PlacementController : MonoBehaviour
     // MARK: reaction
 
 
-    // The entity a reagent drop would land on: the first entity at the cell whose item reacts to reagent
+    // The entity a reagent drop would land on: the entity at the cell, when its item reacts to reagent.
+    // A cell is one entity's, by the same assumption CanPlace and HasEntityAt make
     private bool TryResolveReactionTarget(GameItem reagent, Vector3Int cell, out EntityManager.LiveEntity target)
     {
         target = default;
 
         if (entityManager == null) return false;
+        if (!entityManager.TryGetLiveAt(cell, out target)) return false;
+        if (target.item == null) return false;
 
-        entityManager.CollectLiveAt(cell, reactionScratch);
-
-        for (int i = 0; i < reactionScratch.Count; i++)
-        {
-            // logs and gives up on an identity this manager does not own, which cannot be replaced
-            if (!entityManager.TryGetLive(reactionScratch[i], out EntityManager.LiveEntity candidate)) continue;
-            if (candidate.item == null) continue;
-            if (candidate.item.ReactionInto(reagent) == null) continue;
-
-            target = candidate;
-            return true;
-        }
-
-        return false;
+        // a reagent that nothing reacts to is not a reagent, so this is also what makes CanPlace refuse
+        // a plain drop of an item with no tile and no prefab
+        return target.item.ReactionInto(reagent) != null;
     }
 
 
