@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: TerrainTileRegistry
   m_EditorClassIdentifier: Assembly-CSharp::TerrainTileRegistry
   tiles:
+  - {fileID: 11400000, guid: 4253d9d4b67f460a296cc8a56ecb9ad4, type: 2}
   - {fileID: 11400000, guid: f5371682b1105bd29878dcdc70dd82a6, type: 2}
   - {fileID: 11400000, guid: 033db43898455b3f6abeb4007e3dc393, type: 2}
   - {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}

@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NinePatchTileRule
   id: worm
   animal: {fileID: 11400000, guid: 35aca377dbe5c7b5fb0e1e5f3c104ad4, type: 2}
-  completes: {fileID: 11400000, guid: f37ad24fc6edf73e68843a0f9611a65d, type: 2}
+  completes: {fileID: 11400000, guid: 370016e1cef6a8dcc88855f77c074faa, type: 2}
   requiredTileToBePlaced: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
   desiredNeighbouringTile: {fileID: 11400000, guid: e85dff4f5bd876a15b06f77354134ad5, type: 2}
+  catchUpFromWorld: 1

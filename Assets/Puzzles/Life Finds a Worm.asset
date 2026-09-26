@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b9cb12d39d04b7aab503483786a6892, type: 3}
-  m_Name: P3
+  m_Name: Life Finds a Worm
   m_EditorClassIdentifier: Assembly-CSharp::Puzzle
-  id: p3
-  description: You're gonna fail this one
-  icon: {fileID: 21300000, guid: ea6283715165ffc9db883f1b4b55721f, type: 3}
+  id: life_finds_a_worm
+  description: Don't we all need a little room to breathe?
+  icon: {fileID: 641975204, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
-  - item: {fileID: 11400000, guid: 8a411905243b1919b9f03600a40296ce, type: 2}
-    count: 3
+  - item: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
+    count: 9
   unlocks: []
