@@ -21,4 +21,5 @@ MonoBehaviour:
     count: 1
   unlocks:
   - {fileID: 11400000, guid: 370016e1cef6a8dcc88855f77c074faa, type: 2}
+  resetsTo: {fileID: 0}
   dirt: {fileID: 11400000, guid: 2a41064d6f74dcdd8bc0c4ced089210d, type: 2}

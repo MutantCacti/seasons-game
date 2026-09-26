@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b9cb12d39d04b7aab503483786a6892, type: 3}
-  m_Name: Fern Summer Puzzle
+  m_Name: Hot Fern Summer
   m_EditorClassIdentifier: Assembly-CSharp::Puzzle
-  id: fern_summer_puzzle
+  id: hot_fern_summer
   description: LOREM IPSUM
   icon: {fileID: 1462247588, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: 3ea59f08fabc65b4fb76d1e98ecd567b, type: 2}
     count: 2
   unlocks: []
+  resetsTo: {fileID: 0}
