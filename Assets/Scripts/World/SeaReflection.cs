@@ -104,8 +104,11 @@ public class SeaReflection : MonoBehaviour
         SeaLevel sea = SeaLevel.Instance;
         if (sea == null || !sea.isActiveAndEnabled) return;
 
-        // no sea yet, so nothing to mirror into. with no target the sea's _SeaReflectionOn goes to 0
-        if (!sea.IsRisen)
+        // no water to mirror into until the sheet climbs above the lowest terrain top: below that the
+        // terrain hides all of it, which is the same test the shader collapses the sheet on, so the
+        // mirror pass isn't paid for through the hidden part of the rise. with no target the sea's
+        // _SeaReflectionOn goes to 0
+        if (!sea.IsSurfaceVisible)
         {
             ReleaseTarget();
             return;

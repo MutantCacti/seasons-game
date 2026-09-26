@@ -7,6 +7,12 @@
 // Everything snaps to the terrain's 1/32 world grid so the water steps like the pixel art. Night,
 // the sky and the skirt's floor are globals pushed by SeaLevel, so no material needs wiring.
 //
+// The sheet: SeaLevel never disables the renderer, because the skirt has to keep drawing while the
+// water is still hidden. The sheet is hidden by position instead, and vert() collapses its quads while
+// the surface sits at or below the lowest terrain top (_SeaLowestTop) -- under every top, so none of it
+// can be seen from above. Degenerate triangles cost no fragments, which is what stops a hidden sea
+// paying a footprint of transparent fill just to keep its skirt.
+//
 // The skirt: the mesh always has quads around its edge (uv1.x = 1, bottom edge uv1.y = 1). With Skirt
 // off every skirt vertex sits on the sheet's edge, so the quads have no area and draw nothing; with it
 // on the bottom edge drops to the void (_SeaFloorY) and the world reads as a cut-away diorama whose
@@ -22,7 +28,7 @@ Shader "Seasons/Sea"
     Properties
     {
         [KeywordEnum(Tidepool, Glass)] _Style ("Style", Float) = 0
-        [ToggleUI] _Skirt ("Skirt", Float) = 0
+        [ToggleUI] _Skirt ("Skirt", Float) = 1
 
         [Header(Day)]
         _ShallowColour ("Shallow", Color) = (0.349, 0.710, 0.671, 1)        // #59B5AB
@@ -132,6 +138,7 @@ Shader "Seasons/Sea"
         float _SeaDaylight;     // 0 night .. 1 noon
         float4 _SeaSkyColour;   // the camera's clear colour, as drawn (already in the active colour space)
         float _SeaFloorY;       // world y the skirt drops to
+        float _SeaLowestTop;    // world y of the lowest terrain top: at or below it the sheet is collapsed
 
         // set by SeaReflection: the world mirrored in the sea, alpha where the mirror saw anything.
         // On only for the camera it was rendered from
@@ -413,12 +420,22 @@ Shader "Seasons/Sea"
                 float3 positionOS = input.positionOS.xyz;
                 positionOS.y = 0.0;
                 float3 positionWS = TransformObjectToWorld(positionOS);
+                float3 originWS = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
+
+                // the sea is hidden by position, never by disabling the renderer, so the skirt keeps
+                // drawing throughout. While the surface is at or below the lowest terrain top the
+                // terrain covers the whole footprint and no sheet pixel can be seen from above, so
+                // collapse the sheet onto the object's origin: zero area means no fragments and no
+                // blending, so a footprint of transparent fill simply isn't paid for. The skirt is
+                // uv1.x = 1 and is deliberately left alone: its top edge is the sheet's plane, so it
+                // reaches up to the sea's own y (SeaLevel.skirtStartY) while its base stays on the void
+                if (input.uv1.x < 0.5 && originWS.y <= _SeaLowestTop) positionWS.xz = originWS.xz;
 
                 if (input.uv1.y > 0.5 && _Skirt > 0.5) positionWS.y = _SeaFloorY;
 
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.positionWS = positionWS;
-                output.surfaceY = TransformObjectToWorld(float3(0.0, 0.0, 0.0)).y;
+                output.surfaceY = originWS.y;
                 output.skirt = input.uv1.x;
                 return output;
             }
