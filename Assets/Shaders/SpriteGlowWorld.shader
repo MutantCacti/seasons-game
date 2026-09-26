@@ -7,9 +7,14 @@
 // Everything is in the sprite's local units (_GlowRadius, _MaxWidth, _UVPerUnit), so it scales with it.
 //
 // While the animal is hidden (_Hidden 1, a burrowed worm) the silhouette itself glows too, so it reads
-// as the animal's shape rather than an empty outline, and AnimalGlow sets _ZTest to Always so it shows
-// through the ground. _Flare (1 fading to 0) is the burst when the highlight is first switched on: the
-// core runs out wider and brighter from the outline and settles.
+// as the animal's shape rather than an empty outline. _Flare (1 fading to 0) is the burst when the
+// highlight is first switched on: the core runs out wider and brighter from the outline and settles.
+//
+// Depth: the quad is pulled along the view ray to _PullDepth (view units from the camera, set by
+// AnimalGlow each frame: just behind the book when the book is in front, else just past the near
+// plane). Scaling about the camera keeps every vertex on its own ray, so the glow looks exactly the
+// same on screen, but the depth test now puts it in front of the ground, trees and other entities
+// while the book still covers it. The book's UI draws after it through its canvas's sorting order.
 //
 // URP: an unlit transparent pass tagged UniversalForward, as Seasons/Sea is.
 Shader "Seasons/SpriteGlow"
@@ -28,7 +33,7 @@ Shader "Seasons/SpriteGlow"
         _HiddenFill ("Hidden Fill", Range(0, 1)) = 0.55
         _Flare ("Flare", Float) = 0
         _FlareWidth ("Flare Width", Float) = 0.1
-        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("ZTest", Float) = 4
+        _PullDepth ("Pull Depth", Float) = 0
     }
 
     SubShader
@@ -48,7 +53,7 @@ Shader "Seasons/SpriteGlow"
 
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
-            ZTest [_ZTest]
+            ZTest LEqual
             Cull Off
 
             HLSLPROGRAM
@@ -76,6 +81,7 @@ Shader "Seasons/SpriteGlow"
             half _HiddenFill;
             float _Flare;
             float _FlareWidth;
+            float _PullDepth;
             CBUFFER_END
 
             struct Attributes
@@ -94,7 +100,15 @@ Shader "Seasons/SpriteGlow"
             Varyings vert(Attributes input)
             {
                 Varyings output;
-                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+
+                float3 positionVS = TransformWorldToView(TransformObjectToWorld(input.positionOS.xyz));
+
+                // the whole quad moves by the same factor, taken at its origin, so it stays flat; view
+                // space looks down -z, so depth is -z
+                float originDepth = -TransformWorldToView(TransformObjectToWorld(float3(0.0, 0.0, 0.0))).z;
+                if (_PullDepth > 0.0 && originDepth > 1e-4) positionVS *= _PullDepth / originDepth;
+
+                output.positionCS = TransformWViewToHClip(positionVS);
                 output.uv = input.uv;
                 return output;
             }

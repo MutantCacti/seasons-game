@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -8,10 +9,15 @@ using UnityEngine.Sprites;
 // past the sprite's rect so the halo has room, with the sprite's UVs carried on past its edge so the
 // glow traces the drawn pixels. It faces the camera with the sprite (it is a child of it), follows its
 // wiggle flips and sprite swaps, and keeps glowing while the sprite is hidden: then the silhouette
-// fills in and it draws through the ground, so a burrowed worm still shows where it is.
+// fills in, so a burrowed worm still shows where it is.
 //
-// AnimalSelection adds and drives it; it has its own material, since a hidden and a shown glow need a
-// different ZTest and that is render state, not something a property block can change.
+// It draws in front of the ground, trees and other entities, but never over the book: each frame the
+// shader is told to pull the quad along the view ray to just behind the book's farthest point when the
+// book is nearer than the animal, else to just past the near plane. The book's UI draws over it by
+// its canvas's sorting order.
+//
+// AnimalSelection adds and drives it; each glow has its own material, for its own sprite and depth.
+[DefaultExecutionOrder(1000)]   // after the book and the camera have moved this frame
 public class AnimalGlow : MonoBehaviour
 {
     private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
@@ -26,7 +32,18 @@ public class AnimalGlow : MonoBehaviour
     private static readonly int HiddenFillId = Shader.PropertyToID("_HiddenFill");
     private static readonly int FlareId = Shader.PropertyToID("_Flare");
     private static readonly int FlareWidthId = Shader.PropertyToID("_FlareWidth");
-    private static readonly int ZTestId = Shader.PropertyToID("_ZTest");
+    private static readonly int PullDepthId = Shader.PropertyToID("_PullDepth");
+
+    // view units kept between the glow and the book behind which it sits, or the near plane
+    private const float PULL_MARGIN = 0.05f;
+
+    // the book's view depth range, worked out once a frame for every glow
+    private static int bookFrame = -1;
+    private static bool hasBook;
+    private static float bookNear;
+    private static float bookFar;
+    private static BookAnimator cachedBook;
+    private static readonly List<Renderer> bookRenderers = new List<Renderer>();
 
 
     public struct Settings
@@ -181,16 +198,88 @@ public class AnimalGlow : MonoBehaviour
         if (!built || hidden != builtHidden)
         {
             material.SetFloat(HiddenId, hidden ? 1.0f : 0.0f);
-
-            // hidden underground, it draws through the ground so it shows where the animal is
-            material.SetFloat(ZTestId, (float)(hidden ? CompareFunction.Always : CompareFunction.LessEqual));
-
             builtHidden = hidden;
         }
 
         material.SetFloat(FlareId, flare);
+        material.SetFloat(PullDepthId, PullDepth());
 
         built = true;
+    }
+
+
+    // MARK: depth
+
+
+    // Where along the view ray to draw: just behind the book if the book is nearer than the animal,
+    // so the book still covers it, else just past the near plane, in front of everything. Never
+    // further than the animal itself. 0 is no pull (no camera)
+    private float PullDepth()
+    {
+        Camera viewCamera = Camera.main;
+        if (viewCamera == null || glowTransform == null) return 0.0f;
+
+        float own = -viewCamera.worldToCameraMatrix.MultiplyPoint(glowTransform.position).z;
+        if (own <= 0.0f) return 0.0f;
+
+        MeasureBook(viewCamera);
+
+        float target = hasBook && bookNear < own ? bookFar + PULL_MARGIN : viewCamera.nearClipPlane + PULL_MARGIN;
+
+        return Mathf.Min(target, own);
+    }
+
+
+    // The book's nearest and farthest view depth from its renderers' bounds, once a frame however many
+    // glows ask. Its renderers are looked up again only when the book itself changes
+    private static void MeasureBook(Camera viewCamera)
+    {
+        if (bookFrame == Time.frameCount) return;
+        bookFrame = Time.frameCount;
+
+        BookAnimator book = BookAnimator.Instance;
+
+        if (book != cachedBook)
+        {
+            cachedBook = book;
+            bookRenderers.Clear();
+
+            if (book != null)
+            {
+                EntityId root = book.GetComponentInParent<EntityId>();
+                (root != null ? root.gameObject : book.gameObject).GetComponentsInChildren(true, bookRenderers);
+            }
+        }
+
+        hasBook = false;
+        bookNear = float.PositiveInfinity;
+        bookFar = 0.0f;
+
+        Matrix4x4 view = viewCamera.worldToCameraMatrix;
+
+        for (int i = 0; i < bookRenderers.Count; i++)
+        {
+            Renderer part = bookRenderers[i];
+            if (part == null || !part.enabled || !part.gameObject.activeInHierarchy) continue;
+
+            Bounds bounds = part.bounds;
+            Vector3 min = bounds.min;
+            Vector3 max = bounds.max;
+
+            for (int corner = 0; corner < 8; corner++)
+            {
+                Vector3 point = new Vector3(
+                    (corner & 1) == 0 ? min.x : max.x,
+                    (corner & 2) == 0 ? min.y : max.y,
+                    (corner & 4) == 0 ? min.z : max.z);
+
+                float depth = -view.MultiplyPoint(point).z;
+
+                bookNear = Mathf.Min(bookNear, depth);
+                bookFar = Mathf.Max(bookFar, depth);
+                hasBook = true;
+            }
+        }
     }
 
 
