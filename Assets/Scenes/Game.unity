@@ -27658,6 +27658,7 @@ MonoBehaviour:
   entityManager: {fileID: 1689511887}
   placementController: {fileID: 899837241}
   worldStates: {fileID: 1203589270}
+  puzzleManager: {fileID: 1074182841}
   staggerMax: 0.2
   soundsPerMoment: 3
 --- !u!1 &899837239
