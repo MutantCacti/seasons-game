@@ -139,6 +139,10 @@ public class DeerController : AnimalController
     [SerializeField] private Vector2 munchInterval = new Vector2(0.8f, 1.6f);
     [SerializeField] private float rustleAngle = 8.0f;                    // degrees
     [SerializeField] private float rustleDuration = 0.4f;
+    // how far from the fern's middle it stands to eat, in world units at size 1: close enough that
+    // its muzzle is in the leaves. a little towards the camera too, so it draws in front of the fern
+    [SerializeField] private float grazeDistance = 0.4f;
+    [SerializeField] private float grazeInFront = 0.08f;
 
 
     [Header("Resting")]
@@ -221,6 +225,7 @@ public class DeerController : AnimalController
     private float appetite;
     private float restlessness;
     private float gait = 1.0f;
+    private float size = 1.0f;
     private float brayPitch = 1.0f;
     private bool leftHanded;
 
@@ -940,6 +945,16 @@ public class DeerController : AnimalController
         pathCount = count;
         pathIndex = 0;
         hopping = false;
+        footfalls = 0;
+
+        // already in the goal cell: just the step over to the point, e.g. up to a fern beside it
+        if (count == 0)
+        {
+            pathLevels[0] = bfsLevel[goal];
+            pathPoints[0] = new Vector3(finalPoint.x, terrain.GetLevelHeight(bfsLevel[goal]), finalPoint.z);
+            pathCount = 1;
+            return;
+        }
 
         int slot = count - 1;
 
@@ -958,8 +973,6 @@ public class DeerController : AnimalController
 
             slot--;
         }
-
-        footfalls = 0;
     }
 
 
@@ -1096,8 +1109,27 @@ public class DeerController : AnimalController
 
         if (chosen < 0) return -1;
 
-        point = PointTowards(chosen, fern.transform.position);
+        point = GrazePoint(chosen, fern.transform.position);
         return chosen;
+    }
+
+
+    // Right up against the fern, on the screen side the path comes in from, so it eats side-on. That
+    // point is in the fern's own cell, so it needs that cell walkable and on the same level as the
+    // cell beside it; otherwise it eats from the edge of the cell beside it
+    private Vector3 GrazePoint(int cell, Vector3 fern)
+    {
+        int fx = Mathf.FloorToInt(fern.x);
+        int fz = Mathf.FloorToInt(fern.z);
+
+        if (!IsWalkable(fx, fz, out int top) || top != bfsLevel[cell]) return PointTowards(cell, fern);
+
+        float side = ScreenX(CellCentre(cell) - fern) >= 0.0f ? 1.0f : -1.0f;
+
+        Vector3 point = fern + cameraRight * (side * grazeDistance * size) - cameraForward * grazeInFront;
+        point.y = terrain.GetLevelHeight(top);
+
+        return point;
     }
 
 
@@ -1675,7 +1707,7 @@ public class DeerController : AnimalController
             seed *= 16777619u;
         }
 
-        float size = Mathf.Lerp(sizeRange.x, sizeRange.y, Trait01(SALT_SIZE));
+        size = Mathf.Lerp(sizeRange.x, sizeRange.y, Trait01(SALT_SIZE));
 
         // before anything can hover it, so the hover grow rests on the grown size
         transform.localScale *= size;
