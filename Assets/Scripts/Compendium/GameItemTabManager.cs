@@ -19,6 +19,11 @@ public class GameItemTabManager : CompendiumTabManager
 
     private Material silhouetteMaterial;
 
+    // Registry entries the book is built from, minus the transitional ones (see
+    // GameItem.HideInCompendium). Paging, discovery and the unseen glow all index this, never the
+    // registry itself, so a hidden item takes no page, no slot and no glow
+    private readonly List<GameItem> visibleItems = new List<GameItem>();
+
     // Discovered and unseen items are saved through the base class, keyed by GameItem.Id (unseen with
     // kind 0). Both are global, so a checkpoint reset never takes a discovery back
     private readonly List<UnseenSave> savedUnseen = new List<UnseenSave>();
@@ -48,6 +53,8 @@ public class GameItemTabManager : CompendiumTabManager
 
     private void Start()
     {
+        RebuildVisibleItems();
+
         SubscribeToEvents();
 
         // A new world discovers what the player begins with like anything else, so it is all unseen.
@@ -72,18 +79,37 @@ public class GameItemTabManager : CompendiumTabManager
     // MARK: registry
 
 
-    public int Count { get { return registry != null ? registry.Count : 0; } }
+    // Once, in Start: the registry is authored data, so a hidden item becoming visible mid-session
+    // (an editor tweak during play) is not worth watching for
+    private void RebuildVisibleItems()
+    {
+        visibleItems.Clear();
+
+        IReadOnlyList<GameItem> items = registry != null ? registry.Entries : null;
+        if (items == null) return;
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            GameItem item = items[i];
+            if (item == null) continue;
+            if (item.HideInCompendium) continue;
+
+            visibleItems.Add(item);
+        }
+    }
 
 
-    // False for a null registry, an out of range index or a hole in the list
+    public int Count { get { return visibleItems.Count; } }
+
+
+    // False for an out of range index or a hole in the list
     public bool TryGetItem(int index, out GameItem item)
     {
         item = null;
 
-        if (registry == null) return false;
-        if (index < 0 || index >= registry.Count) return false;
+        if (index < 0 || index >= visibleItems.Count) return false;
 
-        item = registry.Entries[index];
+        item = visibleItems[index];
 
         return item != null;
     }
@@ -230,17 +256,15 @@ public class GameItemTabManager : CompendiumTabManager
 
 
     // Anything present that has never been discovered becomes discovered and unseen. Absence changes
-    // nothing: once seen, it stays in the book
+    // nothing: once seen, it stays in the book. Hidden items are never walked, so they are never
+    // discovered and never unseen either
     private void RecomputePresence()
     {
-        IReadOnlyList<GameItem> items = registry != null ? registry.Entries : null;
-        if (items == null) return;
-
         bool changed = false;
 
-        for (int i = 0; i < items.Count; i++)
+        for (int i = 0; i < visibleItems.Count; i++)
         {
-            GameItem item = items[i];
+            GameItem item = visibleItems[i];
             if (item == null) continue;
 
             if (IsDiscovered(item.Id)) continue;
@@ -265,12 +289,9 @@ public class GameItemTabManager : CompendiumTabManager
     // not unseen (whatever it saved as unseen stays unseen)
     private void SeedDiscovery()
     {
-        IReadOnlyList<GameItem> items = registry != null ? registry.Entries : null;
-        if (items == null) return;
-
-        for (int i = 0; i < items.Count; i++)
+        for (int i = 0; i < visibleItems.Count; i++)
         {
-            GameItem item = items[i];
+            GameItem item = visibleItems[i];
             if (item == null) continue;
 
             if (IsPresent(item)) MarkDiscovered(item.Id, false);
@@ -285,8 +306,10 @@ public class GameItemTabManager : CompendiumTabManager
     }
 
 
-    // Drops unseen ids no item has any more, and any that were never discovered (unseen is always a
-    // subset of discovered, so that is only ever a hand-edited or broken save)
+    // Drops unseen ids no item has any more, any that were never discovered (unseen is always a subset
+    // of discovered, so that is only ever a hand-edited or broken save), and any belonging to an item
+    // that is now hidden: an unseen flag on a page the book no longer shows would only make the tab
+    // glow for nothing
     private void PruneSavedUnseen()
     {
         if (registry == null) return;
@@ -299,11 +322,18 @@ public class GameItemTabManager : CompendiumTabManager
         {
             string id = savedUnseen[i].id;
 
-            if (!registry.TryGetById(id, out GameItem _))
+            if (!registry.TryGetById(id, out GameItem item))
             {
                 Debug.LogWarning($"GameItemTabManager: the save holds unseen item '{id}', but no item in " +
                     $"'{registry.name}' has that id - dropping it", this);
 
+                ClearUnseen(id, false);
+                pruned = true;
+                continue;
+            }
+
+            if (item.HideInCompendium)
+            {
                 ClearUnseen(id, false);
                 pruned = true;
                 continue;
