@@ -422,40 +422,7 @@ public class CompendiumUIManager : MonoBehaviour
         if (!built || turning) return;
         if (spread + 1 >= spreadCount) return;
 
-        turning = true;
-
-        int nextSpread = spread + 1;
-        int revealed = nextSpread * 2 + 1;
-
-        SetTargetSpread(nextSpread);
-
-        Leaf oldLeft = left;
-        Leaf oldRight = right;
-        Leaf oldParked = parked;
-
-        AssignPage(oldParked.front, revealed);
-        AssignPage(oldParked.back, revealed + 1);
-        SetAngle(oldParked, 0.0f);
-        Park(oldParked);
-        ShowLeaf(oldParked, true);
-
-        BringToFront(oldRight);
-        ShowLeaf(oldRight, true);
-
-        AnimateTurn(oldRight, oldRight.angle, oldRight.angle + 180.0f, false, () =>
-        {
-            left = oldRight;
-            right = oldParked;
-            parked = oldLeft;
-
-            spread = nextSpread;
-            turning = false;
-            RememberSpread();
-
-            Promote(left);
-            Promote(right);
-            Retire(parked);
-        });
+        StartTurn(true, spread + 1);
     }
 
 
@@ -464,33 +431,56 @@ public class CompendiumUIManager : MonoBehaviour
         if (!built || turning) return;
         if (spread - 1 < 0) return;
 
+        StartTurn(false, spread - 1);
+    }
+
+
+    // The one turn: the leaf on the turning side swings over onto the other side, and the parked leaf
+    // is bound to what that uncovers and slid in underneath it. Forward turns the right leaf onto the
+    // left, back turns the left leaf onto the right.
+    private void StartTurn(bool forward, int nextSpread)
+    {
         turning = true;
 
-        int previousSpread = spread - 1;
-        int revealed = previousSpread * 2;
-
-        SetTargetSpread(previousSpread);
+        SetTargetSpread(nextSpread);
 
         Leaf oldLeft = left;
         Leaf oldRight = right;
         Leaf oldParked = parked;
+        Leaf turningLeaf = forward ? oldRight : oldLeft;
 
-        AssignPage(oldParked.back, revealed);
-        AssignPage(oldParked.front, revealed - 1);
-        SetAngle(oldParked, 180.0f);
-        Park(oldParked);
-        ShowLeaf(oldParked, false);
-
-        BringToFront(oldLeft);
-        ShowLeaf(oldLeft, false);
-
-        AnimateTurn(oldLeft, oldLeft.angle, oldLeft.angle - 180.0f, true, () =>
+        if (forward)
         {
-            left = oldParked;
-            right = oldLeft;
-            parked = oldRight;
+            int revealed = nextSpread * 2 + 1;
 
-            spread = previousSpread;
+            AssignPage(oldParked.front, revealed);
+            AssignPage(oldParked.back, revealed + 1);
+            SetAngle(oldParked, 0.0f);
+        }
+        else
+        {
+            int revealed = nextSpread * 2;
+
+            AssignPage(oldParked.back, revealed);
+            AssignPage(oldParked.front, revealed - 1);
+            SetAngle(oldParked, 180.0f);
+        }
+
+        Park(oldParked);
+        ShowLeaf(oldParked, forward);
+
+        BringToFront(turningLeaf);
+        ShowLeaf(turningLeaf, forward);
+
+        float to = forward ? turningLeaf.angle + 180.0f : turningLeaf.angle - 180.0f;
+
+        AnimateTurn(turningLeaf, turningLeaf.angle, to, !forward, () =>
+        {
+            left = forward ? oldRight : oldParked;
+            right = forward ? oldParked : oldLeft;
+            parked = forward ? oldLeft : oldRight;
+
+            spread = nextSpread;
             turning = false;
             RememberSpread();
 
