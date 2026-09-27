@@ -636,7 +636,8 @@ public class PuzzleTabManager : CompendiumTabManager
 
         if (CompendiumUIManager.Instance != null) CompendiumUIManager.Instance.RequestClose();
 
-        if (entity != null) view.PanToTransform(entity.transform);
+        // the entity's own marker when its prefab has one, so the camera goes to the marked point
+        if (entity != null) view.PanToTransform(PingTarget.Resolve(entity));
         else view.PanToPoint(point);
     }
 

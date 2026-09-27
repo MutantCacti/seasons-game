@@ -55,6 +55,10 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     private bool hasCell;
     private Vector3 cellPoint;
     private Renderer[] renderers;
+
+    // the prefab's own marker, when it has one: it wins over the top of the renderers below
+    private PingTarget targetMarker;
+
     private float nextResolveAt;
 
     private bool initialised;
@@ -167,7 +171,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
         }
 
         if (hasCell) manager.PanToPoint(cellPoint);
-        else manager.PanTo(target.transform);
+        else manager.PanTo(PingTarget.Resolve(target));
     }
 
 
@@ -480,11 +484,14 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
     // MARK: target
 
 
-    // The top middle of whatever the target draws. Recomputed every frame, because a freshly placed
-    // entity is still growing in.
+    // Where the ping points: the prefab's marker when it has one (read live, so it follows animation,
+    // a growth pop or FloatOnSea), else the top middle of whatever the target draws. Recomputed every
+    // frame, because a freshly placed entity is still growing in.
     private Vector3 Anchor()
     {
         if (hasCell) return cellPoint;
+
+        if (targetMarker != null) return targetMarker.transform.position;
 
         Vector3 fallback = target.transform.position;
 
@@ -546,6 +553,7 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
         target = found;
         target.Destroyed += OnTargetDestroyed;
         renderers = target.GetComponentsInChildren<Renderer>(true);
+        targetMarker = PingTarget.Find(target);
     }
 
 
@@ -562,5 +570,6 @@ public class NotificationPing : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
         target = null;
         renderers = null;
+        targetMarker = null;
     }
 }
