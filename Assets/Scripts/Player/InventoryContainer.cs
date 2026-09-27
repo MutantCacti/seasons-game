@@ -9,6 +9,10 @@ public class InventoryContainer : MonoBehaviour
 
     [SerializeField] private HorizontalOrVerticalLayoutGroup layoutGroup;
 
+    // hides the panel visually while the hotbar is empty. never SetActive(false) this object: it
+    // holds the inventory itself, and OnDisable would drop the SlotsChanged subscription
+    [SerializeField] private CanvasGroup canvasGroup;
+
     private RectTransform rectTransform;
     private float slotWidth;
     private bool measured;
@@ -20,12 +24,19 @@ public class InventoryContainer : MonoBehaviour
 
         if (inventory == null) inventory = GetComponent<InventoryManager>();
         if (layoutGroup == null) layoutGroup = GetComponent<HorizontalOrVerticalLayoutGroup>();
+        if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
+
+        if (canvasGroup == null) Debug.LogError($"InventoryContainer '{name}' has no CanvasGroup, so the panel stays visible when the hotbar is empty", this);
     }
 
 
     private void OnEnable()
     {
-        if (inventory != null) inventory.SlotsChanged += Resize;
+        if (inventory != null)
+        {
+            inventory.SlotsChanged += Resize;
+            inventory.DisplayChanged += UpdateVisibility;
+        }
 
         Resize();
     }
@@ -33,7 +44,11 @@ public class InventoryContainer : MonoBehaviour
 
     private void OnDisable()
     {
-        if (inventory != null) inventory.SlotsChanged -= Resize;
+        if (inventory != null)
+        {
+            inventory.SlotsChanged -= Resize;
+            inventory.DisplayChanged -= UpdateVisibility;
+        }
     }
 
 
@@ -49,6 +64,9 @@ public class InventoryContainer : MonoBehaviour
     // runs whenever an item takes or frees a slot
     public void Resize()
     {
+        // before validation, so a panel that can't be measured still shows and hides
+        UpdateVisibility();
+
         if (!Validate()) return;
 
         int slotCount = inventory.ActiveSlotCount;
@@ -63,6 +81,24 @@ public class InventoryContainer : MonoBehaviour
         if (Mathf.Approximately(size.x, width)) return;
 
         rectTransform.sizeDelta = new Vector2(width, size.y);
+    }
+
+
+    // MARK: visibility
+
+
+    // instant both ways, so an empty hotbar is never on screen. the slot's own pop is the arrival
+    private void UpdateVisibility()
+    {
+        if (inventory == null || canvasGroup == null) return;
+
+        // the displayed count, not the data: a granted slot is concealed until its first icon lands,
+        // and the icons aim at its laid-out position, which alpha doesn't change
+        bool shown = inventory.HasDisplayedSlot;
+
+        canvasGroup.alpha = shown ? 1f : 0f;
+        canvasGroup.blocksRaycasts = shown;
+        canvasGroup.interactable = shown;
     }
 
 

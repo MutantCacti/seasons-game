@@ -25,6 +25,9 @@ public class InventoryManager : MonoBehaviour {
 
     public event Action SlotsChanged;
 
+    // a landing icon revealed or bumped a slot, which SlotsChanged doesn't cover
+    public event Action DisplayChanged;
+
     public event Action<GameItem, int> ItemConsumed;
 
     public int SlotCount { get { return itemInventorySlots != null ? itemInventorySlots.Length : 0; } }
@@ -35,6 +38,17 @@ public class InventoryManager : MonoBehaviour {
     public int ActiveSlotCount { get { return counts.Count; } }
 
     public bool IsFull { get { return ActiveSlotCount >= SlotCount; } }
+
+    // what the player sees: a slot whose first icon is still flying in doesn't count
+    public bool HasDisplayedSlot {
+        get {
+            foreach (ItemInventorySlot slot in itemBySlot.Keys) {
+                if (slot != null && !slot.IsConcealed) return true;
+            }
+
+            return false;
+        }
+    }
 
 
     private void Awake() {
@@ -115,6 +129,8 @@ public class InventoryManager : MonoBehaviour {
         else heldDisplay.Remove(item);
 
         RefreshSlot(item, true);
+
+        DisplayChanged?.Invoke();
     }
 
 
@@ -128,6 +144,8 @@ public class InventoryManager : MonoBehaviour {
         for (int i = 0; i < items.Count; i++) {
             RefreshSlot(items[i], false);
         }
+
+        DisplayChanged?.Invoke();
     }
 
 
