@@ -138,12 +138,11 @@ MonoBehaviour:
   focusHopDuration: 0.22
   renameHopHeight: 0.14
   renameHopDuration: 0.3
-  forbiddenTiles:
-  - {fileID: 11400000, guid: 033db43898455b3f6abeb4007e3dc393, type: 2}
-  - {fileID: 11400000, guid: 8da4a0082d0432c3180c4531b7e54114, type: 2}
+  forbiddenTiles: []
   preferredTiles:
   - {fileID: 11400000, guid: f5371682b1105bd29878dcdc70dd82a6, type: 2}
-  preferredWeight: 4
+  - {fileID: 11400000, guid: 4253d9d4b67f460a296cc8a56ecb9ad4, type: 2}
+  preferredWeight: 1
   crawlSpeed: 0.08
   stepPause: {x: 0.5, y: 2}
   burrowRadius: 3
@@ -169,3 +168,13 @@ MonoBehaviour:
   crawlSoundInterval: {x: 4, y: 9}
   burrowSound: {fileID: 11400000, guid: c0cbd6b28de883c3c80125a0250b8ff9, type: 2}
   surfaceSound: {fileID: 11400000, guid: c0cbd6b28de883c3c80125a0250b8ff9, type: 2}
+  spreadFrom: {fileID: 11400000, guid: 033db43898455b3f6abeb4007e3dc393, type: 2}
+  spreadTo: {fileID: 11400000, guid: 4253d9d4b67f460a296cc8a56ecb9ad4, type: 2}
+  spreadNextTo:
+  - {fileID: 11400000, guid: f5371682b1105bd29878dcdc70dd82a6, type: 2}
+  - {fileID: 11400000, guid: 4253d9d4b67f460a296cc8a56ecb9ad4, type: 2}
+  - {fileID: 11400000, guid: 8da4a0082d0432c3180c4531b7e54114, type: 2}
+  tilesPerDay: 3
+  creditCap: 3
+  seekWeight: 8
+  spreadSound: {fileID: 0}

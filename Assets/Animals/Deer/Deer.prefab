@@ -254,3 +254,12 @@ MonoBehaviour:
   busyHerdSize: 3
   brayInterval: {x: 8, y: 20}
   brayActiveScale: 0.35
+  spreadFrom: {fileID: 11400000, guid: 4253d9d4b67f460a296cc8a56ecb9ad4, type: 2}
+  spreadTo: {fileID: 11400000, guid: f5371682b1105bd29878dcdc70dd82a6, type: 2}
+  spreadNextTo: []
+  tilesPerDay: 2
+  creditCap: 3
+  spreadRadius: 2
+  spreadInterval: 1
+  seekWeight: 8
+  spreadSound: {fileID: 0}
