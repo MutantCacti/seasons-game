@@ -6,7 +6,8 @@ using UnityEngine;
 // The one place world events are fanned out to WorldListeners, and the WorldContext they act through.
 // The listeners are every spawn rule and every active scripted puzzle (unlocked, not completed); a
 // puzzle completed partway through an event stops hearing it straight away. It listens to placement,
-// puzzle unlocks, the world states and the clock, and AnimalManager tells it about spawns.
+// puzzle unlocks, the world states and the clock, and AnimalManager tells it about spawns. It also
+// ticks every listener once every TICK_INTERVAL seconds of game time, for rules that run on a timer.
 //
 // Nothing reaches a listener until the world has finished loading: puzzles, world states, entities,
 // and a new world's construction. Then every listener hears OnLoaded once. An event raised while one
@@ -21,6 +22,11 @@ public class WorldEvents : MonoBehaviour, WorldContext
     public static WorldEvents Instance { get { return instance; } }
 
 
+    // seconds of game time between OnTicks. coarse on purpose: a timer rule's cooldown is tens of
+    // seconds, and a tick walks every listener
+    public const float TICK_INTERVAL = 1.0f;
+
+
     private PlacementController placementController;
     private PuzzleManager puzzleManager;
     private WorldStateManager worldStates;
@@ -29,6 +35,8 @@ public class WorldEvents : MonoBehaviour, WorldContext
 
     // true once every listener has heard OnLoaded; nothing is dispatched before
     private bool ready;
+
+    private float tickTimer;
 
     private readonly Queue<Action<WorldListener>> pendingDispatches = new Queue<Action<WorldListener>>();
     private bool dispatching;
@@ -181,6 +189,22 @@ public class WorldEvents : MonoBehaviour, WorldContext
         }
 
         if (instance == this) instance = null;
+    }
+
+
+    // scaled, so a paused game doesn't tick. nothing ticks before the world is ready, and the first
+    // tick comes a whole interval after it
+    private void Update()
+    {
+        if (!ready) return;
+
+        tickTimer += Time.deltaTime;
+        if (tickTimer < TICK_INTERVAL) return;
+
+        float seconds = tickTimer;
+        tickTimer = 0.0f;
+
+        Dispatch(listener => listener.OnTick(this, seconds));
     }
 
 

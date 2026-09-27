@@ -136,4 +136,13 @@ public abstract class WorldListener : ScriptableObject
     public virtual void OnMidnight(WorldContext context)
     {
     }
+
+
+    // once every WorldEvents.TICK_INTERVAL seconds of game time (so a paused game doesn't tick), for a
+    // listener that works on a timer. seconds is the game time since the last tick. Keep a timer in a
+    // [NonSerialized] field and reset it in OnLoaded: a ScriptableObject outlives the scene reload a
+    // checkpoint reset does, and so does anything it holds
+    public virtual void OnTick(WorldContext context, float seconds)
+    {
+    }
 }
