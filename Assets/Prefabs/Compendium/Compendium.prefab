@@ -1924,7 +1924,7 @@ MonoBehaviour:
   flipIntervalMin: 3
   flipIntervalMax: 6
   looseSheetsHideAt: 0.25
-  readDistance: 4
+  readDistance: 3.25
   readOpenAngle: 90
   readDuration: 0.6
   readFlatAt: 0.4
