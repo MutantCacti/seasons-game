@@ -15,6 +15,23 @@ public abstract class ScriptedPuzzle : Puzzle
     protected abstract bool IsSatisfied(WorldContext context, out PuzzleCredit credit);
 
 
+    // True while the world is still on its way to satisfying it without the player: everything is
+    // spent, but what completes it arrives on its own over time (bees moving into a hive). A soft lock
+    // is held off meanwhile. It should only ever go from true to false: PuzzleManager skips rather than
+    // clears on it, so it never withdraws a flag it already raised
+    protected virtual bool IsStillSettling(WorldContext context)
+    {
+        return false;
+    }
+
+
+    // for PuzzleManager's soft-lock judgement
+    public bool IsSettling(WorldContext context)
+    {
+        return context != null && IsStillSettling(context);
+    }
+
+
     protected bool TryComplete(WorldContext context)
     {
         if (context == null) return false;

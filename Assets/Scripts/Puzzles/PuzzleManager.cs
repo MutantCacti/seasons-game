@@ -236,6 +236,9 @@ public class PuzzleManager : MonoBehaviour
             placementController.ItemShown += OnPlacementShown;
         }
 
+        // a spawn spends nothing, but it can end a puzzle's settling, so it is judged again
+        if (AnimalManager.Instance != null) AnimalManager.Instance.AnimalSpawned += OnAnimalSpawned;
+
         LoadFromSave();
     }
 
@@ -249,6 +252,8 @@ public class PuzzleManager : MonoBehaviour
         }
 
         if (placementController != null) placementController.ItemShown -= OnPlacementShown;
+
+        if (AnimalManager.Instance != null) AnimalManager.Instance.AnimalSpawned -= OnAnimalSpawned;
 
         if (instance == this) instance = null;
     }
@@ -756,6 +761,14 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
+    // An animal arrived, which may be the last one a settling puzzle was waiting for, or may fill the
+    // mob cap so it can never settle
+    private void OnAnimalSpawned(Animal animal)
+    {
+        ScheduleSoftLockCheck();
+    }
+
+
     // The inventory moved: something was granted or spent, which is what decides whether the player is
     // still holding a reagent a live entity would react with
     private void OnSlotsChanged()
@@ -811,6 +824,10 @@ public class PuzzleManager : MonoBehaviour
             // Spent, but some of it is still growing into what the puzzle may want, so it isn't judged
             // yet. GrowthManager asks again once anything grows. An existing flag or ping is left alone
             if (IsGrowthPending(puzzle)) continue;
+
+            // Spent, but the world is still bringing what completes it (bees moving in). Skipped, not
+            // cleared: settling only ever goes true to false, so a flag raised without it stays right
+            if (puzzle is ScriptedPuzzle scripted && scripted.IsSettling(WorldEvents.Instance)) continue;
 
             // Spent, but the ground under it is still changing, so the thing that completes it may not
             // have appeared yet. ItemShown asks again once the world has settled. An existing flag or
