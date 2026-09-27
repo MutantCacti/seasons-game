@@ -17,6 +17,8 @@ public class PersistentSceneBootstrapper : MonoBehaviour {
         DontDestroyOnLoad(gameObject);
         isInitialised = true;
 
+        QualitySettings.vSyncCount = 1;
+
         SceneManager.LoadScene(firstSceneToLoad);
     }
 
