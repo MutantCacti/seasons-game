@@ -80,6 +80,9 @@ public class CompendiumUIManager : MonoBehaviour
     private int currentTabIndex;
     private bool built;
     private bool turning;
+    private bool turningTab;                    // the running turn changes tab, so the faces still in view show the old one
+    private bool tabDirty;                      // the new tab changed under that turn; rebound when it lands
+    private CompendiumTabManager pendingTab;    // a tab clicked mid turn; the latest click wins
     private Coroutine openRoutine;
     private readonly List<Action> tabChangedHandlers = new List<Action>();
 
@@ -167,8 +170,8 @@ public class CompendiumUIManager : MonoBehaviour
                     continue;
                 }
 
-                // each tab reopens where the player left it
-                if (tab.TabButton != null) tab.TabButton.onClick.AddListener(() => ShowTab(tab, tab.RememberedPage));
+                // each tab reopens where the player left it, turning the page to get there
+                if (tab.TabButton != null) tab.TabButton.onClick.AddListener(() => TurnToTab(tab));
 
                 Action handler = () => OnTabChanged(tab);
                 tab.Changed += handler;
@@ -281,6 +284,9 @@ public class CompendiumUIManager : MonoBehaviour
     {
         SetOpen(false);
 
+        // a tab queued behind a turn is not worth turning to once the book is going away
+        pendingTab = null;
+
         if (uiRoot == null) return;
 
         StopOpenRoutine();
@@ -380,6 +386,11 @@ public class CompendiumUIManager : MonoBehaviour
         turning = false;
         built = true;
 
+        // a full layout binds every face from scratch, so nothing a turn left owing still stands
+        turningTab = false;
+        tabDirty = false;
+        pendingTab = null;
+
         left = leaves[0];
         right = leaves[1];
         parked = leaves[2];
@@ -422,7 +433,7 @@ public class CompendiumUIManager : MonoBehaviour
         if (!built || turning) return;
         if (spread + 1 >= spreadCount) return;
 
-        StartTurn(true, spread + 1);
+        StartTurn(true, spread + 1, false);
     }
 
 
@@ -431,16 +442,20 @@ public class CompendiumUIManager : MonoBehaviour
         if (!built || turning) return;
         if (spread - 1 < 0) return;
 
-        StartTurn(false, spread - 1);
+        StartTurn(false, spread - 1, false);
     }
 
 
     // The one turn: the leaf on the turning side swings over onto the other side, and the parked leaf
     // is bound to what that uncovers and slid in underneath it. Forward turns the right leaf onto the
     // left, back turns the left leaf onto the right.
-    private void StartTurn(bool forward, int nextSpread)
+    // changesTab is a tab flip: currentTabIndex already points at the new tab, and only the faces the
+    // turn is about to reveal get bound with it, so the faces still in view keep the old tab until the
+    // leaf covers them - the same trick as an ordinary turn, where both sides are bound up front.
+    private void StartTurn(bool forward, int nextSpread, bool changesTab)
     {
         turning = true;
+        turningTab = changesTab;
 
         SetTargetSpread(nextSpread);
 
@@ -469,6 +484,14 @@ public class CompendiumUIManager : MonoBehaviour
         Park(oldParked);
         ShowLeaf(oldParked, forward);
 
+        // on an arrow turn the turning leaf's hidden side is already the next page; across tabs it
+        // still holds the old tab's, so it gets the new tab's before it swings round into view
+        if (changesTab)
+        {
+            if (forward) AssignPage(turningLeaf.back, nextSpread * 2);
+            else AssignPage(turningLeaf.front, nextSpread * 2 + 1);
+        }
+
         BringToFront(turningLeaf);
         ShowLeaf(turningLeaf, forward);
 
@@ -482,11 +505,36 @@ public class CompendiumUIManager : MonoBehaviour
 
             spread = nextSpread;
             turning = false;
+
+            // the leaf that just landed hides a face still bound to the old tab (its front going
+            // forward, its back going back); the next arrow turn would swing it into view
+            if (changesTab)
+            {
+                if (forward) AssignPage(left.front, spread * 2 - 1);
+                else AssignPage(right.back, spread * 2 + 2);
+            }
+
             RememberSpread();
 
             Promote(left);
             Promote(right);
             Retire(parked);
+
+            turningTab = false;
+
+            if (tabDirty)
+            {
+                tabDirty = false;
+                AssignSpreadPages(spread);
+            }
+
+            // last, so the queued turn starts from the leaves as they now lie
+            if (pendingTab != null)
+            {
+                CompendiumTabManager next = pendingTab;
+                pendingTab = null;
+                TurnToTab(next);
+            }
         });
     }
 
@@ -733,6 +781,14 @@ public class CompendiumUIManager : MonoBehaviour
     {
         if (tab != CurrentTab) return;
 
+        // mid tab flip the leaves in view still show the old tab, and a rebind now would pop them to
+        // the new one; the turn catches up when it lands
+        if (turningTab)
+        {
+            tabDirty = true;
+            return;
+        }
+
         AssignSpreadPages(spread);
     }
 
@@ -759,6 +815,54 @@ public class CompendiumUIManager : MonoBehaviour
         RememberCurrentTab();
         ApplyTabSiblingOrder();
         JumpToSpread(pageIndex);
+    }
+
+
+    // A tab button: the same switch as ShowTab, but turned to rather than jumped to, forward or back
+    // by the tabs array order, landing on the page that tab was left on. ShowTab stays the instant
+    // path for opening the book, which binds while the canvas is still inactive.
+    private void TurnToTab(CompendiumTabManager tab)
+    {
+        int index = IndexOfTab(tab);
+
+        if (index < 0)
+        {
+            Debug.LogWarning("CompendiumUIManager: TurnToTab was passed a tab that is not in tabs", this);
+            return;
+        }
+
+        // nothing laid out or nothing on screen to turn, so just jump
+        if (!built || !IsOpen || uiRoot == null || !uiRoot.activeInHierarchy)
+        {
+            ShowTab(tab, tab.RememberedPage);
+            return;
+        }
+
+        // Queued rather than dropped like the arrows: a tab is a destination, so replaying it later
+        // still lands where the player meant, where a stale "next" would overshoot
+        if (turning)
+        {
+            pendingTab = tab;
+            return;
+        }
+
+        if (index == currentTabIndex) return;
+
+        bool forward = index > currentTabIndex;
+
+        if (CurrentTab != null) CurrentTab.OnHidden();
+
+        currentTabIndex = index;
+
+        if (CurrentTab != null) CurrentTab.OnShown();
+
+        RememberCurrentTab();
+        ApplyTabSiblingOrder();
+
+        spreadCount = SpreadCount;
+        int target = spreadCount > 0 ? Mathf.Clamp(tab.RememberedPage / 2, 0, spreadCount - 1) : 0;
+
+        StartTurn(forward, target, true);
     }
 
 
