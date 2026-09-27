@@ -375,6 +375,9 @@ MonoBehaviour:
   songs:
   - {fileID: 11400000, guid: 37df897fd2e48c72f8ade9e939f56cf6, type: 2}
   - {fileID: 11400000, guid: 89093cce5caa93bb49acf3ce1f42053b, type: 2}
+  - {fileID: 11400000, guid: 878ea7d1291f5b94aa2052be350d946d, type: 2}
+  - {fileID: 11400000, guid: 744b17b98f5f571f7866facf3c3d1f73, type: 2}
+  - {fileID: 11400000, guid: eecefaadb50434005978dbfabea7ab8e, type: 2}
   startDelay: 1
   pauseBetweenSongs: 4
   pauseVariation: 1
@@ -830,6 +833,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8050732777c3fa43b2bb0358fb59cff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DevTools
+  spedUpTimeScale: 10
+  normalTimeScale: 1
 --- !u!1 &1546665106
 GameObject:
   m_ObjectHideFlags: 0
