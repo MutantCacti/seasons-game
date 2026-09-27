@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
   id: lilypad
   description: Excellent shade for fish and other watery things. Pretty, too.
-  icon: {fileID: 149010872, guid: 18f1f9b3d768e754fbcb753054c8c262, type: 3}
+  icon: {fileID: -1089566785, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 0}
   prefab: {fileID: 3049336068532479061, guid: 55d607ff49c590ee79e9071e34f85757, type: 3}
   placeSound: {fileID: 11400000, guid: caf08915bd239ef7ba5c375dc92dd8a5, type: 2}
