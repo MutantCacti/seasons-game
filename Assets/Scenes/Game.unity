@@ -30502,7 +30502,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
   movementSpeed: 0.004
   keyboardMovementSpeed: 8
-  zoomSpeed: 1.5
+  zoomSpeed: 1
   maxZoomOffset: 14
   zoomMovementSpeedFactor: 2
   snappiness: 0.2
