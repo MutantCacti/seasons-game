@@ -114,6 +114,11 @@ public class BookAnimator : MonoBehaviour
     [SerializeField] private float readColliderMargin = 1.1f;
 
 
+    [Header("Sound")]   // both optional; pitch jitter lives on the SoundObject itself
+    [SerializeField] private SoundObject openSound;
+    [SerializeField] private SoundObject closeSound;
+
+
     private const float SPINE_BASE_YAW = -90.0f;
 
     private const float FLIP_OPEN_THRESHOLD = 0.9f;
@@ -156,6 +161,13 @@ public class BookAnimator : MonoBehaviour
     private bool warnedAboutYawTarget;
     private bool warnedAboutInput;
     private bool warnedAboutCursor;
+    private bool warnedAboutOpenSound;
+    private bool warnedAboutCloseSound;
+    private bool warnedAboutAudio;
+
+    // set by the open sound and spent by the close sound, so the two strictly take turns: a caught
+    // close, a toggle spam or a close asked of a shut book can never stack or double either one
+    private bool openSoundOwedClose;
 
     private Transform readPivot;    // runtime pivot, so the flight does not fight the bob or the yaw
     private Vector3 readOffset;     // the book node's offset inside that pivot, for aiming its base
@@ -294,6 +306,9 @@ public class BookAnimator : MonoBehaviour
         // only the closed -> reading edge counts, so repeating an open does not raise it again
         bool starting = reading && !readTarget;
 
+        // the open sound is for a book leaving its rest pose; catching one on its way down is silent
+        bool fromRest = read <= 0.0f;
+
         readTarget = reading;
 
         // the screen-sized click catcher only belongs to an open read, so a close hands the screen
@@ -307,10 +322,16 @@ public class BookAnimator : MonoBehaviour
         readTween = DOTween.To(() => read, value => read = value, reading ? 1.0f : 0.0f, readDuration)
             .SetEase(readEase);
 
+        // the close sound relies on KillTween's Kill(complete: false) never firing OnComplete (see
+        // DOTween.XML), which is what keeps a close caught by a reopen silent - don't complete the kill
+        if (!reading) readTween.OnComplete(OnReadLanded);
+
         // Only the fan is pulled forward: it is what decides when the pages are flat, so the menu can
         // arrive early while the flight and the lay-back still take the whole read. Shaping read
         // itself would shorten the whole read instead.
         fanTween = reading ? OpenFan() : CloseFan();
+
+        if (starting && fromRest) PlayOpenSound();
 
         if (starting) Opened?.Invoke();
     }
@@ -804,6 +825,57 @@ public class BookAnimator : MonoBehaviour
     private float ScaledAngle(PartState part)
     {
         return Mathf.Abs(EffectiveAngle(part)) * PoseScale() * part.open;
+    }
+
+
+    // MARK: sound
+
+
+    // Played on the frame the read and the fan start, which is when the book visibly leaves its rest
+    // pose. Not on the covers: they lift on every hover, and a sound there would chatter.
+    private void PlayOpenSound()
+    {
+        // an open already owed a close means one frame of spam got here first
+        if (openSoundOwedClose) return;
+
+        openSoundOwedClose = true;
+        PlayBookSound(openSound, ref warnedAboutOpenSound, "no openSound assigned, so opening the book is silent");
+    }
+
+
+    // The read landing home. CloseFan's hold and fold add up to readDuration too, so the pages fold
+    // shut on this same frame
+    private void OnReadLanded()
+    {
+        // a close asked of a book that was already shut still runs a 0 -> 0 read and lands, so only
+        // a landing that follows an open sound gets to make one
+        if (!openSoundOwedClose) return;
+
+        openSoundOwedClose = false;
+        PlayBookSound(closeSound, ref warnedAboutCloseSound, "no closeSound assigned, so closing the book is silent");
+    }
+
+
+    private void PlayBookSound(SoundObject sound, ref bool warnedAboutSound, string missing)
+    {
+        if (sound == null)
+        {
+            WarnOnce(ref warnedAboutSound, missing);
+            return;
+        }
+
+        AudioManager audio = AudioManager.Instance;
+
+        if (audio == null)
+        {
+            WarnOnce(ref warnedAboutAudio, "no AudioManager, so the book makes no sound");
+            return;
+        }
+
+        // the model rides the read pivot, so this is wherever the book actually is
+        Vector3 position = yawTarget != null ? yawTarget.position : transform.position;
+
+        audio.PlaySFX(sound, position);
     }
 
 
