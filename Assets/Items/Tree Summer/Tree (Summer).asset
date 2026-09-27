@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a447734dfd8a20878da909dc174cacf, type: 3}
-  m_Name: Sapling Summer
+  m_Name: Tree (Summer)
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
-  id: sapling_summer
+  id: tree_summer
   description: lorem ipsum
-  icon: {fileID: 1681519122, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  icon: {fileID: -157356822, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 0}
-  prefab: {fileID: 212010971281103808, guid: ce3ab08eda69ab742a7524fa216b327d, type: 3}
+  prefab: {fileID: 212010971281103808, guid: 78d89052b9d722b40bff6484c90e13a1, type: 3}
   placeSound: {fileID: 0}
   placedOnTags:
   - grass
   antiPlacedOnTags: []
-  growsInto: {fileID: 11400000, guid: 5a40556e718f4a1458de60832f1ba394, type: 2}
+  growsInto: {fileID: 0}
   growthDays: 1
   growSound: {fileID: 0}
   reactions: []

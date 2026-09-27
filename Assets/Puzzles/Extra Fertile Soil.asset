@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a080f9f00882e204ea6f30ee4897b47b, type: 3}
-  m_Name: Used Fertiliser
+  m_Name: Extra Fertile Soil
   m_EditorClassIdentifier: Assembly-CSharp::UsedFertiliser
-  id: used_fertiliser
+  id: extra_fertile_soil
   description: lorem ipsum
   icon: {fileID: 394711117, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
@@ -21,4 +21,6 @@ MonoBehaviour:
   unlocks:
   - {fileID: 11400000, guid: 9ab47bec8a17ff54c96f3e742b3bee38, type: 2}
   resetsTo: {fileID: 0}
+  waitsFor: []
+  startsConditions: 
   fertiliser: {fileID: 11400000, guid: 23142dca9dc523b14acab44078f8a522, type: 2}
