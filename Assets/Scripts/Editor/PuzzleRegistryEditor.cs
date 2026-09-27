@@ -142,6 +142,7 @@ public class PuzzleRegistryEditor : Editor
 
         problems += ValidateReachability(registry, byId);
         problems += ValidateResetTargets(byId);
+        problems += ValidateWaits(registry, byId);
 
         if (problems == 0)
         {
@@ -354,28 +355,7 @@ public class PuzzleRegistryEditor : Editor
     {
         int problems = 0;
 
-        // who unlocks each puzzle, so the chain can be walked backwards
-        Dictionary<Puzzle, List<Puzzle>> parents = new Dictionary<Puzzle, List<Puzzle>>();
-
-        foreach (Puzzle puzzle in byId.Values)
-        {
-            IReadOnlyList<Puzzle> unlocks = puzzle.Unlocks;
-            if (unlocks == null) continue;
-
-            for (int i = 0; i < unlocks.Count; i++)
-            {
-                Puzzle child = unlocks[i];
-                if (child == null) continue;
-
-                if (!parents.TryGetValue(child, out List<Puzzle> list))
-                {
-                    list = new List<Puzzle>();
-                    parents.Add(child, list);
-                }
-
-                list.Add(puzzle);
-            }
-        }
+        Dictionary<Puzzle, List<Puzzle>> parents = BuildParents(byId);
 
         foreach (Puzzle puzzle in byId.Values)
         {
@@ -420,6 +400,133 @@ public class PuzzleRegistryEditor : Editor
         }
 
         return false;
+    }
+
+
+    // who unlocks each puzzle, so the chain can be walked backwards
+    private static Dictionary<Puzzle, List<Puzzle>> BuildParents(Dictionary<string, Puzzle> byId)
+    {
+        Dictionary<Puzzle, List<Puzzle>> parents = new Dictionary<Puzzle, List<Puzzle>>();
+
+        foreach (Puzzle puzzle in byId.Values)
+        {
+            IReadOnlyList<Puzzle> unlocks = puzzle.Unlocks;
+            if (unlocks == null) continue;
+
+            for (int i = 0; i < unlocks.Count; i++)
+            {
+                Puzzle child = unlocks[i];
+                if (child == null) continue;
+
+                if (!parents.TryGetValue(child, out List<Puzzle> list))
+                {
+                    list = new List<Puzzle>();
+                    parents.Add(child, list);
+                }
+
+                list.Add(puzzle);
+            }
+        }
+
+        return parents;
+    }
+
+
+    // A wait only makes sense for a puzzle that can arrive from somewhere other than the waiter
+    private static int ValidateWaits(PuzzleRegistry registry, Dictionary<string, Puzzle> byId)
+    {
+        int problems = 0;
+
+        Dictionary<Puzzle, List<Puzzle>> parents = BuildParents(byId);
+        HashSet<Puzzle> registered = new HashSet<Puzzle>(byId.Values);
+        HashSet<Puzzle> reached = PuzzleTreeWalker.Walk(registry.StartingPuzzles).Reached;
+
+        foreach (Puzzle puzzle in byId.Values)
+        {
+            IReadOnlyList<Puzzle> waitsFor = puzzle.WaitsFor;
+            if (waitsFor == null) continue;
+
+            for (int i = 0; i < waitsFor.Count; i++)
+            {
+                Puzzle wanted = waitsFor[i];
+
+                if (wanted == null)
+                {
+                    Debug.LogWarning($"PuzzleRegistry: '{puzzle.name}' wait {i} is empty", puzzle);
+                    continue;
+                }
+
+                if (wanted == puzzle)
+                {
+                    Debug.LogError($"PuzzleRegistry: '{puzzle.name}' waits for itself", puzzle);
+                    problems++;
+                    continue;
+                }
+
+                if (!registered.Contains(wanted))
+                {
+                    Debug.LogWarning($"PuzzleRegistry: '{puzzle.name}' waits for '{wanted.name}', which is not " +
+                        $"in the puzzles list, so the wait never ends while nothing unlocks it", puzzle);
+                    continue;
+                }
+
+                if (!reached.Contains(wanted))
+                {
+                    Debug.LogWarning($"PuzzleRegistry: '{puzzle.name}' waits for '{wanted.name}', which can never " +
+                        $"be unlocked, so the wait does nothing", puzzle);
+                    continue;
+                }
+
+                if (IsAncestor(puzzle, wanted, parents))
+                {
+                    Debug.LogWarning($"PuzzleRegistry: '{puzzle.name}' waits for '{wanted.name}', which it unlocks " +
+                        $"itself further down, so the wait only holds while another route to it is open", puzzle);
+                }
+
+                WarnIfWaitsDeadlock(puzzle, wanted, parents);
+            }
+        }
+
+        return problems;
+    }
+
+
+    // x waits for d, but something on the way to d waits for a puzzle only x can lead to: once both are
+    // spent, each holds the other off and neither is ever judged stuck
+    private static void WarnIfWaitsDeadlock(Puzzle x, Puzzle d, Dictionary<Puzzle, List<Puzzle>> parents)
+    {
+        HashSet<Puzzle> visited = new HashSet<Puzzle> { x, d };
+        Queue<Puzzle> open = new Queue<Puzzle>();
+
+        open.Enqueue(d);
+
+        while (open.Count > 0)
+        {
+            if (!parents.TryGetValue(open.Dequeue(), out List<Puzzle> list)) continue;
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                Puzzle ancestor = list[i];
+                if (!visited.Add(ancestor)) continue;
+
+                open.Enqueue(ancestor);
+
+                IReadOnlyList<Puzzle> ancestorWaits = ancestor.WaitsFor;
+                if (ancestorWaits == null) continue;
+
+                for (int j = 0; j < ancestorWaits.Count; j++)
+                {
+                    Puzzle other = ancestorWaits[j];
+                    if (other == null) continue;
+                    if (other != x && !IsAncestor(x, other, parents)) continue;
+
+                    Debug.LogWarning($"PuzzleRegistry: '{x.name}' waits for '{d.name}', but '{ancestor.name}' on " +
+                        $"the way to it waits for '{other.name}', which only '{x.name}' leads to, so if both are " +
+                        $"spent neither is ever judged stuck", x);
+                    return;
+                }
+            }
+        }
     }
 
 

@@ -34,6 +34,10 @@ public class Puzzle : WorldListener
         "caused by that one. Empty resets to this puzzle's own")]
     [SerializeField] private Puzzle resetsTo;
 
+    [Tooltip("puzzles whose unlock brings ingredients this one needs; it isn't judged stuck while any of " +
+        "them can still be unlocked")]
+    [SerializeField] private List<Puzzle> waitsFor = new List<Puzzle>();
+
 
     public string Id => id;
     public string Name => name;   // Object.name, the name in the inspector
@@ -41,6 +45,7 @@ public class Puzzle : WorldListener
     public Sprite Icon => icon;
     public IReadOnlyList<Ingredient> Ingredients => ingredients;
     public IReadOnlyList<Puzzle> Unlocks => unlocks;
+    public IReadOnlyList<Puzzle> WaitsFor => waitsFor;
 
     // whose checkpoint a fail of this one goes back to
     public Puzzle ResetTarget => resetsTo != null ? resetsTo : this;

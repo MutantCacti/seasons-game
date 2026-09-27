@@ -163,6 +163,14 @@ public class PuzzleManager : MonoBehaviour
     // a guard against a growsInto or reaction cycle, which the item registry's validation reports
     private const int MAX_GROWTH_CHAIN = 32;
 
+    // puzzle -> every registry puzzle whose unlocks list it, so a waited-for puzzle can be walked back
+    // to whatever could still unlock it. built once, the registry doesn't change at runtime
+    private Dictionary<Puzzle, List<Puzzle>> unlockedBy;
+
+    // scratch for the reachability walk
+    private readonly HashSet<Puzzle> reachVisited = new HashSet<Puzzle>();
+    private readonly List<Puzzle> reachStack = new List<Puzzle>();
+
     private bool completionEnabled = true;
 
     private bool checkpointManagerWarningLogged;
@@ -561,6 +569,10 @@ public class PuzzleManager : MonoBehaviour
         // after the capture on purpose: the checkpoint still holds these as pending, so resetting to
         // it replays the completion instead of losing it
         FlushPending();
+
+        // a puzzle held while it waited for one of these is judged normally now. the grant's
+        // SlotsChanged usually asks too, but not for a puzzle with no ingredients
+        ScheduleSoftLockCheck();
     }
 
 
@@ -743,6 +755,10 @@ public class PuzzleManager : MonoBehaviour
 
     private void EvaluateSoftLocks()
     {
+        // a flag going up or down can decide whether another puzzle's wait is still reachable, so that
+        // one is judged again. deferred to after the loop: scheduling clears the set being walked
+        bool rejudge = false;
+
         foreach (Puzzle puzzle in pendingSoftLockChecks)
         {
             // a puzzle completed during the grace period was never stuck
@@ -766,25 +782,29 @@ public class PuzzleManager : MonoBehaviour
             // ping is left alone
             if (IsPresenting()) continue;
 
+            // Spent, but a puzzle it waits for can still unlock and bring what it needs. Like the reagent
+            // check below this can become true after the puzzle was flagged (a parent's flag clears, or
+            // a save from before waits existed), so it un-flags and withdraws too
+            if (IsWaitingOnUnlock(puzzle))
+            {
+                if (ClearSoftLock(puzzle)) rejudge = true;
+                continue;
+            }
+
             // Spent, but the player is still holding something that would react with what's left on the
-            // ground, so the puzzle is not provably stuck: they can still act. Unlike the two checks
+            // ground, so the puzzle is not provably stuck: they can still act. Unlike growth and presenting
             // above, this condition can become true AFTER the puzzle was flagged - a later puzzle grants
             // the reagent - so it has to un-flag and withdraw, not just skip. SlotsChanged asks again
             // whenever the inventory moves
             if (IsReagentInHand(puzzle))
             {
-                bool wasFlagged = softLocked.Remove(puzzle);
-
-                if (NotificationManager.Instance != null) NotificationManager.Instance.Withdraw(NotificationType.FailPuzzle, puzzle);
-
-                // the Puzzles tab is the only thing that reads IsSoftLocked, and it only rebinds on a
-                // change: without this, the row would keep its fail state after the data let go of it
-                if (wasFlagged) OnPuzzleSoftLockCleared?.Invoke(puzzle);
-
+                if (ClearSoftLock(puzzle)) rejudge = true;
                 continue;
             }
 
             if (!softLocked.Add(puzzle)) continue;
+
+            rejudge = true;
 
             Debug.LogWarning($"PuzzleManager: '{puzzle.name}' has spent every ingredient it was given " +
                 $"and is still incomplete, so it is flagged as soft locked", puzzle);
@@ -804,6 +824,129 @@ public class PuzzleManager : MonoBehaviour
         }
 
         pendingSoftLockChecks.Clear();
+
+        if (rejudge) ScheduleSoftLockCheck();
+    }
+
+
+    // Lets go of a puzzle the player can still act on. True when it had been flagged
+    private bool ClearSoftLock(Puzzle puzzle)
+    {
+        bool wasFlagged = softLocked.Remove(puzzle);
+
+        if (NotificationManager.Instance != null) NotificationManager.Instance.Withdraw(NotificationType.FailPuzzle, puzzle);
+
+        // the Puzzles tab is the only thing that reads IsSoftLocked, and it only rebinds on a
+        // change: without this, the row would keep its fail state after the data let go of it
+        if (wasFlagged) OnPuzzleSoftLockCleared?.Invoke(puzzle);
+
+        return wasFlagged;
+    }
+
+
+    // MARK: waits
+
+
+    // True while any puzzle this one waits for is still locked but can still be unlocked, so the
+    // ingredients it needs are on their way
+    private bool IsWaitingOnUnlock(Puzzle puzzle)
+    {
+        IReadOnlyList<Puzzle> waitsFor = puzzle.WaitsFor;
+        if (waitsFor == null || waitsFor.Count == 0) return false;
+
+        for (int i = 0; i < waitsFor.Count; i++)
+        {
+            Puzzle wanted = waitsFor[i];
+            if (wanted == null || wanted == puzzle) continue;
+            if (unlocked.Contains(wanted)) continue;
+
+            if (CanStillUnlock(wanted, puzzle)) return true;
+        }
+
+        return false;
+    }
+
+
+    // Walks back from a locked puzzle through whatever unlocks it. A parent keeps it reachable when it
+    // is completed (its unlocks land when the ping is opened) or active and not stuck; a locked parent
+    // only does if it is reachable itself. A visited node counts as unreachable, which is right because
+    // any reachable one ends the walk. Scratch is reused, so this allocates nothing
+    private bool CanStillUnlock(Puzzle wanted, Puzzle waiter)
+    {
+        EnsureUnlockedBy();
+
+        reachVisited.Clear();
+        reachStack.Clear();
+
+        // the waiter can't count as a way through: it's exhausted, so it will never complete
+        reachVisited.Add(waiter);
+        reachVisited.Add(wanted);
+        reachStack.Add(wanted);
+
+        bool reachable = false;
+
+        while (reachStack.Count > 0 && !reachable)
+        {
+            Puzzle step = reachStack[reachStack.Count - 1];
+            reachStack.RemoveAt(reachStack.Count - 1);
+
+            if (!unlockedBy.TryGetValue(step, out List<Puzzle> parents)) continue;
+
+            for (int i = 0; i < parents.Count; i++)
+            {
+                Puzzle parent = parents[i];
+                if (!reachVisited.Add(parent)) continue;
+
+                if (completed.Contains(parent) || (unlocked.Contains(parent) && !softLocked.Contains(parent)))
+                {
+                    reachable = true;
+                    break;
+                }
+
+                if (!unlocked.Contains(parent)) reachStack.Add(parent);
+            }
+        }
+
+        reachVisited.Clear();
+        reachStack.Clear();
+
+        return reachable;
+    }
+
+
+    private void EnsureUnlockedBy()
+    {
+        if (unlockedBy != null) return;
+
+        unlockedBy = new Dictionary<Puzzle, List<Puzzle>>();
+
+        if (registry == null) return;
+
+        IReadOnlyList<Puzzle> entries = registry.Entries;
+        if (entries == null) return;
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            Puzzle parent = entries[i];
+            if (parent == null) continue;
+
+            IReadOnlyList<Puzzle> unlocks = parent.Unlocks;
+            if (unlocks == null) continue;
+
+            for (int j = 0; j < unlocks.Count; j++)
+            {
+                Puzzle child = unlocks[j];
+                if (child == null) continue;
+
+                if (!unlockedBy.TryGetValue(child, out List<Puzzle> list))
+                {
+                    list = new List<Puzzle>();
+                    unlockedBy.Add(child, list);
+                }
+
+                if (!list.Contains(parent)) list.Add(parent);
+            }
+        }
     }
 
 
