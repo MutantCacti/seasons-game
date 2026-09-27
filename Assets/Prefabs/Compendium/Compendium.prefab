@@ -1930,6 +1930,8 @@ MonoBehaviour:
   readFlatAt: 0.4
   readEase: 7
   readColliderMargin: 1.1
+  openSound: {fileID: 11400000, guid: 916a35453b0f9c08585e2b38644c31c7, type: 2}
+  closeSound: {fileID: 11400000, guid: e3adb7ac48a858173a84df14cd9df5ac, type: 2}
 --- !u!114 &5302760159980842745
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1974,6 +1976,7 @@ MonoBehaviour:
   turnDuration: 0.55
   turnEase: 7
   hiddenDepth: 2
+  pageTurnSound: {fileID: 11400000, guid: d85b65951865640d690d6a535234d29c, type: 2}
 --- !u!114 &4901880833567961377
 MonoBehaviour:
   m_ObjectHideFlags: 0
