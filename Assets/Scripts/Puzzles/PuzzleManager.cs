@@ -336,6 +336,38 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
+    // What this puzzle was credited to, as a credit another completion can reuse: the entity when it is
+    // still in the world (growth keeps the guid, so a sapling that became a tree still counts), else the
+    // cell. False when there is neither
+    public bool TryGetCredit(Puzzle puzzle, out PuzzleCredit credit)
+    {
+        credit = PuzzleCredit.None;
+
+        if (puzzle == null || !completedBy.TryGetValue(puzzle, out string key)) return false;
+
+        if (TryGetCompletedBy(puzzle, out EntityId entity) && entity != null)
+        {
+            credit = PuzzleCredit.Entity(entity);
+            return true;
+        }
+
+        TerrainManager terrain = TerrainManager.Instance;
+        if (terrain == null) return false;
+        if (!PuzzleCredit.TryParseCellKey(key, out int x, out int levelMm, out int z)) return false;
+        if (!terrain.TryGetLevelAtMillimetres(levelMm, out int level)) return false;
+
+        credit = PuzzleCredit.Cell(new Vector3Int(x, level, z));
+        return true;
+    }
+
+
+    // every ingredient this active puzzle was given has been spent
+    public bool IsExhausted(Puzzle puzzle)
+    {
+        return ledger.IsExhausted(puzzle);
+    }
+
+
     // the fliers for what a completion unlocks come from whatever completed it, entity or cell
     private GrantOrigin CreditOrigin(Puzzle puzzle)
     {

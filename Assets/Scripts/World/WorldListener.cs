@@ -61,6 +61,15 @@ public interface WorldContext
 
     // through PuzzleManager.Complete, with its queue, ping and completedBy
     bool Complete(Puzzle puzzle, PuzzleCredit credit);
+
+    bool IsCompleted(Puzzle puzzle);
+
+    // what a completed puzzle was credited to, resolved: its entity if it is still in the world, else
+    // its cell. False when it isn't completed, was credited to nothing, or neither resolves
+    bool TryGetCredit(Puzzle puzzle, out PuzzleCredit credit);
+
+    // every one of this active puzzle's ingredients has been spent (its ledger is all zeroes)
+    bool IsExhausted(Puzzle puzzle);
 }
 
 
@@ -105,6 +114,13 @@ public abstract class WorldListener : ScriptableObject
     // transition has finished, like OnItemShown, so the new tile is what the player sees. The remap
     // is already saved and counts as the player's own, so tile puzzles re-check here
     public virtual void OnTerrainMutated(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to)
+    {
+    }
+
+
+    // any puzzle's live completion, once it is saved. Never raised for a puzzle restored as completed
+    // by a load: catch up on those in OnLoaded and OnPuzzleUnlocked
+    public virtual void OnPuzzleCompleted(WorldContext context, Puzzle completed)
     {
     }
 

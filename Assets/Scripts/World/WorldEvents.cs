@@ -154,6 +154,7 @@ public class WorldEvents : MonoBehaviour, WorldContext
         if (puzzleManager != null)
         {
             puzzleManager.OnPuzzleUnlocked += OnPuzzleUnlocked;
+            puzzleManager.OnPuzzleComplete += OnPuzzleComplete;
             puzzleManager.OnPuzzlesLoaded += TryBecomeReady;
         }
         else
@@ -185,6 +186,7 @@ public class WorldEvents : MonoBehaviour, WorldContext
         if (puzzleManager != null)
         {
             puzzleManager.OnPuzzleUnlocked -= OnPuzzleUnlocked;
+            puzzleManager.OnPuzzleComplete -= OnPuzzleComplete;
             puzzleManager.OnPuzzlesLoaded -= TryBecomeReady;
         }
 
@@ -340,6 +342,14 @@ public class WorldEvents : MonoBehaviour, WorldContext
     }
 
 
+    // to everyone. a completion replayed while loading happens before ready, so it is dropped here and
+    // the listeners catch up in OnLoaded instead
+    private void OnPuzzleComplete(Puzzle puzzle)
+    {
+        Dispatch(listener => listener.OnPuzzleCompleted(this, puzzle));
+    }
+
+
     // AnimalManager calls this once a spawn has been saved and credited
     public void RaiseAnimalSpawned(Animal animal, EntityId entity)
     {
@@ -435,6 +445,26 @@ public class WorldEvents : MonoBehaviour, WorldContext
     public bool Complete(Puzzle puzzle, PuzzleCredit credit)
     {
         return puzzleManager != null && puzzleManager.Complete(puzzle, credit);
+    }
+
+
+    public bool IsCompleted(Puzzle puzzle)
+    {
+        return puzzleManager != null && puzzleManager.IsCompleted(puzzle);
+    }
+
+
+    public bool TryGetCredit(Puzzle puzzle, out PuzzleCredit credit)
+    {
+        credit = PuzzleCredit.None;
+
+        return puzzleManager != null && puzzleManager.TryGetCredit(puzzle, out credit);
+    }
+
+
+    public bool IsExhausted(Puzzle puzzle)
+    {
+        return puzzleManager != null && puzzleManager.IsExhausted(puzzle);
     }
 
 
