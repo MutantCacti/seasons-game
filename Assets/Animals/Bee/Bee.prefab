@@ -1,0 +1,228 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1687690589134836470
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 231326085678289409}
+  - component: {fileID: 2004454045670355965}
+  - component: {fileID: 1994604852704424833}
+  - component: {fileID: 5170499955284404406}
+  - component: {fileID: 1878090431320212674}
+  m_Layer: 0
+  m_Name: Bee
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &231326085678289409
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1687690589134836470}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &2004454045670355965
+SpriteRenderer:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1687690589134836470}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: fbbde3d170b94c8aa3785e76ed6f5745, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 0
+  m_SpriteSortPoint: 0
+--- !u!114 &1994604852704424833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1687690589134836470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 514d92b7d6f5094d199621f14ce2c544, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BillboardSprite
+  targetCamera: {fileID: 0}
+  yawOffset: 0
+--- !u!114 &5170499955284404406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1687690589134836470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77813ecc1ac031ca5bc337463057908b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityId
+--- !u!114 &1878090431320212674
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1687690589134836470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b7fa7724c7b9d67c9ad2153f0199831, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BeeController
+  hoverGrow: 1.05
+  hoverDuration: 0.12
+  focusHopHeight: 0.08
+  focusHopDuration: 0.22
+  renameHopHeight: 0.14
+  renameHopDuration: 0.3
+  spriteRenderer: {fileID: 2004454045670355965}
+  sideFrames:
+  - {fileID: -1487319770, guid: f434bc43ea8724665b63f50481c1d5b6, type: 3}
+  - {fileID: -1178804868, guid: f434bc43ea8724665b63f50481c1d5b6, type: 3}
+  - {fileID: -1487319770, guid: f434bc43ea8724665b63f50481c1d5b6, type: 3}
+  - {fileID: 1037840850, guid: f434bc43ea8724665b63f50481c1d5b6, type: 3}
+  downSprite: {fileID: 707708113, guid: f434bc43ea8724665b63f50481c1d5b6, type: 3}
+  upSprite: {fileID: -1335024222, guid: f434bc43ea8724665b63f50481c1d5b6, type: 3}
+  framesPerSecond: 12
+  sideBias: 1.1
+  facingHysteresis: 0.15
+  vibrateAmplitude: {x: 0.012, y: 0.008}
+  vibrateFrequency: 28
+  fadeDuration: 0.3
+  sizeRange: {x: 0.88, y: 1.12}
+  warmTint: {r: 1, g: 0.95, b: 0.82, a: 1}
+  coolTint: {r: 0.92, g: 0.95, b: 1, a: 1}
+  brightnessRange: {x: 0.93, y: 1}
+  speedVariation: 0.1
+  flySpeed: 0.9
+  hurrySpeed: 1.5
+  cruiseHeight: 0.55
+  cruiseVariation: 0.15
+  lookAhead: 0.7
+  climbSmoothTime: 0.25
+  descentDistance: 0.8
+  arriveDistance: 0.04
+  wobbleAmplitude: 0.07
+  wobbleFrequency: 0.8
+  mapMargin: 0.3
+  wakeRange: {x: 0.03, y: 0.12}
+  homeRange: {x: 0.82, y: 0.92}
+  hurryFrom: 0.95
+  hiveRest: {x: 3, y: 8}
+  flowerItems:
+  - {fileID: 11400000, guid: bd6e914e243fb49b28c60794bff562bb, type: 2}
+  - {fileID: 11400000, guid: 194053dd46cc844d890f12c6cfae168b, type: 2}
+  - {fileID: 11400000, guid: 6c7005ff39fc31240b69bc6756b0e091, type: 2}
+  forageRadius: 8
+  visitsPerTrip: {x: 3, y: 5}
+  sameKindWeight: 0.3
+  recruitWeight: 4
+  drinkDuration: {x: 2, y: 4}
+  drinkHeight: 0.02
+  drinkInFront: 0.05
+  dipDepth: 0.03
+  dipsPerDrink: 2
+  flowerRustleAngle: 6
+  flowerRustleDuration: 0.4
+  wanderRadius: 2
+  danceInFront: 0.2
+  danceAbove: 0.12
+  waggleRunLength: {x: 0.08, y: 0.22}
+  waggleRunSpeed: 0.12
+  waggleAmplitude: 0.02
+  waggleFrequency: 13
+  returnSpeed: 0.35
+  danceCircuits: {x: 2, y: 3}
+  danceFromSun: 0
+  millSpeed: 0.15
+  millPause: {x: 0.3, y: 1.5}
+  emergeOut: 0.25
+  emergeDuration: 0.6
+  enterDuration: 0.5
+  peekOut: 0.12
+  peekHold: 1.2
+  focusFreeze: 0.6
+  loopRadius: 0.12
+  loopDuration: 0.7
+  sleepBreath: 0.004
+  baseHappiness: 0.4
+  flowerBonus: 0.3
+  flowersForFull: 4
+  varietyBonus: 0.1
+  homeBonus: 0.15
+  companyBonus: 0.05
+  noFlowersTip: No flowers to sip nearby
+  oneKindTip: Only one kind of flower to visit
+  noHomeTip: No hive to go home to
+  floodedTip: My hive is under the sea
+  lonelyTip: The only bee in my hive
+  homeAtNightLine: Tucked up in the hive
+  happyLines:
+  - Buzz, buzz
+  - I sure do love pollen
+  - I'm busy as a bee
+  buzzSound: {fileID: 11400000, guid: d52e6217d01acfdf0997864379df0bfc, type: 2}
+  buzzGap: 0.3

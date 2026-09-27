@@ -14,4 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AnimalSpawnRuleRegistry
   rules:
   - {fileID: 11400000, guid: 893166e7e3210970ebb400f6ecdee972, type: 2}
+  - {fileID: 11400000, guid: cc2c03d739e128107adc7ae09aa480c8, type: 2}
   - {fileID: 11400000, guid: 402dbf9c65d3ec04db455e5a9f8b5a0e, type: 2}
