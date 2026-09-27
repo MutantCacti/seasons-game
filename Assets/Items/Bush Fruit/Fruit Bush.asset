@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Fruit Bush
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
   id: bush_fruit
-  description: lorem ipsum
+  description: Abundant with juicy fruit ripe for the picking by a cute forest creature.
   icon: {fileID: -1967581791, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 0}
   prefab: {fileID: 212010971281103808, guid: 515538b66f1f6c34ea5f0a8a9f143cef, type: 3}
