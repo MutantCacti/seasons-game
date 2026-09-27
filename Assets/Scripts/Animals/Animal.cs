@@ -15,10 +15,15 @@ public class Animal : ScriptableObject
     // how many of this animal the world holds at most, shared by every rule that spawns it
     [SerializeField] [Min(1)] private int mobCap = 1;
 
+    [Tooltip("an animal the book keeps out (a variant or a placeholder, say) still lives and spawns in " +
+        "the world, it is just kept out of the compendium, which the player reads as a catalogue")]
+    [SerializeField] private bool hideInCompendium;
+
     public string Id => id;
     public string Name => name; // Object.name, the name in the editor
     public string Description => description;
     public Sprite Icon => icon;
     public GameObject Prefab => prefab;
     public int MobCap => Mathf.Max(1, mobCap);
+    public bool HideInCompendium => hideInCompendium;
 }

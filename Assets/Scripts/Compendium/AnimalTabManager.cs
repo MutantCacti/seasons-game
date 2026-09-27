@@ -20,6 +20,11 @@ public class AnimalTabManager : CompendiumTabManager
 
     private Material silhouetteMaterial;
 
+    // Registry entries the book is built from, minus the hidden ones (see Animal.HideInCompendium).
+    // Paging, discovery and the unseen glow all index this, never the registry itself, so a hidden
+    // animal takes no page, no slot and no glow
+    private readonly List<Animal> visibleAnimals = new List<Animal>();
+
     // Discovered and unseen animals are saved through the base class, keyed by Animal.Id (unseen with
     // kind 0). Both are global, so a checkpoint reset never takes a discovery back
     private readonly List<UnseenSave> savedUnseen = new List<UnseenSave>();
@@ -57,6 +62,8 @@ public class AnimalTabManager : CompendiumTabManager
         if (animalManager != null) animalManager.AnimalsChanged += OnAnimalsChanged;
         else Debug.LogError("AnimalTabManager: no AnimalManager, so no animal can ever be discovered", this);
 
+        RebuildVisibleAnimals();
+
         // A new world discovers an animal present from the start like any other, so it is unseen. A
         // save from before discovery was remembered is seeded quietly from what is present now
         if (!baselineEmpty && !DiscoverySeeded) SeedDiscovery();
@@ -77,7 +84,27 @@ public class AnimalTabManager : CompendiumTabManager
     // MARK: registry
 
 
-    public int Count { get { return registry != null ? registry.Count : 0; } }
+    // Once, in Start: the registry is authored data, so a hidden animal becoming visible mid-session
+    // (an editor tweak during play) is not worth watching for
+    private void RebuildVisibleAnimals()
+    {
+        visibleAnimals.Clear();
+
+        IReadOnlyList<Animal> animals = registry != null ? registry.Entries : null;
+        if (animals == null) return;
+
+        for (int i = 0; i < animals.Count; i++)
+        {
+            Animal animal = animals[i];
+            if (animal == null) continue;
+            if (animal.HideInCompendium) continue;
+
+            visibleAnimals.Add(animal);
+        }
+    }
+
+
+    public int Count { get { return visibleAnimals.Count; } }
 
 
     // False for a null registry, an out of range index or a hole in the list
@@ -85,10 +112,9 @@ public class AnimalTabManager : CompendiumTabManager
     {
         animal = null;
 
-        if (registry == null) return false;
-        if (index < 0 || index >= registry.Count) return false;
+        if (index < 0 || index >= visibleAnimals.Count) return false;
 
-        animal = registry.Entries[index];
+        animal = visibleAnimals[index];
 
         return animal != null;
     }
@@ -207,17 +233,15 @@ public class AnimalTabManager : CompendiumTabManager
 
 
     // Any animal present that has never been discovered becomes discovered and unseen. Absence
-    // changes nothing: once seen, it stays in the book
+    // changes nothing: once seen, it stays in the book. Hidden animals are never walked, so they are
+    // never discovered and never unseen either
     private void RecomputePresence()
     {
-        IReadOnlyList<Animal> animals = registry != null ? registry.Entries : null;
-        if (animals == null) return;
-
         bool changed = false;
 
-        for (int i = 0; i < animals.Count; i++)
+        for (int i = 0; i < visibleAnimals.Count; i++)
         {
-            Animal animal = animals[i];
+            Animal animal = visibleAnimals[i];
             if (animal == null) continue;
 
             if (IsDiscovered(animal.Id)) continue;
@@ -242,12 +266,9 @@ public class AnimalTabManager : CompendiumTabManager
     // not unseen (whatever it saved as unseen stays unseen)
     private void SeedDiscovery()
     {
-        IReadOnlyList<Animal> animals = registry != null ? registry.Entries : null;
-        if (animals == null) return;
-
-        for (int i = 0; i < animals.Count; i++)
+        for (int i = 0; i < visibleAnimals.Count; i++)
         {
-            Animal animal = animals[i];
+            Animal animal = visibleAnimals[i];
             if (animal == null) continue;
 
             if (IsPresent(animal)) MarkDiscovered(animal.Id, false);
@@ -262,8 +283,10 @@ public class AnimalTabManager : CompendiumTabManager
     }
 
 
-    // Drops unseen ids no animal has any more, and any that were never discovered (unseen is always a
-    // subset of discovered, so that is only ever a hand-edited or broken save)
+    // Drops unseen ids no animal has any more, any that were never discovered (unseen is always a
+    // subset of discovered, so that is only ever a hand-edited or broken save), and any belonging to
+    // an animal that is now hidden: an unseen flag on a page the book no longer shows would only make
+    // the tab glow for nothing
     private void PruneSavedUnseen()
     {
         if (registry == null) return;
@@ -276,11 +299,18 @@ public class AnimalTabManager : CompendiumTabManager
         {
             string id = savedUnseen[i].id;
 
-            if (!registry.TryGetById(id, out Animal _))
+            if (!registry.TryGetById(id, out Animal animal))
             {
                 Debug.LogWarning($"AnimalTabManager: the save holds unseen animal '{id}', but no animal in " +
                     $"'{registry.name}' has that id - dropping it", this);
 
+                ClearUnseen(id, false);
+                pruned = true;
+                continue;
+            }
+
+            if (animal.HideInCompendium)
+            {
                 ClearUnseen(id, false);
                 pruned = true;
                 continue;
