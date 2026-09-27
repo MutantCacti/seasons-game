@@ -812,6 +812,16 @@ public class WormController : AnimalController
     }
 
 
+    // A birth lands where this worm would crawl: never on a forbidden tile, and pulled towards the
+    // same preferred ground it drifts over
+    public override float SpawnWeightOn(TerrainTile tile)
+    {
+        if (tile == null || IsForbidden(tile)) return 0.0f;
+
+        return IsPreferred(tile) ? preferredWeight : 1.0f;
+    }
+
+
     // MARK: internals
 
 

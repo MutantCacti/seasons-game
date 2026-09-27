@@ -92,6 +92,34 @@ public class AnimalController : MonoBehaviour
     }
 
 
+    // The clock reading of its last birth: its own, or its last baby's. 0 is a save from before
+    // stamping, which a breeding rule sets to the clock instead of reading as long overdue
+    public int BredDay { get { return save != null ? save.bredDay : 0; } }
+    public float BredCycleTime { get { return save != null ? save.bredCycleTime : 0.0f; } }
+
+
+    // World state like the name and the star, so it rolls back with a checkpoint. Writes through to
+    // the save at once: a birth that is not on disk can be born again after a reload
+    public void SetBredStamp(int day, float cycleTime)
+    {
+        if (save == null) return;
+
+        save.bredDay = day;
+        save.bredCycleTime = cycleTime;
+
+        if (SaveDataManager.Instance != null) SaveDataManager.Instance.Save();
+    }
+
+
+    // How much this animal's own ground rules want one of its kind placed on this tile, 0 for never.
+    // The base allows anywhere at the same weight; a mover that avoids or prefers ground (a worm) says
+    // so here, so a rule that puts a new one down honours the tiles it would walk on itself
+    public virtual float SpawnWeightOn(TerrainTile tile)
+    {
+        return 1.0f;
+    }
+
+
     // Trimmed and capped. Empty, or the species name itself, goes back to the species name, so a
     // player who clears the field gets the default rather than a nameless animal. True when the name
     // actually changed, which is when it is worth celebrating
