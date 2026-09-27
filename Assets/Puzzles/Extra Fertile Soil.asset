@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Extra Fertile Soil
   m_EditorClassIdentifier: Assembly-CSharp::UsedFertiliser
   id: extra_fertile_soil
-  description: lorem ipsum
+  description: Tastier than it looks (and smells) ...for the plants that is.
   icon: {fileID: 394711117, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: 23142dca9dc523b14acab44078f8a522, type: 2}

@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b9cb12d39d04b7aab503483786a6892, type: 3}
-  m_Name: Life Above Ground
+  m_Name: Wood You Be Mine
   m_EditorClassIdentifier: Assembly-CSharp::Puzzle
-  id: life_above_ground
-  description: lorem ipsum
+  id: wood_you_be_mine
+  description: Some of us seem to be less rooted in reality than others.
   icon: {fileID: -157356822, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: 777e2b82c49909441ac3fae8c4827049, type: 2}
