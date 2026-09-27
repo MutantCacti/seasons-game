@@ -26,8 +26,6 @@ public class CameraController : MonoBehaviour
     [SerializeField] private Transform audioListener;
     [SerializeField] private float listenerDistance = 5.0f;
 
-    [SerializeField] private SoundObject testSO;        // DEBUG
-
     private bool leftClickDown = false;
     private Vector3 right;
     private Vector3 forward;
@@ -110,10 +108,6 @@ public class CameraController : MonoBehaviour
         currentPosition = transform.position;
 
         ResolveAudioListener();
-
-
-        // DEBUG: play the intro song
-        AudioManager.Instance.PlayMusic(testSO);
     }
 
 

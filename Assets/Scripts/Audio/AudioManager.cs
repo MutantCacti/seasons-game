@@ -24,9 +24,10 @@ public class AudioManager : MonoBehaviour
     }
 
 
-    public void PlayMusic(SoundObject musicObject)
+    // the returned voice turns null once the song is over or stopped, null straight away if it couldn't play
+    public AudioSource PlayMusic(SoundObject musicObject)
     {
-        musicPlayer.Play(musicObject);
+        return musicPlayer.Play(musicObject);
     }
 
 
@@ -39,6 +40,12 @@ public class AudioManager : MonoBehaviour
     public void StopAllMusic()
     {
         musicPlayer.StopAll();
+    }
+
+
+    public void FadeOutAllMusic(float duration)
+    {
+        musicPlayer.FadeOutAll(duration);
     }
 
 

@@ -79,7 +79,10 @@ public class InGameOptionsHelper : MonoBehaviour {
 
 
     public void OnTitleScreen() {
-        AudioManager.Instance.StopAllAudio();
+        // the music fades out behind the loading screen instead of cutting; the sfx still cut
+        if (MusicPlaylist.Instance != null) MusicPlaylist.Instance.StopAndReset();
+        else AudioManager.Instance.StopAllMusic();
+        AudioManager.Instance.StopAllSFX();
         LoadingScreenManager.Instance.LoadScene("Title Screen");
     }
 

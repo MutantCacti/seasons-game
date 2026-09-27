@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -18,15 +19,17 @@ public class MusicPlayer : MonoBehaviour
     private float cleanupResumesAt;
 
 
-    public void Play(SoundObject soundObject)
+    // returns the voice so a caller can tell when it's over: the voice is destroyed when its clip
+    // ends (see Update) or it's stopped, and a destroyed AudioSource compares equal to null
+    public AudioSource Play(SoundObject soundObject)
     {
-        if (soundObject == null) return;
+        if (soundObject == null) return null;
 
         AudioClip clip = soundObject.PickRandomClip();
         if (clip == null)
         {
             Debug.LogWarning($"MusicPlayer: SoundObject '{soundObject.name}' has no clips assigned - ignoring Play !!");
-            return;
+            return null;
         }
 
         AudioSource audioSource = gameObject.AddComponent<AudioSource>();
@@ -45,6 +48,7 @@ public class MusicPlayer : MonoBehaviour
         soundObjects.Add(soundObject);
 
         audioSource.Play();
+        return audioSource;
     }
 
 
@@ -62,6 +66,24 @@ public class MusicPlayer : MonoBehaviour
         for (int i = audioSources.Count - 1; i >= 0; i--)
         {
             RemoveVoice(i);
+        }
+    }
+
+
+    // fades every voice to silence and then removes it. unscaled, because the pause menu sets
+    // timeScale 0 and quitting to title happens from under it
+    public void FadeOutAll(float duration)
+    {
+        for (int i = 0; i < audioSources.Count; i++)
+        {
+            AudioSource audioSource = audioSources[i];
+
+            // a second fade restarts from wherever the first one got to
+            audioSource.DOKill();
+            audioSource.DOFade(0f, duration)
+                .SetUpdate(true)
+                .SetLink(gameObject)
+                .OnComplete(() => RemoveVoice(audioSource));
         }
     }
 
@@ -96,9 +118,21 @@ public class MusicPlayer : MonoBehaviour
     }
 
 
+    private void RemoveVoice(AudioSource audioSource)
+    {
+        // looked up again because other voices may have been removed while this one faded
+        int index = audioSources.IndexOf(audioSource);
+        if (index == -1) return;
+
+        RemoveVoice(index);
+    }
+
+
     private void RemoveVoice(int index)
     {
-        // stop and destroy the AudioSource, then drop it from both lists
+        // stop and destroy the AudioSource, then drop it from both lists. a voice can end or be
+        // stopped mid-fade, so its tween goes with it
+        audioSources[index].DOKill();
         audioSources[index].Stop();
         Destroy(audioSources[index]);
 
