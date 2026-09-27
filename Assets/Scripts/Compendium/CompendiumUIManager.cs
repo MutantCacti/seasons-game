@@ -65,6 +65,10 @@ public class CompendiumUIManager : MonoBehaviour
     [Header("Layout")]
     [SerializeField] private float hiddenDepth = 2.0f;
 
+    [Header("Sound")]
+    // optional: left empty, page turns are just silent
+    [SerializeField] private SoundObject pageTurnSound;
+
 
     private Leaf left;
     private Leaf right;
@@ -507,6 +511,9 @@ public class CompendiumUIManager : MonoBehaviour
 
         KillTween(ref leaf.turn);
         leaf.angle = from;
+
+        // TurnForward/TurnBack refuse while a turn is running, so this can't stack
+        if (pageTurnSound != null && AudioManager.Instance != null) AudioManager.Instance.PlaySFX(pageTurnSound, leaf.pivot.position);
 
         float angle = from;
         bool switched = false;
