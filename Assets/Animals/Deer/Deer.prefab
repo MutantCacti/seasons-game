@@ -208,7 +208,9 @@ MonoBehaviour:
   rustleDuration: 0.4
   grazeDistance: 0.4
   grazeInFront: 0.08
-  shelterItems: []
+  shelterItems:
+  - {fileID: 11400000, guid: 5a40556e718f4a1458de60832f1ba394, type: 2}
+  - {fileID: 11400000, guid: 49234ce1684d8b39ab361864e3e00ef0, type: 2}
   restDuration: {x: 4, y: 8}
   fleeFrom: []
   detectRadius: 4
@@ -234,16 +236,15 @@ MonoBehaviour:
   spookedPenalty: 0.4
   noFoodTip: Nothing green to nibble nearby
   noShelterTip: No trees to shelter under
-  lonelyTip: Lonely without the herd
+  lonelyTip: I'm lonely without my family
   spookedTip: Still trembling from a fright
   happyLines:
-  - Nose deep in ferns
-  - Ears up, all is quiet
-  - Dozing in the dappled shade
-  - Tail flicking contentedly
-  - Hooves light, heart lighter
-  - Keeping one ear on the treeline
-  - Dusk smells delicious
+  - Everything is beautiful
+  - Yum... grass and leaves !!
+  - All of my friends are so nice
+  - The sun is shining on me
+  - My fur feels nice today
+  - Safe and sound
   stepSound: {fileID: 11400000, guid: e345e290f2fa6f576970d0c147e6ba5d, type: 2}
   braySound: {fileID: 11400000, guid: 412cbf53382f8279a9775a549da80aa7, type: 2}
   snortSound: {fileID: 0}
