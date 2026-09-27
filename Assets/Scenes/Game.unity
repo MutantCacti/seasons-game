@@ -15584,6 +15584,7 @@ GameObject:
   - component: {fileID: 230018481}
   - component: {fileID: 230018484}
   - component: {fileID: 230018483}
+  - component: {fileID: 230018485}
   m_Layer: 5
   m_Name: Inventory Container Panel
   m_TagString: Untagged
@@ -15703,6 +15704,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventoryContainer
   inventory: {fileID: 0}
   layoutGroup: {fileID: 230018481}
+  canvasGroup: {fileID: 230018485}
+  showDuration: 0.25
+  hideDuration: 0.2
+  hiddenScale: 0.9
+  showEase: 27
+  hideEase: 5
 --- !u!114 &230018484
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15732,6 +15739,18 @@ MonoBehaviour:
   - {fileID: 2019140011}
   - {fileID: 540493824}
   registry: {fileID: 11400000, guid: 03db0fd31fcdc6297b2946be5ba96786, type: 2}
+--- !u!225 &230018485
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 230018477}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &236633206
 GameObject:
   m_ObjectHideFlags: 0
