@@ -58,7 +58,7 @@ public static class TerrainSpread
 
 
     // Whether cell may go from `from` to `to` right now: it's the visible top of its column, it holds
-    // from, it touches one of nextTo orthogonally on the same level (just `to` when nextTo is empty),
+    // from, it touches one of nextTo orthogonally within a level (just `to` when nextTo is empty),
     // the risen sea isn't over it, and nothing standing on it would be turned out by the new tile
     public static bool CanSpread(Vector3Int cell, TerrainTile from, TerrainTile to, TerrainTile[] nextTo)
     {
@@ -82,16 +82,20 @@ public static class TerrainSpread
     }
 
 
-    // the frontier: a neighbour on the same level, at the top of its own column, holds one of nextTo,
-    // or `to` itself when nextTo is empty
+    // the frontier: an orthogonal neighbour's top holds one of nextTo, or `to` itself when nextTo is
+    // empty. The top may be a level above or below, so greenery creeps up and down a single step; a
+    // cliff of two levels or more still stops it
     private static bool TouchesFrontier(TerrainManager terrain, Vector3Int cell, TerrainTile to, TerrainTile[] nextTo)
     {
         for (int i = 0; i < ORTHOGONAL.Length; i++)
         {
-            Vector3Int neighbour = cell + ORTHOGONAL[i];
+            int x = cell.x + ORTHOGONAL[i].x;
+            int z = cell.z + ORTHOGONAL[i].z;
 
-            if (terrain.GetTopLevel(neighbour.x, neighbour.z) != cell.y) continue;
-            if (IsFrontier(terrain.GetTile(neighbour), to, nextTo)) return true;
+            int top = terrain.GetTopLevel(x, z);
+            if (top < 0 || Mathf.Abs(top - cell.y) > 1) continue;
+
+            if (IsFrontier(terrain.GetTile(new Vector3Int(x, top, z)), to, nextTo)) return true;
         }
 
         return false;
