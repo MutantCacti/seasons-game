@@ -84,15 +84,15 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -1487319770, guid: f434bc43ea8724665b63f50481c1d5b6, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.375, y: 0.3125}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
 --- !u!114 &1994604852704424833
 MonoBehaviour:
@@ -181,8 +181,11 @@ MonoBehaviour:
   sameKindWeight: 0.3
   recruitWeight: 4
   drinkDuration: {x: 2, y: 4}
+  nectarAcross: {x: 0.3, y: 0.7}
+  nectarUp: {x: 0.35, y: 0.7}
   drinkHeight: 0.02
   drinkInFront: 0.05
+  drinkDepthJitter: 0.06
   dipDepth: 0.03
   dipsPerDrink: 2
   flowerRustleAngle: 6
