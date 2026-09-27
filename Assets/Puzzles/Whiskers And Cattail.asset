@@ -19,7 +19,8 @@ MonoBehaviour:
   ingredients:
   - item: {fileID: 11400000, guid: 6c7005ff39fc31240b69bc6756b0e091, type: 2}
     count: 9
-  unlocks: []
+  unlocks:
+  - {fileID: 11400000, guid: 788df3cc659d29972a92992401e03ce4, type: 2}
   resetsTo: {fileID: 0}
   waitsFor: []
   startsConditions: 
