@@ -296,6 +296,16 @@ public class AnimalManager : MonoBehaviour
 
         AnimalSave save = new AnimalSave { animalId = animalId, position = position, homeGuid = homeGuid ?? "" };
 
+        // its breeding clock starts at birth. No WorldStateManager means a test scene, where the
+        // stamp stays 0 and a breeding rule starts it the first time it looks
+        WorldStateManager states = WorldStateManager.Instance;
+
+        if (states != null)
+        {
+            save.bredDay = states.Day;
+            save.bredCycleTime = states.CycleTime;
+        }
+
         EntityId entityId = CreateInstance(animal, save, position, animal.Prefab != null ? animal.Prefab.transform.rotation : Quaternion.identity);
         if (entityId == null) return false;
 
@@ -312,7 +322,7 @@ public class AnimalManager : MonoBehaviour
         AnimalSpawned?.Invoke(animal);
         AnimalsChanged?.Invoke();
 
-        if (rule.Completes != null)
+        if (rule.Completes != null && rule.CreditsCompletion)
         {
             if (PuzzleManager.Instance != null) PuzzleManager.Instance.Complete(rule.Completes, entityId);
             else Debug.LogError($"AnimalManager: no PuzzleManager, so '{animal.name}' spawning did not " +

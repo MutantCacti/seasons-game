@@ -22,6 +22,12 @@ public class AnimalSave
     // the guid of the placed entity it lives in (a bee's hive). null or empty is none: a save from
     // before this was written may give either, so read it with string.IsNullOrEmpty
     public string homeGuid;
+
+    // The clock reading of this one's last birth: its own when it has never bred, its last baby's
+    // after. 0 is a save from before stamping, which a breeding rule sets to the clock when it first
+    // looks at it rather than reading it as long overdue. World state, so a checkpoint rolls it back
+    public int bredDay;
+    public float bredCycleTime;
 }
 
 

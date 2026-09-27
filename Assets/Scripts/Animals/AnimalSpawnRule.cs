@@ -27,6 +27,11 @@ public abstract class AnimalSpawnRule : WorldListener
     public Puzzle Completes { get { return completes; } }
 
 
+    // Some rules must never credit a puzzle (a bred animal is a background population, not progress).
+    // Completes still gates the rule as it always did; it just cannot complete anything
+    public virtual bool CreditsCompletion { get { return true; } }
+
+
     // MARK: the spawn check
 
 
