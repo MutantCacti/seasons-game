@@ -450,6 +450,14 @@ public class PlacementController : MonoBehaviour
     }
 
 
+    // Whether everything standing on cell would still be allowed there if it became tile. For a tile
+    // change that isn't a placement (TerrainSpread), so it follows the same rule a drop does
+    public bool ResidentsAllowTile(TerrainTile tile, Vector3Int cell)
+    {
+        return ResidentsAllow(tile, cell, null);
+    }
+
+
     // Check if an entity already at this tile will allow the tile to change
     private bool ResidentsAllow(TerrainTile newTile, Vector3Int cell, EntityId replacing)
     {
