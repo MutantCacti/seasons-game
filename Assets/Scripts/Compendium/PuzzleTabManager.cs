@@ -415,9 +415,12 @@ public class PuzzleTabManager : CompendiumTabManager
     // MARK: unseen
 
 
-    // A soft lock outranks a completion, which outranks anything merely new
+    // A soft lock outranks a completion, which outranks anything merely new. A stuck puzzle stays red
+    // for as long as it is stuck, seen or not, so it's read from the live state and not the unseen list
     public override UnseenPriority HighestUnseen()
     {
+        if (AnySoftLocked(0, Count)) return UnseenPriority.SoftLock;
+
         UnseenPriority highest = UnseenPriority.None;
         int count = UnseenCount;
 
@@ -442,6 +445,8 @@ public class PuzzleTabManager : CompendiumTabManager
         int first = Mathf.Max(firstPage, 0) * rows;
         int end = Mathf.Min((lastPage + 1) * rows, Count);
 
+        if (AnySoftLocked(first, end)) return UnseenPriority.SoftLock;
+
         UnseenPriority highest = UnseenPriority.None;
 
         for (int i = first; i < end; i++)
@@ -456,6 +461,20 @@ public class PuzzleTabManager : CompendiumTabManager
         }
 
         return highest;
+    }
+
+
+    private bool AnySoftLocked(int first, int end)
+    {
+        PuzzleManager manager = PuzzleManager.Instance;
+        if (manager == null) return false;
+
+        for (int i = first; i < end; i++)
+        {
+            if (TryGetPuzzle(i, out Puzzle puzzle) && manager.IsSoftLocked(puzzle)) return true;
+        }
+
+        return false;
     }
 
 
@@ -487,6 +506,9 @@ public class PuzzleTabManager : CompendiumTabManager
     private void OnPuzzleSoftLocked(Puzzle puzzle)
     {
         MarkPuzzleUnseen(puzzle, UnseenKind.Failed);
+
+        // the glows rank soft locks by live state, so they re-rank even when the unseen list didn't change
+        RaiseUnseenChanged();
     }
 
 
@@ -497,6 +519,7 @@ public class PuzzleTabManager : CompendiumTabManager
     private void OnPuzzleSoftLockCleared(Puzzle puzzle)
     {
         RaiseChanged();
+        RaiseUnseenChanged();
     }
 
 

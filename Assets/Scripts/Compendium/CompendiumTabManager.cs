@@ -283,7 +283,8 @@ public abstract class CompendiumTabManager : MonoBehaviour
     }
 
 
-    private static void RaiseUnseenChanged()
+    // also for a tab whose ranking follows live state rather than its unseen list (a soft lock)
+    protected static void RaiseUnseenChanged()
     {
         if (UnseenChanged != null) UnseenChanged();
     }
