@@ -10,10 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 306a7571c0b2df545bfd2708e367ea9a, type: 3}
-  m_Name: Cattail Puzzle Name
+  m_Name: Fluffier Than A...
   m_EditorClassIdentifier: Assembly-CSharp::MajorityOfNinePatch
-  id: cattail_puzzle_id
-  description: cattail puzzle description
+  id: fluffier_than_a...
+  description: About as lazy as the household pet it shares a name with; less biting
+    though.
   icon: {fileID: -2065771991, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: 6c7005ff39fc31240b69bc6756b0e091, type: 2}
