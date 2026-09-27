@@ -17,7 +17,12 @@ MonoBehaviour:
   icon: {fileID: 1296638262, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 11400000, guid: f5371682b1105bd29878dcdc70dd82a6, type: 2}
   prefab: {fileID: 0}
-  placeSound: {fileID: 0}
+  placeSound: {fileID: 11400000, guid: caf08915bd239ef7ba5c375dc92dd8a5, type: 2}
   placedOnTags:
   - dirt
   antiPlacedOnTags: []
+  growsInto: {fileID: 0}
+  growthDays: 1
+  growSound: {fileID: 0}
+  reactions: []
+  hideInCompendium: 0
