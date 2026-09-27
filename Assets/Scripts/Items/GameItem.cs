@@ -32,7 +32,7 @@ public class GameItem : ScriptableObject
     [SerializeField] private SoundObject placeSound;
 
 
-    [Header("all tags must be present on the tile for this item to be placeable")]
+    [Header("any tag must be present on the tile for this item to be placeable")]
     [SerializeField] private string[] placedOnTags;
 
     [Header("any of these tags present on the tile makes the item unplaceable")]
@@ -101,7 +101,7 @@ public class GameItem : ScriptableObject
         if (target == null) return false;
         if (target.Tags == null) return false;
 
-        if (placedOnTags != null && !placedOnTags.All(tag => target.Tags.Contains(tag))) return false;
+        if (placedOnTags != null && !placedOnTags.Any(tag => target.Tags.Contains(tag))) return false;
         if (antiPlacedOnTags != null && !antiPlacedOnTags.All(antiTag => !target.Tags.Contains(antiTag))) return false;
 
         return true;
