@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306a7571c0b2df545bfd2708e367ea9a, type: 3}
+  m_Name: Cattail Puzzle Name
+  m_EditorClassIdentifier: Assembly-CSharp::MajorityOfNinePatch
+  id: cattail_puzzle_id
+  description: cattail puzzle description
+  icon: {fileID: -2065771991, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  ingredients:
+  - item: {fileID: 11400000, guid: 6c7005ff39fc31240b69bc6756b0e091, type: 2}
+    count: 9
+  unlocks: []
+  resetsTo: {fileID: 0}
+  cattail: {fileID: 11400000, guid: 6c7005ff39fc31240b69bc6756b0e091, type: 2}
