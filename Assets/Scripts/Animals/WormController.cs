@@ -15,11 +15,12 @@ public enum WormState
 //
 // Tiles:
 //   forbidden  - never entered, crawling or burrowing
-//   preferred  - drifted towards, and the only tiles a burrow can start from
+//   preferred  - drifted towards, crawling and resurfacing
 //   the rest   - allowed but not preferred; worms drift off them
 //
-// Crawling never changes level: a sprite sliding up a cliff face reads wrong. A burrow may come up
-// on any level within burrowRadius, which is how worms get past cliffs.
+// Crawling never changes level: a sprite sliding up a cliff face reads wrong. A burrow may start from
+// any tile it can stand on and come up on any level within burrowRadius, which is how worms get past
+// cliffs, and off a plateau with nothing preferred on it.
 //
 // Everything below works on the worm's feet, a point on the top surface. The transform stands above
 // them by the sprite's lowest vertex, so the sprite sits on the ground whatever its pivot, and is
@@ -264,9 +265,10 @@ public class WormController : AnimalController
 
         Crawl(dt);
 
-        // a burrow only starts from a preferred tile; anywhere else it keeps crawling until it's on one
+        // burrowing is its only way down a cliff, so any ground it may stand on will do. Only a
+        // forbidden tile (it loaded onto one) keeps it crawling until it's off
         stateTimer -= dt;
-        if (stateTimer <= 0.0f && IsPreferred(TileUnder(feet))) BeginEnterBurrow();
+        if (stateTimer <= 0.0f && !IsForbidden(TileUnder(feet))) BeginEnterBurrow();
     }
 
 
