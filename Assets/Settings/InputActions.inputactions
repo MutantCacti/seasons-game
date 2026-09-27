@@ -75,6 +75,26 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "Speed Up",
+                    "type": "Button",
+                    "id": "afc10e81-86eb-4856-ac24-2c3c1940acb1",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Speed Down",
+                    "type": "Button",
+                    "id": "53cb915b-bd52-4dcf-a381-dcd9a1bd06e6",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -273,6 +293,28 @@
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "12a6fd82-1fc3-418b-8172-e72a9741421f",
+                    "path": "<Keyboard>/numpadPlus",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Speed Up",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1f918eb3-56b2-4d1f-acb1-74e4b4bcc7ae",
+                    "path": "<Keyboard>/numpadMinus",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Speed Down",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

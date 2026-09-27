@@ -786,6 +786,50 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fdcc8ff550344de6904c6b98ee3c111, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveDataManager
+--- !u!1 &1472308208
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1472308209}
+  - component: {fileID: 1472308210}
+  m_Layer: 0
+  m_Name: DevTools Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1472308209
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1472308208}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -10.09583, y: -5.75864, z: -82.82478}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1857046190}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1472308210
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1472308208}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8050732777c3fa43b2bb0358fb59cff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DevTools
 --- !u!1 &1546665106
 GameObject:
   m_ObjectHideFlags: 0
@@ -951,6 +995,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1472308209}
   - {fileID: 1455280306}
   - {fileID: 1125248946}
   - {fileID: 594071003}
@@ -1157,6 +1202,38 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: ce7b3b80-f2e3-4406-8c3f-d96c5fac68a9
     m_ActionName: 'Player/Pause[/Keyboard/escape]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1926876056}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnSpeedUp
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: afc10e81-86eb-4856-ac24-2c3c1940acb1
+    m_ActionName: 'Player/Speed Up[/Keyboard/numpadPlus]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1926876056}
+        m_TargetAssemblyTypeName: InputManager, Assembly-CSharp
+        m_MethodName: OnSpeedDown
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 53cb915b-bd52-4dcf-a381-dcd9a1bd06e6
+    m_ActionName: 'Player/Speed Down[/Keyboard/numpadMinus]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: Keyboard&Mouse
   m_DefaultActionMap: Player
