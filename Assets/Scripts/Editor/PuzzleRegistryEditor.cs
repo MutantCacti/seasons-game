@@ -123,6 +123,7 @@ public class PuzzleRegistryEditor : Editor
         int problems = 0;
 
         problems += ValidateEntries(registry, list, byId);
+        problems += ValidateHidden(list);
         problems += ValidateIngredients(byId);
         problems += ValidateUnlocks(registry, byId);
         problems += ValidateStarting(registry, starting, byId);
@@ -249,6 +250,24 @@ public class PuzzleRegistryEditor : Editor
         }
 
         return problems;
+    }
+
+
+    // A hidden puzzle has no row in the book, so a soft lock it raises cannot be reset from there. The
+    // tab and the book still go red, so this is only a warning: the puzzle still runs, whatever owns it
+    // outside the book is just the only thing that can reset it
+    private static int ValidateHidden(SerializedProperty list)
+    {
+        for (int i = 0; i < list.arraySize; i++)
+        {
+            Puzzle puzzle = list.GetArrayElementAtIndex(i).objectReferenceValue as Puzzle;
+            if (puzzle == null || !puzzle.HideInCompendium) continue;
+
+            Debug.LogWarning($"PuzzleRegistry: '{puzzle.name}' is hidden in the compendium, so its " +
+                $"failures can't be reset from the book", puzzle);
+        }
+
+        return 0;
     }
 
 

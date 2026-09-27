@@ -41,6 +41,10 @@ public class Puzzle : WorldListener
     [Tooltip("world conditions this puzzle starts the moment it's completed")]
     [SerializeField] private List<WorldCondition> startsConditions = new List<WorldCondition>();
 
+    [Tooltip("a puzzle the book keeps out (a cut or internal one, say) still runs and completes, it is " +
+        "just kept out of the compendium; with no row in the book, its failures cannot be reset from there")]
+    [SerializeField] private bool hideInCompendium;
+
 
     public string Id => id;
     public string Name => name;   // Object.name, the name in the inspector
@@ -50,6 +54,7 @@ public class Puzzle : WorldListener
     public IReadOnlyList<Puzzle> Unlocks => unlocks;
     public IReadOnlyList<Puzzle> WaitsFor => waitsFor;
     public IReadOnlyList<WorldCondition> StartsConditions => startsConditions;
+    public bool HideInCompendium => hideInCompendium;
 
     // whose checkpoint a fail of this one goes back to
     public Puzzle ResetTarget => resetsTo != null ? resetsTo : this;

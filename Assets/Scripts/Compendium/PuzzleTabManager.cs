@@ -52,6 +52,11 @@ public class PuzzleTabManager : CompendiumTabManager
     private int rowsPerPage = -1;
     private bool warnedAboutMissingStatusRow;
 
+    // Registry entries the book is built from, minus the hidden ones (see Puzzle.HideInCompendium).
+    // Paging, binding and the page arrows all index this, never the registry itself, so a hidden
+    // puzzle takes no page, no row and no glow
+    private readonly List<Puzzle> visiblePuzzles = new List<Puzzle>();
+
     // unseen puzzles are saved through the base class, keyed by Puzzle.Id with an UnseenKind
     private readonly List<UnseenSave> savedUnseen = new List<UnseenSave>();
     private bool baselineEmpty;
@@ -92,6 +97,8 @@ public class PuzzleTabManager : CompendiumTabManager
             return;
         }
 
+        RebuildVisiblePuzzles();
+
         manager.OnPuzzleUnlocked += OnPuzzleUnlocked;
         manager.OnPuzzleComplete += OnPuzzleComplete;
         manager.OnPuzzleSoftLocked += OnPuzzleSoftLocked;
@@ -125,14 +132,27 @@ public class PuzzleTabManager : CompendiumTabManager
     // MARK: registry
 
 
-    public int Count
+    // Once, in Start: the registry is authored data, so a hidden puzzle becoming visible mid-session
+    // (an editor tweak during play) is not worth watching for
+    private void RebuildVisiblePuzzles()
     {
-        get
+        visiblePuzzles.Clear();
+
+        PuzzleRegistry registry = Registry;
+        if (registry == null) return;
+
+        for (int i = 0; i < registry.Count; i++)
         {
-            PuzzleRegistry registry = Registry;
-            return registry != null ? registry.Count : 0;
+            Puzzle puzzle = registry.Entries[i];
+            if (puzzle == null) continue;
+            if (puzzle.HideInCompendium) continue;
+
+            visiblePuzzles.Add(puzzle);
         }
     }
+
+
+    public int Count { get { return visiblePuzzles.Count; } }
 
 
     private PuzzleRegistry Registry
@@ -146,11 +166,9 @@ public class PuzzleTabManager : CompendiumTabManager
     {
         puzzle = null;
 
-        PuzzleRegistry registry = Registry;
-        if (registry == null) return false;
-        if (index < 0 || index >= registry.Count) return false;
+        if (index < 0 || index >= visiblePuzzles.Count) return false;
 
-        puzzle = registry.Entries[index];
+        puzzle = visiblePuzzles[index];
 
         return puzzle != null;
     }
@@ -215,6 +233,15 @@ public class PuzzleTabManager : CompendiumTabManager
                 if (!TryGetPuzzle(i, out Puzzle puzzle) || puzzle != wanted) continue;
 
                 pageIndex = i / RowsPerPage;
+                return true;
+            }
+
+            // The requested puzzle is soft locked but hidden, so it has no page to jump to. The book
+            // still opens on this tab, at the spread it was left on, rather than turning to an
+            // unrelated puzzle the player did not ask about
+            if (wanted.HideInCompendium)
+            {
+                pageIndex = RememberedPage;
                 return true;
             }
         }
@@ -416,10 +443,12 @@ public class PuzzleTabManager : CompendiumTabManager
 
 
     // A soft lock outranks a completion, which outranks anything merely new. A stuck puzzle stays red
-    // for as long as it is stuck, seen or not, so it's read from the live state and not the unseen list
+    // for as long as it is stuck, seen or not, so it's read from the live state and not the unseen list.
+    // Over the whole registry, hidden puzzles included: they have no row to show red on, but the book
+    // and the tab still point at the failures the player cannot fix from anywhere else
     public override UnseenPriority HighestUnseen()
     {
-        if (AnySoftLocked(0, Count)) return UnseenPriority.SoftLock;
+        if (AnySoftLocked()) return UnseenPriority.SoftLock;
 
         UnseenPriority highest = UnseenPriority.None;
         int count = UnseenCount;
@@ -464,6 +493,24 @@ public class PuzzleTabManager : CompendiumTabManager
     }
 
 
+    // Over the whole registry, so a hidden puzzle's soft lock still fires the tab and book red. The
+    // page range version stays on the visible list: an arrow must not point at a page that isn't there
+    private bool AnySoftLocked()
+    {
+        PuzzleManager manager = PuzzleManager.Instance;
+        PuzzleRegistry registry = Registry;
+
+        if (manager == null || registry == null) return false;
+
+        for (int i = 0; i < registry.Count; i++)
+        {
+            if (manager.IsSoftLocked(registry.Entries[i])) return true;
+        }
+
+        return false;
+    }
+
+
     private bool AnySoftLocked(int first, int end)
     {
         PuzzleManager manager = PuzzleManager.Instance;
@@ -505,6 +552,14 @@ public class PuzzleTabManager : CompendiumTabManager
     // so a reload brings its fail highlight back. That is intended.
     private void OnPuzzleSoftLocked(Puzzle puzzle)
     {
+        // A hidden puzzle has no row to put a fail glow on, but it can still be stuck: the glows rank
+        // off live state, so they re-rank even though nothing unseen is added
+        if (puzzle != null && puzzle.HideInCompendium)
+        {
+            RaiseUnseenChanged();
+            return;
+        }
+
         MarkPuzzleUnseen(puzzle, UnseenKind.Failed);
 
         // the glows rank soft locks by live state, so they re-rank even when the unseen list didn't change
@@ -526,6 +581,9 @@ public class PuzzleTabManager : CompendiumTabManager
     private void MarkPuzzleUnseen(Puzzle puzzle, UnseenKind kind)
     {
         if (puzzle == null) return;
+
+        // a hidden puzzle has no page for an unseen flag to point at, so it is never marked
+        if (puzzle.HideInCompendium) return;
 
         MarkUnseen(puzzle.Id, (int)kind);
         RaiseChanged();
@@ -571,7 +629,8 @@ public class PuzzleTabManager : CompendiumTabManager
 
     // The save is global, so a checkpoint reset rolls the puzzles back but not this. Anything the
     // restored state contradicts goes; a Failed on a still-active puzzle stays, because the soft lock
-    // re-announce half a second after load confirms it (or it is already stale and harmless).
+    // re-announce half a second after load confirms it (or it is already stale and harmless). A hidden
+    // puzzle's flags go too: an unseen flag on a page the book no longer shows only glows for nothing
     private void PruneSavedUnseen(PuzzleManager manager)
     {
         PuzzleRegistry registry = manager.Registry;
@@ -591,6 +650,13 @@ public class PuzzleTabManager : CompendiumTabManager
                 Debug.LogWarning($"PuzzleTabManager: the save holds unseen puzzle '{id}', but no puzzle in " +
                     $"'{registry.name}' has that id - dropping it", this);
 
+                ClearUnseen(id, false);
+                pruned = true;
+                continue;
+            }
+
+            if (puzzle.HideInCompendium)
+            {
                 ClearUnseen(id, false);
                 pruned = true;
                 continue;
