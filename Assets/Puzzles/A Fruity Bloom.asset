@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98ef3cbdb0855ce32250e5166ccd872d, type: 3}
+  m_Name: A Fruity Bloom
+  m_EditorClassIdentifier: Assembly-CSharp::AFruityBloom
+  id: a_fruity_bloom
+  description: Fruit sets better with a few flowers nearby.
+  icon: {fileID: 0}
+  ingredients:
+  - item: {fileID: 11400000, guid: f3f4459975b84b94c8188b8ad30d73a7, type: 2}
+    count: 1
+  unlocks: []
+  resetsTo: {fileID: 0}
+  waitsFor: []
+  startsConditions: 
+  fruitBush: {fileID: 11400000, guid: f3f4459975b84b94c8188b8ad30d73a7, type: 2}
+  flowers:
+  - {fileID: 11400000, guid: bd6e914e243fb49b28c60794bff562bb, type: 2}
+  - {fileID: 11400000, guid: 194053dd46cc844d890f12c6cfae168b, type: 2}
+  radius: 2

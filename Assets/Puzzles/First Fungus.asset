@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d433392e400ad11d6c92ec26a6bf421b, type: 3}
+  m_Name: First Fungus
+  m_EditorClassIdentifier: Assembly-CSharp::FirstFungus
+  id: first_fungus
+  description: Mushrooms like to keep out of the sun.
+  icon: {fileID: 0}
+  ingredients:
+  - item: {fileID: 11400000, guid: b754a80c2b4d7184b83e961599d437d8, type: 2}
+    count: 1
+  unlocks: []
+  resetsTo: {fileID: 0}
+  waitsFor: []
+  startsConditions: 
+  mushroom: {fileID: 11400000, guid: b754a80c2b4d7184b83e961599d437d8, type: 2}
+  trees:
+  - {fileID: 11400000, guid: 5a40556e718f4a1458de60832f1ba394, type: 2}
+  - {fileID: 11400000, guid: 49234ce1684d8b39ab361864e3e00ef0, type: 2}
+  shadeRadius: 1
