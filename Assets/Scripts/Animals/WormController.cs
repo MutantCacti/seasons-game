@@ -124,6 +124,9 @@ public class WormController : AnimalController
     [Tooltip("extra pull, while it has a whole credit, on burrow exits it could spread at, so it goes " +
         "and churns the edge of the patch instead of waiting to luck into it. 0 is pure luck")]
     [SerializeField] [Min(0.0f)] private float seekWeight = 8.0f;
+    [Tooltip("cells each way it looks for somewhere to spread when there's nowhere within Burrow Radius. " +
+        "it then heads for the nearest by burrowing towards it")]
+    [SerializeField] [Min(1)] private int seekRadius = 8;
     [SerializeField] private SoundObject spreadSound;
 
 
@@ -161,6 +164,13 @@ public class WormController : AnimalController
     // spreading: credit earned towards the next conversion, and scratch for the cells around a burrow
     private float spreadCredit;
     private readonly Vector3Int[] spreadCandidates = new Vector3Int[9];
+
+    // how one resurface pick seeks, fixed for both of its passes: nearby spreads, or heading for the
+    // nearest far one (seekGoal, which the burrow start was seekGoalDistance from)
+    private bool seekNear;
+    private bool seekFar;
+    private Vector2 seekGoal;
+    private float seekGoalDistance;
 
 
     // MARK: read-only state
@@ -455,14 +465,14 @@ public class WormController : AnimalController
 
     // A weighted pick from every column within burrowRadius on any level, not counting the one it
     // went down in, pulled towards the edge of the patch while it has a spread to spend. Two passes
-    // over at most (2r+1)^2 columns, once per burrow, and no allocation
+    // over at most (2r+1)^2 columns, plus the seek set-up, once per burrow, and no allocation
     private Vector3 PickResurfacePoint(Vector3 from)
     {
         int x = Mathf.FloorToInt(from.x);
         int z = Mathf.FloorToInt(from.z);
 
-        // read once, so both passes weigh every column the same
-        bool seeking = IsSeekingSpread;
+        // decided once, so both passes weigh every column the same
+        PlanSeek(x, z);
 
         float total = 0.0f;
 
@@ -470,7 +480,7 @@ public class WormController : AnimalController
         {
             for (int dx = -burrowRadius; dx <= burrowRadius; dx++)
             {
-                total += ResurfaceWeight(x, z, dx, dz, seeking);
+                total += ResurfaceWeight(x, z, dx, dz);
             }
         }
 
@@ -483,7 +493,7 @@ public class WormController : AnimalController
         {
             for (int dx = -burrowRadius; dx <= burrowRadius; dx++)
             {
-                float weight = ResurfaceWeight(x, z, dx, dz, seeking);
+                float weight = ResurfaceWeight(x, z, dx, dz);
                 if (weight <= 0.0f) continue;
 
                 roll -= weight;
@@ -498,8 +508,9 @@ public class WormController : AnimalController
     }
 
 
-    // seeking adds seekWeight on columns it could spread at, never on one it can't come up in at all
-    private float ResurfaceWeight(int x, int z, int dx, int dz, bool seeking)
+    // seeking adds seekWeight on columns it could spread at, or, heading for a far one, up to
+    // seekWeight on columns by how much closer they bring it. never on one it can't come up in at all
+    private float ResurfaceWeight(int x, int z, int dx, int dz)
     {
         if (dx == 0 && dz == 0) return 0.0f;
 
@@ -511,9 +522,69 @@ public class WormController : AnimalController
 
         float weight = IsPreferred(tile) ? preferredWeight : 1.0f;
 
-        if (seeking && CanSpreadAround(x + dx, z + dz)) weight += seekWeight;
+        if (seekNear && CanSpreadAround(x + dx, z + dz)) weight += seekWeight;
+        if (seekFar) weight += seekWeight * CloserBy(x + dx, z + dz);
 
         return weight;
+    }
+
+
+    // 0 for no closer to the far goal than where it went down, 1 for a whole burrowRadius closer
+    private float CloserBy(int x, int z)
+    {
+        float distance = Vector2.Distance(new Vector2(x + 0.5f, z + 0.5f), seekGoal);
+
+        return Mathf.Clamp01((seekGoalDistance - distance) / burrowRadius);
+    }
+
+
+    // With a spread to spend: somewhere within burrowRadius to spread at, else the nearest spreadable
+    // cell out to seekRadius to head for. That scan is one CanSpread per column outside the burrow
+    // radius, at most (2 * seekRadius + 1)^2, and only when nothing was near
+    private void PlanSeek(int x, int z)
+    {
+        seekNear = false;
+        seekFar = false;
+
+        if (!IsSeekingSpread) return;
+
+        for (int dz = -burrowRadius; dz <= burrowRadius && !seekNear; dz++)
+        {
+            for (int dx = -burrowRadius; dx <= burrowRadius; dx++)
+            {
+                if ((dx != 0 || dz != 0) && CanSpreadAround(x + dx, z + dz))
+                {
+                    seekNear = true;
+                    break;
+                }
+            }
+        }
+
+        if (seekNear) return;
+
+        int best = int.MaxValue;
+
+        for (int dz = -seekRadius; dz <= seekRadius; dz++)
+        {
+            for (int dx = -seekRadius; dx <= seekRadius; dx++)
+            {
+                // already looked at, around every column in the burrow radius
+                if (Mathf.Abs(dx) <= burrowRadius && Mathf.Abs(dz) <= burrowRadius) continue;
+
+                int distance = dx * dx + dz * dz;
+                if (distance >= best) continue;
+
+                if (!TerrainSpread.CanSpread(TopCell(x + dx, z + dz), spreadFrom, spreadTo, spreadNextTo)) continue;
+
+                best = distance;
+                seekGoal = new Vector2(x + dx + 0.5f, z + dz + 0.5f);
+            }
+        }
+
+        if (best == int.MaxValue) return;
+
+        seekFar = true;
+        seekGoalDistance = Mathf.Sqrt(best);
     }
 
 
