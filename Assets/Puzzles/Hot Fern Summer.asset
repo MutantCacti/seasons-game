@@ -19,7 +19,7 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 3ea59f08fabc65b4fb76d1e98ecd567b, type: 2}
     count: 3
   - item: {fileID: 11400000, guid: 23142dca9dc523b14acab44078f8a522, type: 2}
-    count: 4
+    count: 3
   unlocks:
   - {fileID: 11400000, guid: b642dcb4a42fc4f4f81ebe26317bcc0c, type: 2}
   resetsTo: {fileID: 0}

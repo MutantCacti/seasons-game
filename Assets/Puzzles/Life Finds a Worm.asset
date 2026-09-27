@@ -22,4 +22,5 @@ MonoBehaviour:
     count: 8
   unlocks:
   - {fileID: 11400000, guid: 788a26d0d5d94ef42b2cee943641a814, type: 2}
+  - {fileID: 11400000, guid: 831829b1d3299094fad948212a9ef157, type: 2}
   resetsTo: {fileID: 11400000, guid: 6b3fb5c8f4bb890a2a314d8c0534feea, type: 2}
