@@ -211,9 +211,9 @@ public class DeerController : AnimalController
 
 
     [Header("Spreading")]
-    // while it grazes or rests, it turns ground near its feet from spreadFrom into spreadTo, as long as
-    // that ground already touches one of spreadNextTo (see TerrainSpread). nearest first, so it greens
-    // out from it
+    // while it stands, grazes or rests, it turns ground near its feet from spreadFrom into spreadTo,
+    // as long as that ground already touches one of spreadNextTo (see TerrainSpread). nearest first,
+    // so it greens out from it
     [SerializeField] private TerrainTile spreadFrom;    // dirt
     [SerializeField] private TerrainTile spreadTo;      // grass
     [Tooltip("the ground a spread creeps out from. empty means Spread To")]
@@ -223,6 +223,9 @@ public class DeerController : AnimalController
     [SerializeField] [Min(1.0f)] private float creditCap = 2.0f;
     [SerializeField] [Min(0)] private int spreadRadius = 2;               // cells each way from its feet
     [SerializeField] [Min(0.1f)] private float spreadInterval = 1.0f;     // seconds between tries while it stays
+    [Tooltip("extra pull, while it has a whole credit, on wander cells it could spread at, so it goes " +
+        "and greens the edge of the grass instead of waiting to luck into it. 0 is pure luck")]
+    [SerializeField] [Min(0.0f)] private float seekWeight = 8.0f;
     [SerializeField] private SoundObject spreadSound;
 
 
@@ -302,6 +305,7 @@ public class DeerController : AnimalController
     // spreading: credit earned towards the next conversion, and the countdown to the next try
     private float spreadCredit;
     private float spreadTimer;
+    private bool wanderSeeking;     // IsSeekingSpread, fixed for one wander pick
 
     private readonly List<EntityId> scratchIds = new List<EntityId>();
 
@@ -534,6 +538,7 @@ public class DeerController : AnimalController
         stateTimer = duration;
         lingering = true;
         pathCount = 0;
+        spreadTimer = 0.0f;
 
         TurnSide(IsDusk() ? SunScreenX() : 0.0f);
         ShowStill();
@@ -542,6 +547,8 @@ public class DeerController : AnimalController
 
     private void UpdateStand(float dt)
     {
+        UpdateSpread(dt);
+
         stateTimer -= dt;
         if (stateTimer <= 0.0f) Decide();
     }
@@ -1009,11 +1016,15 @@ public class DeerController : AnimalController
     }
 
 
-    // A weighted pick of a cell some steps away, pulled towards the rest of the herd
+    // A weighted pick of a cell some steps away, pulled towards the rest of the herd, and towards
+    // ground it could green while it has a spread to spend
     private bool TryPlanWander()
     {
         int minSteps = Mathf.Max(1, Mathf.Min(wanderSteps.x, wanderSteps.y));
         int maxSteps = Mathf.Max(minSteps, Mathf.Max(wanderSteps.x, wanderSteps.y));
+
+        // read once, so every pass weighs every cell the same
+        wanderSeeking = IsSeekingSpread;
 
         float total = 0.0f;
 
@@ -1046,8 +1057,12 @@ public class DeerController : AnimalController
     }
 
 
+    // a cell it could spread at is worth walking to from anywhere it reached, not just the usual few
+    // steps, since that's what gets it to the edge of the grass
     private float WanderWeight(int cell, int minSteps, int maxSteps)
     {
+        if (wanderSeeking && CanSpreadAt(cell)) return 1.0f + seekWeight;
+
         int steps = bfsSteps[cell];
         if (steps < minSteps || steps > maxSteps) return 0.0f;
 
@@ -1289,7 +1304,7 @@ public class DeerController : AnimalController
     // MARK: spreading
 
 
-    // Only while it stays put grazing or resting: straight away when it settles, then every
+    // Only while it stays put standing, grazing or resting: straight away when it settles, then every
     // spreadInterval, one cell per whole credit
     private void UpdateSpread(float dt)
     {
@@ -1302,6 +1317,22 @@ public class DeerController : AnimalController
         if (!TryPickSpread(out Vector3Int cell)) return;
 
         if (TerrainSpread.TrySpread(cell, spreadFrom, spreadTo, spreadNextTo, spreadSound)) spreadCredit -= 1.0f;
+    }
+
+
+    // it only goes looking with a whole credit to spend, so between spreads it wanders as it always did
+    private bool IsSeekingSpread
+    {
+        get { return seekWeight > 0.0f && spreadCredit >= 1.0f && spreadFrom != null && spreadTo != null; }
+    }
+
+
+    // a reached window cell, on the level the bfs reached it at
+    private bool CanSpreadAt(int cell)
+    {
+        Vector3Int at = new Vector3Int(bfsOriginX + cell % bfsWidth, bfsLevel[cell], bfsOriginZ + cell / bfsWidth);
+
+        return TerrainSpread.CanSpread(at, spreadFrom, spreadTo, spreadNextTo);
     }
 
 
