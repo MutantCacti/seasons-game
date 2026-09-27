@@ -15705,11 +15705,6 @@ MonoBehaviour:
   inventory: {fileID: 0}
   layoutGroup: {fileID: 230018481}
   canvasGroup: {fileID: 230018485}
-  showDuration: 0.25
-  hideDuration: 0.2
-  hiddenScale: 0.9
-  showEase: 27
-  hideEase: 5
 --- !u!114 &230018484
 MonoBehaviour:
   m_ObjectHideFlags: 0
