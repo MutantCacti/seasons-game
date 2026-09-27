@@ -210,6 +210,25 @@ public class DeerController : AnimalController
     [SerializeField] [Range(0.05f, 1.0f)] private float brayActiveScale = 0.35f;   // the interval at full activity
 
 
+    [Header("Spreading")]
+    // while it stands, grazes or rests, it turns ground near its feet from spreadFrom into spreadTo,
+    // as long as that ground already touches one of spreadNextTo (see TerrainSpread). nearest first,
+    // so it greens out from it
+    [SerializeField] private TerrainTile spreadFrom;    // dirt
+    [SerializeField] private TerrainTile spreadTo;      // grass
+    [Tooltip("the ground a spread creeps out from. empty means Spread To")]
+    [SerializeField] private TerrainTile[] spreadNextTo = new TerrainTile[0];
+    [Tooltip("cells converted per whole day and night, while it has somewhere to graze or rest")]
+    [SerializeField] [Min(0.0f)] private float tilesPerDay = 2.0f;
+    [SerializeField] [Min(1.0f)] private float creditCap = 2.0f;
+    [SerializeField] [Min(0)] private int spreadRadius = 2;               // cells each way from its feet
+    [SerializeField] [Min(0.1f)] private float spreadInterval = 1.0f;     // seconds between tries while it stays
+    [Tooltip("extra pull, while it has a whole credit, on wander cells it could spread at, so it goes " +
+        "and greens the edge of the grass instead of waiting to luck into it. 0 is pure luck")]
+    [SerializeField] [Min(0.0f)] private float seekWeight = 8.0f;
+    [SerializeField] private SoundObject spreadSound;
+
+
     private TerrainManager terrain;
     private Vector3 cameraRight;
     private Vector3 cameraForward;
@@ -282,6 +301,11 @@ public class DeerController : AnimalController
     private float answerTimer;
 
     private int happyLineIndex = -1;
+
+    // spreading: credit earned towards the next conversion, and the countdown to the next try
+    private float spreadCredit;
+    private float spreadTimer;
+    private bool wanderSeeking;     // IsSeekingSpread, fixed for one wander pick
 
     private readonly List<EntityId> scratchIds = new List<EntityId>();
 
@@ -368,6 +392,11 @@ public class DeerController : AnimalController
             Debug.LogWarning("DeerController: no WorldStateManager, so the deer never feels dawn or dusk", this);
         }
 
+        if (spreadFrom == null || spreadTo == null)
+        {
+            Debug.LogError("DeerController: no spread tiles assigned, so the deer never turns dirt into grass", this);
+        }
+
         FindCameraAxes();
         FindSun();
 
@@ -394,6 +423,8 @@ public class DeerController : AnimalController
         if (dt <= 0.0f) return;
 
         activity = Activity();
+
+        spreadCredit = TerrainSpread.Accrue(spreadCredit, tilesPerDay, creditCap, dt);
 
         UpdateFear(dt);
         UpdateVoice(dt);
@@ -507,6 +538,7 @@ public class DeerController : AnimalController
         stateTimer = duration;
         lingering = true;
         pathCount = 0;
+        spreadTimer = 0.0f;
 
         TurnSide(IsDusk() ? SunScreenX() : 0.0f);
         ShowStill();
@@ -515,6 +547,8 @@ public class DeerController : AnimalController
 
     private void UpdateStand(float dt)
     {
+        UpdateSpread(dt);
+
         stateTimer -= dt;
         if (stateTimer <= 0.0f) Decide();
     }
@@ -542,6 +576,7 @@ public class DeerController : AnimalController
             lingering = true;
             stateTimer = RandomIn(grazeDuration);
             munchTimer = RandomIn(munchInterval) * 0.5f;
+            spreadTimer = 0.0f;
             TurnSide(ScreenX(grazeFern.transform.position - feet));
             ShowStill();
             return;
@@ -552,6 +587,8 @@ public class DeerController : AnimalController
             Decide();
             return;
         }
+
+        UpdateSpread(dt);
 
         munchTimer -= dt;
 
@@ -574,10 +611,13 @@ public class DeerController : AnimalController
 
             lingering = true;
             stateTimer = RandomIn(restDuration);
+            spreadTimer = 0.0f;
             TurnSide(IsDusk() ? SunScreenX() : 0.0f);
             ShowStill();
             return;
         }
+
+        UpdateSpread(dt);
 
         stateTimer -= dt;
         if (stateTimer <= 0.0f) Decide();
@@ -976,11 +1016,15 @@ public class DeerController : AnimalController
     }
 
 
-    // A weighted pick of a cell some steps away, pulled towards the rest of the herd
+    // A weighted pick of a cell some steps away, pulled towards the rest of the herd, and towards
+    // ground it could green while it has a spread to spend
     private bool TryPlanWander()
     {
         int minSteps = Mathf.Max(1, Mathf.Min(wanderSteps.x, wanderSteps.y));
         int maxSteps = Mathf.Max(minSteps, Mathf.Max(wanderSteps.x, wanderSteps.y));
+
+        // read once, so every pass weighs every cell the same
+        wanderSeeking = IsSeekingSpread;
 
         float total = 0.0f;
 
@@ -1013,8 +1057,12 @@ public class DeerController : AnimalController
     }
 
 
+    // a cell it could spread at is worth walking to from anywhere it reached, not just the usual few
+    // steps, since that's what gets it to the edge of the grass
     private float WanderWeight(int cell, int minSteps, int maxSteps)
     {
+        if (wanderSeeking && CanSpreadAt(cell)) return 1.0f + seekWeight;
+
         int steps = bfsSteps[cell];
         if (steps < minSteps || steps > maxSteps) return 0.0f;
 
@@ -1250,6 +1298,79 @@ public class DeerController : AnimalController
         if (offset.sqrMagnitude > 0.0001f) centre += offset.normalized * (0.5f - cellMargin);
 
         return centre;
+    }
+
+
+    // MARK: spreading
+
+
+    // Only while it stays put standing, grazing or resting: straight away when it settles, then every
+    // spreadInterval, one cell per whole credit
+    private void UpdateSpread(float dt)
+    {
+        spreadTimer -= dt;
+        if (spreadTimer > 0.0f) return;
+
+        spreadTimer = spreadInterval;
+
+        if (spreadCredit < 1.0f || spreadFrom == null || spreadTo == null) return;
+        if (!TryPickSpread(out Vector3Int cell)) return;
+
+        if (TerrainSpread.TrySpread(cell, spreadFrom, spreadTo, spreadNextTo, spreadSound)) spreadCredit -= 1.0f;
+    }
+
+
+    // it only goes looking with a whole credit to spend, so between spreads it wanders as it always did
+    private bool IsSeekingSpread
+    {
+        get { return seekWeight > 0.0f && spreadCredit >= 1.0f && spreadFrom != null && spreadTo != null; }
+    }
+
+
+    // a reached window cell, on the level the bfs reached it at
+    private bool CanSpreadAt(int cell)
+    {
+        Vector3Int at = new Vector3Int(bfsOriginX + cell % bfsWidth, bfsLevel[cell], bfsOriginZ + cell / bfsWidth);
+
+        return TerrainSpread.CanSpread(at, spreadFrom, spreadTo, spreadNextTo);
+    }
+
+
+    // the spreadable cell nearest its feet within spreadRadius, ties at random, so the grass visibly
+    // comes from the deer. At most (2r+1)^2 columns, once a second, and no allocation
+    private bool TryPickSpread(out Vector3Int picked)
+    {
+        picked = default;
+
+        int x = Mathf.FloorToInt(feet.x);
+        int z = Mathf.FloorToInt(feet.z);
+
+        float best = float.PositiveInfinity;
+        int ties = 0;
+
+        for (int dz = -spreadRadius; dz <= spreadRadius; dz++)
+        {
+            for (int dx = -spreadRadius; dx <= spreadRadius; dx++)
+            {
+                Vector3Int cell = new Vector3Int(x + dx, terrain.GetTopLevel(x + dx, z + dz), z + dz);
+                if (!TerrainSpread.CanSpread(cell, spreadFrom, spreadTo, spreadNextTo)) continue;
+
+                float distance = new Vector2(cell.x + 0.5f - feet.x, cell.z + 0.5f - feet.z).sqrMagnitude;
+                if (distance > best + ARRIVED_SQR) continue;
+
+                // a new nearest starts the ties over; an equal one replaces it with a fair chance
+                if (distance < best - ARRIVED_SQR)
+                {
+                    best = distance;
+                    ties = 0;
+                }
+
+                ties++;
+                if (Random.Range(0, ties) == 0) picked = cell;
+            }
+        }
+
+        return ties > 0;
     }
 
 

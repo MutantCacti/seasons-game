@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 508d114467548ae18b5249591cf26370, type: 3}
+  m_Name: Walking On Water
+  m_EditorClassIdentifier: Assembly-CSharp::PlaceAll
+  id: walking_on_water
+  description: Lily pads are great for marine ecosystems.
+  icon: {fileID: 149010872, guid: 18f1f9b3d768e754fbcb753054c8c262, type: 3}
+  ingredients:
+  - item: {fileID: 11400000, guid: 862b714692a61127a8be0c201c85858a, type: 2}
+    count: 8
+  unlocks: []
+  resetsTo: {fileID: 0}
+  waitsFor: []
+  startsConditions: 
+  item: {fileID: 11400000, guid: 862b714692a61127a8be0c201c85858a, type: 2}
+  requiredOverride: 0

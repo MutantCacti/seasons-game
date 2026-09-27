@@ -51,7 +51,8 @@ public readonly struct GrantOrigin
     {
         if (entity != null)
         {
-            position = entity.transform.position;
+            // the entity's own marker when its prefab has one, so the fliers leave from the right point
+            position = PingTarget.Resolve(entity).position;
             return true;
         }
 

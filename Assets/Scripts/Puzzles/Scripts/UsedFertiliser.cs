@@ -14,17 +14,18 @@ public class UsedFertiliser : ScriptedPuzzle
     [SerializeField] private GameItem fertiliser;
 
 
-    // [System.NonSerialized] private List<Vector3Int> placedCells;
-    // [System.NonSerialized] private bool hasLastPlaced;
-    // [System.NonSerialized] private Vector3Int lastPlaced;
+    [System.NonSerialized] private EntityId lastPlacedEntity;
+    [System.NonSerialized] private bool hasLastPlacedEntity;
 
 
     public override void OnItemPlaced(WorldContext context, GameItem item, Vector3Int cell)
     {
         if (InventoryManager.Instance.GetCount(fertiliser) >= 4) return;
 
-        // lastPlaced = cell;
-        // hasLastPlaced = true;
+        // the placement hears the grown result, not the fertiliser that made it, so this takes whatever
+        // non-fixture entity now stands on the cell
+        lastPlacedEntity = PlacedEntityAt(cell, null);
+        hasLastPlacedEntity = lastPlacedEntity != null;
 
         TryComplete(context);
     }
@@ -35,25 +36,27 @@ public class UsedFertiliser : ScriptedPuzzle
         credit = PuzzleCredit.None;
 
         if (fertiliser == null) {
-            Debug.LogError("BreakGround: no dirt item, so this puzzle can never complete", this);
+            Debug.LogError("UsedFertiliser: no fertiliser item, so this puzzle can never complete", this);
             return false;
         }
 
         if (InventoryManager.Instance.GetCount(fertiliser) >= 4) return false;
 
-        // credit = PuzzleCredit.Cell(CreditCell(context));
+        credit = Credit();
         return true;
     }
 
 
-    // private Vector3Int CreditCell(WorldContext context)
-    // {
-    //     if (hasLastPlaced)
-    //     {
-    //         hasLastPlaced = false;
-    //         return lastPlaced;
-    //     }
+    // the entity the fertilising made. Only the just placed one will do: the world's entities say
+    // nothing about which of them a fertiliser grew, so a load or an unlock catches up with None rather
+    // than pointing the ping at something unrelated
+    private PuzzleCredit Credit()
+    {
+        EntityId entity = hasLastPlacedEntity && IsLive(lastPlacedEntity) ? lastPlacedEntity : null;
 
-    //     return default;
-    // }
+        hasLastPlacedEntity = false;
+        lastPlacedEntity = null;
+
+        return entity != null ? PuzzleCredit.Entity(entity) : PuzzleCredit.None;
+    }
 }

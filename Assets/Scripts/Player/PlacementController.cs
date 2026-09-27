@@ -31,6 +31,8 @@ public class PlacementController : MonoBehaviour
     {
         typeof(SpriteRenderer),
         typeof(BillboardSprite),
+        typeof(FloatOnSea),     // so the ghost floats where the lilypad will
+        typeof(RandomYRotation),     // so the ghost previews the angle the item will land at
     };
 
 
@@ -446,6 +448,14 @@ public class PlacementController : MonoBehaviour
         if (!ResidentsAllow(item.Tile, cell, replacing)) return false;
 
         return item.IsPlaceableOn(target);
+    }
+
+
+    // Whether everything standing on cell would still be allowed there if it became tile. For a tile
+    // change that isn't a placement (TerrainSpread), so it follows the same rule a drop does
+    public bool ResidentsAllowTile(TerrainTile tile, Vector3Int cell)
+    {
+        return ResidentsAllow(tile, cell, null);
     }
 
 

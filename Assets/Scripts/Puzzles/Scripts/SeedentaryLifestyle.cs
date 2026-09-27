@@ -17,16 +17,17 @@ public class SeedentaryLifestyle : ScriptedPuzzle
 
     [System.NonSerialized] private List<Vector3> seed1Positions;
     [System.NonSerialized] private List<Vector3> seed2Positions;
-    [System.NonSerialized] private bool hasLastPlaced;
-    [System.NonSerialized] private Vector3Int lastPlaced;
+    [System.NonSerialized] private EntityId lastPlacedEntity;
+    [System.NonSerialized] private bool hasLastPlacedEntity;
 
 
     public override void OnItemPlaced(WorldContext context, GameItem item, Vector3Int cell)
     {
         if (item != seeds_1 && item != seeds_2) return;
 
-        lastPlaced = cell;
-        hasLastPlaced = true;
+        // the one that was actually put down, so a 2x2 of two kinds still pings on the last of them
+        lastPlacedEntity = PlacedEntityAt(cell, item);
+        hasLastPlacedEntity = lastPlacedEntity != null;
 
         TryComplete(context);
     }
@@ -42,7 +43,7 @@ public class SeedentaryLifestyle : ScriptedPuzzle
 
         if (!Has2x2Patch(context)) return false;
 
-        credit = PuzzleCredit.Cell(CreditCell(context));
+        credit = Credit();
         return true;
     }
 
@@ -91,15 +92,17 @@ public class SeedentaryLifestyle : ScriptedPuzzle
     }
 
 
-    // the dirt just placed; caught up after a load or an unlock, any of the player's dirt cells
-    private Vector3Int CreditCell(WorldContext context)
+    // the seed just placed, so the ping sits on it and follows it; caught up after a load or an unlock,
+    // when there is no just placed one, any seed of either kind the player has
+    private PuzzleCredit Credit()
     {
-        if (hasLastPlaced)
-        {
-            hasLastPlaced = false;
-            return lastPlaced;
-        }
+        EntityId entity = hasLastPlacedEntity && IsLive(lastPlacedEntity) ? lastPlacedEntity : AnyPlacedEntity(seeds_1);
 
-        return default;
+        if (entity == null) entity = AnyPlacedEntity(seeds_2);
+
+        hasLastPlacedEntity = false;
+        lastPlacedEntity = null;
+
+        return entity != null ? PuzzleCredit.Entity(entity) : PuzzleCredit.None;
     }
 }

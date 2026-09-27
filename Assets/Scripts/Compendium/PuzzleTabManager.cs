@@ -10,7 +10,7 @@ public class PuzzleTabManager : CompendiumTabManager
 
     private const string ACTIVE_TEXT = "This puzzle is active";
     private const string COMPLETE_TEXT = "You've completed this puzzle";
-    private const string FAIL_TEXT = "You've failed this puzzle, reset to checkpoint?";
+    private const string FAIL_TEXT = "You've failed this puzzle";
 
 
     private enum PuzzleState
@@ -636,7 +636,8 @@ public class PuzzleTabManager : CompendiumTabManager
 
         if (CompendiumUIManager.Instance != null) CompendiumUIManager.Instance.RequestClose();
 
-        if (entity != null) view.PanToTransform(entity.transform);
+        // the entity's own marker when its prefab has one, so the camera goes to the marked point
+        if (entity != null) view.PanToTransform(PingTarget.Resolve(entity));
         else view.PanToPoint(point);
     }
 

@@ -108,6 +108,24 @@ public class WormController : AnimalController
     [SerializeField] private SoundObject surfaceSound;
 
 
+    [Header("Spreading")]
+    // coming up, it turns ground next to where it surfaced from spreadFrom into spreadTo, as long as
+    // that ground already touches one of spreadNextTo (see TerrainSpread)
+    [SerializeField] private TerrainTile spreadFrom;    // wasteland
+    [SerializeField] private TerrainTile spreadTo;      // dirt
+    [Tooltip("the ground a spread creeps out from: whatever the worm lives on (dirt and grass), since it " +
+        "avoids wasteland and there's rarely any dirt left by the time it arrives. empty means Spread To")]
+    [SerializeField] private TerrainTile[] spreadNextTo = new TerrainTile[0];
+    [Tooltip("cells converted per whole day and night. it only converts on resurfacing (about once a " +
+        "day with the default timings), up to Credit Cap at once, so rates much above that are capped")]
+    [SerializeField] [Min(0.0f)] private float tilesPerDay = 1.0f;
+    [SerializeField] [Min(1.0f)] private float creditCap = 2.0f;
+    [Tooltip("extra pull, while it has a whole credit, on burrow exits it could spread at, so it goes " +
+        "and churns the edge of the patch instead of waiting to luck into it. 0 is pure luck")]
+    [SerializeField] [Min(0.0f)] private float seekWeight = 8.0f;
+    [SerializeField] private SoundObject spreadSound;
+
+
     private TerrainManager terrain;
     private Sprite crawlSprite;
 
@@ -138,6 +156,10 @@ public class WormController : AnimalController
     // scratch for the weighted step pick; sized to STEP_OFFSETS so picking never allocates
     private readonly Vector2Int[] candidates = new Vector2Int[9];
     private readonly float[] candidateWeights = new float[9];
+
+    // spreading: credit earned towards the next conversion, and scratch for the cells around a burrow
+    private float spreadCredit;
+    private readonly Vector3Int[] spreadCandidates = new Vector3Int[9];
 
 
     // MARK: read-only state
@@ -175,6 +197,11 @@ public class WormController : AnimalController
             return;
         }
 
+        if (spreadFrom == null || spreadTo == null)
+        {
+            Debug.LogError("WormController: no spread tiles assigned, so the worm never turns wasteland into dirt", this);
+        }
+
         SnapToSurface();
         BeginCrawling();
     }
@@ -184,6 +211,8 @@ public class WormController : AnimalController
     {
         float dt = Time.deltaTime;   // scaled, so a paused game freezes the worm
         if (dt <= 0.0f) return;
+
+        spreadCredit = TerrainSpread.Accrue(spreadCredit, tilesPerDay, creditCap, dt);
 
         switch (state)
         {
@@ -300,6 +329,8 @@ public class WormController : AnimalController
         if (transitionSprite != null) SetSprite(transitionSprite);
         SetVisible(true);
         PlaySound(surfaceSound);
+
+        SpreadAround(burrowTo);
     }
 
 
@@ -421,11 +452,15 @@ public class WormController : AnimalController
 
 
     // A weighted pick from every column within burrowRadius on any level, not counting the one it
-    // went down in. Two passes over at most (2r+1)^2 columns, once per burrow, and no allocation
+    // went down in, pulled towards the edge of the patch while it has a spread to spend. Two passes
+    // over at most (2r+1)^2 columns, once per burrow, and no allocation
     private Vector3 PickResurfacePoint(Vector3 from)
     {
         int x = Mathf.FloorToInt(from.x);
         int z = Mathf.FloorToInt(from.z);
+
+        // read once, so both passes weigh every column the same
+        bool seeking = IsSeekingSpread;
 
         float total = 0.0f;
 
@@ -433,7 +468,7 @@ public class WormController : AnimalController
         {
             for (int dx = -burrowRadius; dx <= burrowRadius; dx++)
             {
-                total += ResurfaceWeight(x, z, dx, dz);
+                total += ResurfaceWeight(x, z, dx, dz, seeking);
             }
         }
 
@@ -446,7 +481,7 @@ public class WormController : AnimalController
         {
             for (int dx = -burrowRadius; dx <= burrowRadius; dx++)
             {
-                float weight = ResurfaceWeight(x, z, dx, dz);
+                float weight = ResurfaceWeight(x, z, dx, dz, seeking);
                 if (weight <= 0.0f) continue;
 
                 roll -= weight;
@@ -461,7 +496,8 @@ public class WormController : AnimalController
     }
 
 
-    private float ResurfaceWeight(int x, int z, int dx, int dz)
+    // seeking adds seekWeight on columns it could spread at, never on one it can't come up in at all
+    private float ResurfaceWeight(int x, int z, int dx, int dz, bool seeking)
     {
         if (dx == 0 && dz == 0) return 0.0f;
 
@@ -471,7 +507,70 @@ public class WormController : AnimalController
         TerrainTile tile = terrain.GetTile(new Vector3Int(x + dx, top, z + dz));
         if (tile == null || IsForbidden(tile)) return 0.0f;
 
-        return IsPreferred(tile) ? preferredWeight : 1.0f;
+        float weight = IsPreferred(tile) ? preferredWeight : 1.0f;
+
+        if (seeking && CanSpreadAround(x + dx, z + dz)) weight += seekWeight;
+
+        return weight;
+    }
+
+
+    // MARK: spreading
+
+
+    // Coming up churns the ground around it: the column it surfaced in or one of the eight around it,
+    // at random, per whole credit. Picked afresh after each one, since the dirt just made can open up
+    // more frontier
+    private void SpreadAround(Vector3 point)
+    {
+        if (spreadFrom == null || spreadTo == null) return;
+
+        int x = Mathf.FloorToInt(point.x);
+        int z = Mathf.FloorToInt(point.z);
+
+        while (spreadCredit >= 1.0f)
+        {
+            int count = 0;
+
+            for (int i = 0; i < STEP_OFFSETS.Length; i++)
+            {
+                Vector3Int cell = TopCell(x + STEP_OFFSETS[i].x, z + STEP_OFFSETS[i].y);
+                if (TerrainSpread.CanSpread(cell, spreadFrom, spreadTo, spreadNextTo)) spreadCandidates[count++] = cell;
+            }
+
+            if (count == 0) return;
+
+            if (!TerrainSpread.TrySpread(spreadCandidates[Random.Range(0, count)], spreadFrom, spreadTo, spreadNextTo, spreadSound)) return;
+
+            spreadCredit -= 1.0f;
+        }
+    }
+
+
+    // whether coming up in this column would find something to spread: it or a column around it.
+    // Only asked while seeking, so the nine checks per column cost nothing the rest of the time
+    private bool CanSpreadAround(int x, int z)
+    {
+        for (int i = 0; i < STEP_OFFSETS.Length; i++)
+        {
+            Vector3Int cell = TopCell(x + STEP_OFFSETS[i].x, z + STEP_OFFSETS[i].y);
+            if (TerrainSpread.CanSpread(cell, spreadFrom, spreadTo, spreadNextTo)) return true;
+        }
+
+        return false;
+    }
+
+
+    // it only goes looking with a whole credit to spend, so between spreads it wanders as it always did
+    private bool IsSeekingSpread
+    {
+        get { return seekWeight > 0.0f && spreadCredit >= 1.0f && spreadFrom != null && spreadTo != null; }
+    }
+
+
+    private Vector3Int TopCell(int x, int z)
+    {
+        return new Vector3Int(x, terrain.GetTopLevel(x, z), z);
     }
 
 

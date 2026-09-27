@@ -347,6 +347,16 @@ public class WorldEvents : MonoBehaviour, WorldContext
     }
 
 
+    // TerrainSpread calls this once a spread's transition has finished. a tile changing can strand or
+    // unstick a puzzle, so the soft locks are judged again too
+    public void RaiseTerrainChanged(Vector3Int cell, TerrainTile from, TerrainTile to)
+    {
+        Dispatch(listener => listener.OnTerrainChanged(this, cell, from, to));
+
+        if (ready && puzzleManager != null) puzzleManager.ScheduleSoftLockCheck();
+    }
+
+
     private void OnSeasonChanged(Season season)
     {
         Dispatch(listener => listener.OnSeasonChanged(this, season));

@@ -17,6 +17,9 @@ public class SaveDataManager : MonoBehaviour
     // True while this session has created a world that is not finished populating
     public bool IsConstructingNewWorld { get; private set; }
 
+    // a SaveSoon waiting for this frame's LateUpdate
+    private bool saveSoon;
+
 
     // Raised once a newly created world has finished populating, so systems that held work back until
     // construction ended can flush it
@@ -53,6 +56,25 @@ public class SaveDataManager : MonoBehaviour
         saveData.PrepareForWrite();
 
         WriteToDisk(saveData);
+    }
+
+
+    // Saves at the end of this frame instead of now, so several changes in one frame (a worm greening
+    // two cells, two animals at once) cost one write. What changed is already in SaveData, so a quit
+    // before the flush is still caught by the quit and pause saves below
+    public void SaveSoon()
+    {
+        saveSoon = true;
+    }
+
+
+    private void LateUpdate()
+    {
+        if (!saveSoon) return;
+
+        saveSoon = false;
+
+        if (CanFlush) Save();
     }
 
 
