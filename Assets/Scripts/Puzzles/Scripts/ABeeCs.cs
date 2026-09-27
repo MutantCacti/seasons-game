@@ -17,7 +17,9 @@ public class ABeeCs : ScriptedPuzzle
     [SerializeField] [Min(1)] private int requiredBees = 3;
     [SerializeField] private Animal bee;
 
-    // only for validation: the item the hive is placed as, whose Beehive holds the per-hive cap
+    // only for validation: the placed item the hive is part of (the tree with the hive in it, not the
+    // Beehive reagent), whose Beehive holds the per-hive cap
+    [Tooltip("the placed item the hive is part of (e.g. Maple Tree (Hive)), not the Beehive reagent")]
     [SerializeField] private GameItem hiveItem;
 
 
@@ -93,7 +95,14 @@ public class ABeeCs : ScriptedPuzzle
             return;
         }
 
-        Beehive hive = hiveItem.Prefab != null ? hiveItem.Prefab.GetComponentInChildren<Beehive>(true) : null;
+        if (hiveItem.Prefab == null)
+        {
+            Debug.LogError($"ABeeCs: '{name}' Hive Item '{hiveItem.name}' has no prefab (the Beehive reagent?): " +
+                $"it wants the placed item the hive is part of, e.g. Maple Tree (Hive)", this);
+            return;
+        }
+
+        Beehive hive = hiveItem.Prefab.GetComponentInChildren<Beehive>(true);
 
         if (hive == null)
         {
