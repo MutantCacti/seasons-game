@@ -75,7 +75,7 @@ public class MajorityOfNinePatch : ScriptedPuzzle
 
 
         foreach (Vector3Int cell in occupied) {
-            IsMajority3x3(occupied, cell);
+            if (IsMajority3x3(occupied, cell)) return true;
         }
 
 
