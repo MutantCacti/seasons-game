@@ -9,8 +9,9 @@ using UnityEngine;
 // and a checkpoint rolls it back. What makes it different from a placement is the feel: the tile
 // transition and a sound, but no ripple, pop or shake, since nobody dropped anything.
 //
-// It only creeps out from ground that already has the new tile (the frontier), so it never appears
-// out of nowhere.
+// It only creeps out from ground next to it (the frontier), so it never appears out of nowhere. The
+// frontier is the new tile itself unless the animal names others: a worm lives on grass and avoids
+// wasteland, so its dirt creeps out from grass as well as dirt.
 public static class TerrainSpread
 {
     private static readonly Vector3Int[] ORTHOGONAL =
@@ -57,9 +58,9 @@ public static class TerrainSpread
 
 
     // Whether cell may go from `from` to `to` right now: it's the visible top of its column, it holds
-    // from, it touches to orthogonally on the same level, the risen sea isn't over it, and nothing
-    // standing on it would be turned out by the new tile
-    public static bool CanSpread(Vector3Int cell, TerrainTile from, TerrainTile to)
+    // from, it touches one of nextTo orthogonally on the same level (just `to` when nextTo is empty),
+    // the risen sea isn't over it, and nothing standing on it would be turned out by the new tile
+    public static bool CanSpread(Vector3Int cell, TerrainTile from, TerrainTile to, TerrainTile[] nextTo)
     {
         if (from == null || to == null || from == to) return false;
 
@@ -70,7 +71,7 @@ public static class TerrainSpread
         if (cell.y < 0 || terrain.GetTopLevel(cell.x, cell.z) != cell.y) return false;
         if (terrain.GetTile(cell) != from) return false;
 
-        if (!TouchesTile(terrain, cell, to)) return false;
+        if (!TouchesFrontier(terrain, cell, to, nextTo)) return false;
         if (IsUnderSea(terrain, cell)) return false;
 
         // the same rule a drop follows, so a spread never strands a flower on the wrong ground
@@ -81,15 +82,30 @@ public static class TerrainSpread
     }
 
 
-    // the frontier: a neighbour on the same level, at the top of its own column, already holds tile
-    private static bool TouchesTile(TerrainManager terrain, Vector3Int cell, TerrainTile tile)
+    // the frontier: a neighbour on the same level, at the top of its own column, holds one of nextTo,
+    // or `to` itself when nextTo is empty
+    private static bool TouchesFrontier(TerrainManager terrain, Vector3Int cell, TerrainTile to, TerrainTile[] nextTo)
     {
         for (int i = 0; i < ORTHOGONAL.Length; i++)
         {
             Vector3Int neighbour = cell + ORTHOGONAL[i];
 
             if (terrain.GetTopLevel(neighbour.x, neighbour.z) != cell.y) continue;
-            if (terrain.GetTile(neighbour) == tile) return true;
+            if (IsFrontier(terrain.GetTile(neighbour), to, nextTo)) return true;
+        }
+
+        return false;
+    }
+
+
+    private static bool IsFrontier(TerrainTile tile, TerrainTile to, TerrainTile[] nextTo)
+    {
+        if (tile == null) return false;
+        if (nextTo == null || nextTo.Length == 0) return tile == to;
+
+        for (int i = 0; i < nextTo.Length; i++)
+        {
+            if (nextTo[i] == tile) return true;
         }
 
         return false;
@@ -113,9 +129,9 @@ public static class TerrainSpread
     // Changes cell and shows it: the tile transition, the sound, a save at the end of the frame, and
     // OnTerrainChanged once the transition has finished (straight away when none plays), so a rule
     // reacting to the new tile never fires while the ground is still growing over
-    public static bool TrySpread(Vector3Int cell, TerrainTile from, TerrainTile to, SoundObject sound)
+    public static bool TrySpread(Vector3Int cell, TerrainTile from, TerrainTile to, TerrainTile[] nextTo, SoundObject sound)
     {
-        if (!CanSpread(cell, from, to)) return false;
+        if (!CanSpread(cell, from, to, nextTo)) return false;
 
         TerrainManager terrain = TerrainManager.Instance;
 

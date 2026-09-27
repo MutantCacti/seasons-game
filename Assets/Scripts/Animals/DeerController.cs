@@ -212,9 +212,12 @@ public class DeerController : AnimalController
 
     [Header("Spreading")]
     // while it grazes or rests, it turns ground near its feet from spreadFrom into spreadTo, as long as
-    // that ground already touches spreadTo (see TerrainSpread). nearest first, so it greens out from it
+    // that ground already touches one of spreadNextTo (see TerrainSpread). nearest first, so it greens
+    // out from it
     [SerializeField] private TerrainTile spreadFrom;    // dirt
     [SerializeField] private TerrainTile spreadTo;      // grass
+    [Tooltip("the ground a spread creeps out from. empty means Spread To")]
+    [SerializeField] private TerrainTile[] spreadNextTo = new TerrainTile[0];
     [Tooltip("cells converted per whole day and night, while it has somewhere to graze or rest")]
     [SerializeField] [Min(0.0f)] private float tilesPerDay = 2.0f;
     [SerializeField] [Min(1.0f)] private float creditCap = 2.0f;
@@ -1298,7 +1301,7 @@ public class DeerController : AnimalController
         if (spreadCredit < 1.0f || spreadFrom == null || spreadTo == null) return;
         if (!TryPickSpread(out Vector3Int cell)) return;
 
-        if (TerrainSpread.TrySpread(cell, spreadFrom, spreadTo, spreadSound)) spreadCredit -= 1.0f;
+        if (TerrainSpread.TrySpread(cell, spreadFrom, spreadTo, spreadNextTo, spreadSound)) spreadCredit -= 1.0f;
     }
 
 
@@ -1319,7 +1322,7 @@ public class DeerController : AnimalController
             for (int dx = -spreadRadius; dx <= spreadRadius; dx++)
             {
                 Vector3Int cell = new Vector3Int(x + dx, terrain.GetTopLevel(x + dx, z + dz), z + dz);
-                if (!TerrainSpread.CanSpread(cell, spreadFrom, spreadTo)) continue;
+                if (!TerrainSpread.CanSpread(cell, spreadFrom, spreadTo, spreadNextTo)) continue;
 
                 float distance = new Vector2(cell.x + 0.5f - feet.x, cell.z + 0.5f - feet.z).sqrMagnitude;
                 if (distance > best + ARRIVED_SQR) continue;

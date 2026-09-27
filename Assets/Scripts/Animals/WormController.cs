@@ -110,9 +110,12 @@ public class WormController : AnimalController
 
     [Header("Spreading")]
     // coming up, it turns ground next to where it surfaced from spreadFrom into spreadTo, as long as
-    // that ground already touches spreadTo (see TerrainSpread)
+    // that ground already touches one of spreadNextTo (see TerrainSpread)
     [SerializeField] private TerrainTile spreadFrom;    // wasteland
     [SerializeField] private TerrainTile spreadTo;      // dirt
+    [Tooltip("the ground a spread creeps out from: whatever the worm lives on (dirt and grass), since it " +
+        "avoids wasteland and there's rarely any dirt left by the time it arrives. empty means Spread To")]
+    [SerializeField] private TerrainTile[] spreadNextTo = new TerrainTile[0];
     [Tooltip("cells converted per whole day and night. it only converts on resurfacing (about once a " +
         "day with the default timings), up to Credit Cap at once, so rates much above that are capped")]
     [SerializeField] [Min(0.0f)] private float tilesPerDay = 1.0f;
@@ -523,12 +526,12 @@ public class WormController : AnimalController
                 int cz = z + STEP_OFFSETS[i].y;
 
                 Vector3Int cell = new Vector3Int(cx, terrain.GetTopLevel(cx, cz), cz);
-                if (TerrainSpread.CanSpread(cell, spreadFrom, spreadTo)) spreadCandidates[count++] = cell;
+                if (TerrainSpread.CanSpread(cell, spreadFrom, spreadTo, spreadNextTo)) spreadCandidates[count++] = cell;
             }
 
             if (count == 0) return;
 
-            if (!TerrainSpread.TrySpread(spreadCandidates[Random.Range(0, count)], spreadFrom, spreadTo, spreadSound)) return;
+            if (!TerrainSpread.TrySpread(spreadCandidates[Random.Range(0, count)], spreadFrom, spreadTo, spreadNextTo, spreadSound)) return;
 
             spreadCredit -= 1.0f;
         }
