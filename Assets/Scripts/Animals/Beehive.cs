@@ -3,8 +3,8 @@ using DG.Tweening;
 using UnityEngine;
 
 
-// A placed hive that bees live in. Goes on the root of a hive item's prefab, alongside the EntityId
-// that EntityManager gives it.
+// A placed hive that bees live in. It can sit anywhere in a placed entity's prefab: on its root, or
+// nested inside another item (a hive in a tree). Its identity is the entity's, found up the parents.
 //
 // Nothing about the bees is stored here: each bee saves its hive's guid (AnimalSave.homeGuid), and
 // Residents counts the live bees that name this one, so the count rolls back with a checkpoint and
@@ -80,14 +80,24 @@ public class Beehive : MonoBehaviour
     // MARK: identity
 
 
-    // looked up lazily: EntityManager adds the EntityId after the prefab's Awake, and the guid is only
-    // assigned (a load, a replace) after that
+    // The entity it is part of. Looked up lazily: EntityManager adds the EntityId after the prefab's
+    // Awake, and the guid is only assigned (a load, a replace) after that
+    public EntityId Entity
+    {
+        get
+        {
+            if (entityId == null) entityId = GetComponentInParent<EntityId>();
+            return entityId;
+        }
+    }
+
+
     public string Guid
     {
         get
         {
-            if (entityId == null) entityId = GetComponent<EntityId>();
-            return entityId != null ? entityId.Guid : "";
+            EntityId entity = Entity;
+            return entity != null ? entity.Guid : "";
         }
     }
 
@@ -120,13 +130,19 @@ public class Beehive : MonoBehaviour
     public bool HasRoom { get { return Residents < capacity; } }
 
 
-    // the risen sea is over its base: no bee is born here and none goes in
+    // the risen sea is over the base of whatever it is in (a hive up a tree floods with the tree): no
+    // bee is born here and none goes in
     public bool IsFlooded
     {
         get
         {
             SeaLevel sea = SeaLevel.Instance;
-            return sea != null && sea.IsRisen && transform.position.y < sea.SurfaceY;
+            if (sea == null || !sea.IsRisen) return false;
+
+            EntityId entity = Entity;
+            Transform bottom = entity != null ? entity.transform : transform;
+
+            return bottom.position.y < sea.SurfaceY;
         }
     }
 
