@@ -24,4 +24,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b642dcb4a42fc4f4f81ebe26317bcc0c, type: 2}
   resetsTo: {fileID: 0}
   waitsFor: []
+  startsConditions: 02000000
   fernSummer: {fileID: 11400000, guid: 3ea59f08fabc65b4fb76d1e98ecd567b, type: 2}

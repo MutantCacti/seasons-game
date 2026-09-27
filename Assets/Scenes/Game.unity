@@ -28691,6 +28691,7 @@ MonoBehaviour:
   level: 0.25
   skirtStartY: -1
   riseDuration: 5
+  riseSound: {fileID: 11400000, guid: 36f46787c27a739b88d0c81422682718, type: 2}
   floorY: -4
   lowestTopY: 0
   pixelsPerUnit: 32
@@ -30500,7 +30501,6 @@ MonoBehaviour:
   boundsReturnSnappiness: 0.2
   audioListener: {fileID: 0}
   listenerDistance: 5
-  testSO: {fileID: 11400000, guid: 37df897fd2e48c72f8ade9e939f56cf6, type: 2}
 --- !u!114 &1764824874
 MonoBehaviour:
   m_ObjectHideFlags: 0
