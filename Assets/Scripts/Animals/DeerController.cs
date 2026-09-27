@@ -1693,19 +1693,13 @@ public class DeerController : AnimalController
     // MARK: traits
 
 
-    // FNV-1a over the guid's characters: string.GetHashCode isn't promised to be the same across
-    // runtimes, and this must give a deer the same look every load
+    // from the guid, so a deer has the same look every load (see EntitySeed)
     private void ApplyTraits()
     {
         EntityId id = EntityId != null ? EntityId : GetComponent<EntityId>();
         string guid = id != null ? id.Guid : name;
 
-        seed = 2166136261u;
-        for (int i = 0; i < guid.Length; i++)
-        {
-            seed ^= guid[i];
-            seed *= 16777619u;
-        }
+        seed = EntitySeed.FromGuid(guid);
 
         size = Mathf.Lerp(sizeRange.x, sizeRange.y, Trait01(SALT_SIZE));
 
@@ -1735,17 +1729,10 @@ public class DeerController : AnimalController
     }
 
 
-    // one trait, 0..1, from the seed mixed with its own salt (a lowbias32 finaliser)
+    // one trait, 0..1, from the seed mixed with its own salt
     private float Trait01(uint salt)
     {
-        uint x = seed ^ salt;
-        x ^= x >> 16;
-        x *= 0x7FEB352Du;
-        x ^= x >> 15;
-        x *= 0x846CA68Bu;
-        x ^= x >> 16;
-
-        return (x >> 8) / 16777216.0f;
+        return EntitySeed.Trait01(seed, salt);
     }
 
 
