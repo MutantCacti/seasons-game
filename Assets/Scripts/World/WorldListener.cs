@@ -104,7 +104,7 @@ public abstract class WorldListener : ScriptableObject
     // a cell changed tile without a placement (an animal spreading greenery). Heard once its tile
     // transition has finished, like OnItemShown, so the new tile is what the player sees. The remap
     // is already saved and counts as the player's own, so tile puzzles re-check here
-    public virtual void OnTerrainChanged(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to)
+    public virtual void OnTerrainMutated(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to)
     {
     }
 

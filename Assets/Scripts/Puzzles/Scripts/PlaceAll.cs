@@ -53,7 +53,7 @@ public class PlaceAll : ScriptedPuzzle
 
 
     // a worm's greenery is a remap like the player's, so it counts too
-    public override void OnTerrainChanged(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to)
+    public override void OnTerrainMutated(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to)
     {
         if (item == null || item.Tile == null) return;
         if (to != item.Tile) return;

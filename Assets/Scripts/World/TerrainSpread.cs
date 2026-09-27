@@ -127,7 +127,7 @@ public static class TerrainSpread
 
 
     // Changes cell and shows it: the tile transition, the sound, a save at the end of the frame, and
-    // OnTerrainChanged once the transition has finished (straight away when none plays), so a rule
+    // OnTerrainMutated once the transition has finished (straight away when none plays), so a rule
     // reacting to the new tile never fires while the ground is still growing over
     public static bool TrySpread(Vector3Int cell, TerrainTile from, TerrainTile to, TerrainTile[] nextTo, SoundObject sound)
     {

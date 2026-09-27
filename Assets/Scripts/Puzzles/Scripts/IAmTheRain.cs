@@ -37,7 +37,7 @@ public class IAmTheRain : ScriptedPuzzle
 
 
     // water's tile is grass, so a deer's grass counts as rain too
-    public override void OnTerrainChanged(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to)
+    public override void OnTerrainMutated(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to)
     {
         if (water == null || to != water.Tile) return;
 

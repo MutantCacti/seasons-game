@@ -351,7 +351,7 @@ public class WorldEvents : MonoBehaviour, WorldContext
     // unstick a puzzle, so the soft locks are judged again too
     public void RaiseTerrainChanged(Vector3Int cell, TerrainTile from, TerrainTile to)
     {
-        Dispatch(listener => listener.OnTerrainChanged(this, cell, from, to));
+        Dispatch(listener => listener.OnTerrainMutated(this, cell, from, to));
 
         if (ready && puzzleManager != null) puzzleManager.ScheduleSoftLockCheck();
     }

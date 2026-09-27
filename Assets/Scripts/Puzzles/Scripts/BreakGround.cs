@@ -31,7 +31,7 @@ public class BreakGround : ScriptedPuzzle
 
 
     // a worm's dirt is a remap like the player's, so it counts too
-    public override void OnTerrainChanged(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to)
+    public override void OnTerrainMutated(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to)
     {
         if (dirt == null || to != dirt.Tile) return;
 
