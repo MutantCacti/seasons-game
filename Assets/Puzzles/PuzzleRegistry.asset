@@ -18,6 +18,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 370016e1cef6a8dcc88855f77c074faa, type: 2}
   - {fileID: 11400000, guid: 0fc367109252a58449792da384e7a561, type: 2}
   - {fileID: 11400000, guid: 788a26d0d5d94ef42b2cee943641a814, type: 2}
+  - {fileID: 11400000, guid: 831829b1d3299094fad948212a9ef157, type: 2}
   - {fileID: 11400000, guid: b642dcb4a42fc4f4f81ebe26317bcc0c, type: 2}
+  - {fileID: 11400000, guid: 9ab47bec8a17ff54c96f3e742b3bee38, type: 2}
   startingPuzzles:
   - {fileID: 11400000, guid: 6b3fb5c8f4bb890a2a314d8c0534feea, type: 2}
