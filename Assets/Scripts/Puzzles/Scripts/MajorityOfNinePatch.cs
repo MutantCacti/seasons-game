@@ -30,16 +30,16 @@ public class MajorityOfNinePatch : ScriptedPuzzle
     [SerializeField] private GameItem cattail;
 
     [System.NonSerialized] private List<Vector3> cattailPositions;
-    [System.NonSerialized] private bool hasLastPlaced;
-    [System.NonSerialized] private Vector3Int lastPlaced;
+    [System.NonSerialized] private EntityId lastPlacedEntity;
+    [System.NonSerialized] private bool hasLastPlacedEntity;
 
 
     public override void OnItemPlaced(WorldContext context, GameItem item, Vector3Int cell)
     {
         if (item != cattail) return;
 
-        lastPlaced = cell;
-        hasLastPlaced = true;
+        lastPlacedEntity = PlacedEntityAt(cell, cattail);
+        hasLastPlacedEntity = lastPlacedEntity != null;
 
         TryComplete(context);
     }
@@ -55,7 +55,7 @@ public class MajorityOfNinePatch : ScriptedPuzzle
 
         if (!Check3X3AroundPlaced(context)) return false;
 
-        credit = PuzzleCredit.Cell(CreditCell(context));
+        credit = Credit();
         return true;
     }
 
@@ -93,13 +93,15 @@ public class MajorityOfNinePatch : ScriptedPuzzle
         return false;
     }
 
-    private Vector3Int CreditCell(WorldContext context) {
-        if (hasLastPlaced) {
-            hasLastPlaced = false;
-            return lastPlaced;
-        }
+    // the cattail just placed, so the ping sits on it and follows it; caught up after a load or an
+    // unlock, when there is no just placed one, any cattail the player has
+    private PuzzleCredit Credit() {
+        EntityId entity = hasLastPlacedEntity && IsLive(lastPlacedEntity) ? lastPlacedEntity : AnyPlacedEntity(cattail);
 
-        return default;
+        hasLastPlacedEntity = false;
+        lastPlacedEntity = null;
+
+        return entity != null ? PuzzleCredit.Entity(entity) : PuzzleCredit.None;
     }
     
 }

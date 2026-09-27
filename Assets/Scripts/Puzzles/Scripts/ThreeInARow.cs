@@ -14,16 +14,16 @@ public class ThreeInARow : ScriptedPuzzle
     [SerializeField] private GameItem fernSummer;
 
     [System.NonSerialized] private List<Vector3> placedItems;
-    [System.NonSerialized] private bool hasLastPlaced;
-    [System.NonSerialized] private Vector3Int lastPlaced;
+    [System.NonSerialized] private EntityId lastPlacedEntity;
+    [System.NonSerialized] private bool hasLastPlacedEntity;
 
 
     public override void OnItemPlaced(WorldContext context, GameItem item, Vector3Int cell)
     {
         if (item != fernSummer) return;
 
-        lastPlaced = cell;
-        hasLastPlaced = true;
+        lastPlacedEntity = PlacedEntityAt(cell, fernSummer);
+        hasLastPlacedEntity = lastPlacedEntity != null;
 
         TryComplete(context);
     }
@@ -39,7 +39,7 @@ public class ThreeInARow : ScriptedPuzzle
 
         if (!HasLineOf3(context)) return false;
 
-        credit = PuzzleCredit.Cell(CreditCell(context));
+        credit = Credit();
         return true;
     }
 
@@ -78,15 +78,15 @@ public class ThreeInARow : ScriptedPuzzle
     }
 
 
-    // the dirt just placed; caught up after a load or an unlock, any of the player's dirt cells
-    private Vector3Int CreditCell(WorldContext context)
+    // the fern just placed, so the ping sits on it and follows it; caught up after a load or an unlock,
+    // when there is no just placed one, any fern the player has
+    private PuzzleCredit Credit()
     {
-        if (hasLastPlaced)
-        {
-            hasLastPlaced = false;
-            return lastPlaced;
-        }
+        EntityId entity = hasLastPlacedEntity && IsLive(lastPlacedEntity) ? lastPlacedEntity : AnyPlacedEntity(fernSummer);
 
-        return default;
+        hasLastPlacedEntity = false;
+        lastPlacedEntity = null;
+
+        return entity != null ? PuzzleCredit.Entity(entity) : PuzzleCredit.None;
     }
 }

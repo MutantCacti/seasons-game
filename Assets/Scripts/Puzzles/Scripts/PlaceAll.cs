@@ -24,8 +24,6 @@ public class PlaceAll : ScriptedPuzzle
 
 
     [System.NonSerialized] private List<Vector3Int> placedCells;
-    [System.NonSerialized] private List<EntityId> scratchEntities;
-    [System.NonSerialized] private List<EntityManager.LiveEntity> scratchLive;
     [System.NonSerialized] private bool hasLastPlaced;
     [System.NonSerialized] private Vector3Int lastPlaced;
     [System.NonSerialized] private EntityId lastPlacedEntity;
@@ -46,7 +44,7 @@ public class PlaceAll : ScriptedPuzzle
         }
         else
         {
-            lastPlacedEntity = PlacedEntityAt(cell);
+            lastPlacedEntity = PlacedEntityAt(cell, item);
             hasLastPlacedEntity = lastPlacedEntity != null;
         }
 
@@ -104,23 +102,13 @@ public class PlaceAll : ScriptedPuzzle
 
         // a checkpoint reset despawns what was just placed while this asset, which outlives the scene,
         // still remembers it: a dead reference would complete with nothing for the ping to follow
-        EntityId entity = hasLastPlacedEntity && IsLive(lastPlacedEntity) ? lastPlacedEntity : AnyPlacedEntity();
+        EntityId entity = hasLastPlacedEntity && IsLive(lastPlacedEntity) ? lastPlacedEntity : AnyPlacedEntity(item);
 
         hasLastPlacedEntity = false;
         lastPlacedEntity = null;
 
         // None is legal: the completion still counts, it just has nothing to point at
         return entity != null ? PuzzleCredit.Entity(entity) : PuzzleCredit.None;
-    }
-
-
-    private static bool IsLive(EntityId entity)
-    {
-        if (entity == null) return false;
-
-        EntityManager entities = EntityManager.Instance;
-
-        return entities != null && entities.TryGetLive(entity, out _);
     }
 
 
@@ -138,52 +126,6 @@ public class PlaceAll : ScriptedPuzzle
         context.CollectPlacedCells(item, placedCells);
 
         return placedCells.Count > 0 ? placedCells[placedCells.Count - 1] : default;
-    }
-
-
-    // The entity the placement just made. WorldContext has no "what stands on this cell" query, so
-    // this asks EntityManager directly, as WorldEvents' own CountPlaced does
-    private EntityId PlacedEntityAt(Vector3Int cell)
-    {
-        EntityManager entities = EntityManager.Instance;
-        if (entities == null) return null;
-
-        if (scratchEntities == null) scratchEntities = new List<EntityId>();
-        entities.CollectLiveAt(cell, scratchEntities);
-
-        // a cell can hold more than one entity, so take the one that is actually this item's
-        for (int i = 0; i < scratchEntities.Count; i++)
-        {
-            if (!entities.TryGetLive(scratchEntities[i], out EntityManager.LiveEntity live)) continue;
-            if (live.item != item || live.fixture) continue;
-
-            return live.entityId;
-        }
-
-        return null;
-    }
-
-
-    // caught up: any placed one will do, the last to arrive, as BreakGround takes the last cell
-    private EntityId AnyPlacedEntity()
-    {
-        EntityManager entities = EntityManager.Instance;
-        if (entities == null) return null;
-
-        if (scratchLive == null) scratchLive = new List<EntityManager.LiveEntity>();
-        entities.CollectLive(scratchLive);
-
-        EntityId found = null;
-
-        for (int i = 0; i < scratchLive.Count; i++)
-        {
-            EntityManager.LiveEntity live = scratchLive[i];
-            if (live.item != item || live.fixture || live.entityId == null) continue;
-
-            found = live.entityId;
-        }
-
-        return found;
     }
 
 
