@@ -101,7 +101,8 @@ public class GameItem : ScriptableObject
         if (target == null) return false;
         if (target.Tags == null) return false;
 
-        if (placedOnTags != null && !placedOnTags.Any(tag => target.Tags.Contains(tag))) return false;
+        // any one tag is enough, and no tags means anywhere (Any on an empty list would mean nowhere)
+        if (placedOnTags != null && placedOnTags.Length > 0 && !placedOnTags.Any(tag => target.Tags.Contains(tag))) return false;
         if (antiPlacedOnTags != null && !antiPlacedOnTags.All(antiTag => !target.Tags.Contains(antiTag))) return false;
 
         return true;
