@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b9cb12d39d04b7aab503483786a6892, type: 3}
+  m_Name: You Beat The Game
+  m_EditorClassIdentifier: Assembly-CSharp::Puzzle
+  id: you_beat_the_game
+  description: The land is alive again. Here's a little of everything - make it yours,
+    and when it's all used up, start again from the beginning.
+  icon: {fileID: 0}
+  ingredients:
+  - item: {fileID: 11400000, guid: 2a41064d6f74dcdd8bc0c4ced089210d, type: 2}
+    count: 15
+  - item: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
+    count: 10
+  - item: {fileID: 11400000, guid: 641663caa22cd29a68165a82bcc24891, type: 2}
+    count: 4
+  - item: {fileID: 11400000, guid: 094ecffb17153e02fb86e9c15e48a83b, type: 2}
+    count: 4
+  - item: {fileID: 11400000, guid: 23142dca9dc523b14acab44078f8a522, type: 2}
+    count: 8
+  - item: {fileID: 11400000, guid: 3ea59f08fabc65b4fb76d1e98ecd567b, type: 2}
+    count: 6
+  - item: {fileID: 11400000, guid: 6c7005ff39fc31240b69bc6756b0e091, type: 2}
+    count: 4
+  - item: {fileID: 11400000, guid: 862b714692a61127a8be0c201c85858a, type: 2}
+    count: 6
+  - item: {fileID: 11400000, guid: 777e2b82c49909441ac3fae8c4827049, type: 2}
+    count: 3
+  - item: {fileID: 11400000, guid: 1ba7695016810394cb8dd252a9484cfa, type: 2}
+    count: 6
+  - item: {fileID: 11400000, guid: f3f4459975b84b94c8188b8ad30d73a7, type: 2}
+    count: 3
+  - item: {fileID: 11400000, guid: b754a80c2b4d7184b83e961599d437d8, type: 2}
+    count: 3
+  unlocks: []
+  resetsTo: {fileID: 11400000, guid: 6b3fb5c8f4bb890a2a314d8c0534feea, type: 2}
+  waitsFor: []
+  startsConditions: []
+  hideInCompendium: 0

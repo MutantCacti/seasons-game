@@ -13,17 +13,19 @@ MonoBehaviour:
   m_Name: Field Work
   m_EditorClassIdentifier: Assembly-CSharp::FieldWork
   id: field_work
-  description: Bees like a bit of long grass to come home to.
-  icon: {fileID: 0}
+  description: The bees will be buzzed to find some long grass to play in.
+  icon: {fileID: -875080649, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: 1ba7695016810394cb8dd252a9484cfa, type: 2}
     count: 3
   - item: {fileID: 11400000, guid: f041bf6c234bfde438163a2a4f5d178e, type: 2}
     count: 3
-  unlocks: []
+  unlocks:
+  - {fileID: 11400000, guid: b857f505005b412a9674723972fda023, type: 2}
   resetsTo: {fileID: 0}
   waitsFor: []
   startsConditions: 
+  hideInCompendium: 0
   grasses:
   - {fileID: 11400000, guid: 1ba7695016810394cb8dd252a9484cfa, type: 2}
   - {fileID: 11400000, guid: f041bf6c234bfde438163a2a4f5d178e, type: 2}

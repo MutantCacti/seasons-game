@@ -22,7 +22,8 @@ MonoBehaviour:
     count: 5
   - item: {fileID: 11400000, guid: 777e2b82c49909441ac3fae8c4827049, type: 2}
     count: 5
-  unlocks: []
+  unlocks:
+  - {fileID: 11400000, guid: b857f505005b412a9674723972fda023, type: 2}
   resetsTo: {fileID: 0}
   waitsFor: []
   startsConditions: []

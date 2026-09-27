@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Rocky Shores
   m_EditorClassIdentifier: Assembly-CSharp::RockyShores
   id: rocky_shores
-  description: Every good shoreline needs somewhere to sit.
-  icon: {fileID: 0}
+  description: What's a shoreline without somewhere to sit?
+  icon: {fileID: 2034490687, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: c8859df733204994ea9f271d577b448d, type: 2}
     count: 2
@@ -22,10 +22,12 @@ MonoBehaviour:
     count: 2
   - item: {fileID: 11400000, guid: e4f106c6730cf9a4b8c0d1c11ae233ab, type: 2}
     count: 2
-  unlocks: []
+  unlocks:
+  - {fileID: 11400000, guid: b857f505005b412a9674723972fda023, type: 2}
   resetsTo: {fileID: 0}
   waitsFor: []
   startsConditions: 
+  hideInCompendium: 0
   rocks:
   - {fileID: 11400000, guid: c8859df733204994ea9f271d577b448d, type: 2}
   - {fileID: 11400000, guid: 64d847f6f42f77445a4d677a48f9a5cd, type: 2}

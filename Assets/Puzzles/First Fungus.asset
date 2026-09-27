@@ -13,15 +13,18 @@ MonoBehaviour:
   m_Name: First Fungus
   m_EditorClassIdentifier: Assembly-CSharp::FirstFungus
   id: first_fungus
-  description: Mushrooms like to keep out of the sun.
-  icon: {fileID: 0}
+  description: Mushrooms like to keep out of the sun. You might call them shady,
+    but it's very warming being such a fun gi.
+  icon: {fileID: 1961561089, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: b754a80c2b4d7184b83e961599d437d8, type: 2}
     count: 1
-  unlocks: []
+  unlocks:
+  - {fileID: 11400000, guid: b857f505005b412a9674723972fda023, type: 2}
   resetsTo: {fileID: 0}
   waitsFor: []
   startsConditions: 
+  hideInCompendium: 0
   mushroom: {fileID: 11400000, guid: b754a80c2b4d7184b83e961599d437d8, type: 2}
   trees:
   - {fileID: 11400000, guid: 5a40556e718f4a1458de60832f1ba394, type: 2}

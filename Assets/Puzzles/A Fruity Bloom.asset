@@ -13,15 +13,17 @@ MonoBehaviour:
   m_Name: A Fruity Bloom
   m_EditorClassIdentifier: Assembly-CSharp::AFruityBloom
   id: a_fruity_bloom
-  description: Fruit sets better with a few flowers nearby.
-  icon: {fileID: 0}
+  description: Everyone knows the fruit is sweeter when the flowers are blooming.
+  icon: {fileID: -1967581791, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: f3f4459975b84b94c8188b8ad30d73a7, type: 2}
     count: 1
-  unlocks: []
+  unlocks:
+  - {fileID: 11400000, guid: b857f505005b412a9674723972fda023, type: 2}
   resetsTo: {fileID: 0}
   waitsFor: []
   startsConditions: 
+  hideInCompendium: 0
   fruitBush: {fileID: 11400000, guid: f3f4459975b84b94c8188b8ad30d73a7, type: 2}
   flowers:
   - {fileID: 11400000, guid: bd6e914e243fb49b28c60794bff562bb, type: 2}
