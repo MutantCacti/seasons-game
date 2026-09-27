@@ -124,7 +124,12 @@ public class BeeController : AnimalController
     [SerializeField] [Range(0.0f, 1.0f)] private float sameKindWeight = 0.3f;
     [SerializeField] [Min(1.0f)] private float recruitWeight = 4.0f;       // pull of the flower last danced for
     [SerializeField] private Vector2 drinkDuration = new Vector2(2.0f, 4.0f);
-    [SerializeField] private float drinkHeight = 0.02f;                    // above the flower's drawn top
+    // where on a flower it drinks: a child named "Nectar..." under the flower (or its sprite) if it has
+    // any, else a random point in this part of the flower's sprite rect (0..1 across and up), where
+    // the blossoms of a bushy flower are rather than the top of the bush
+    [SerializeField] private Vector2 nectarAcross = new Vector2(0.3f, 0.7f);
+    [SerializeField] private Vector2 nectarUp = new Vector2(0.35f, 0.7f);
+    [SerializeField] private float drinkHeight = 0.02f;                    // above the nectar point
     [SerializeField] private float drinkInFront = 0.05f;                   // towards the camera, so it draws in front
     [SerializeField] private float dipDepth = 0.03f;
     [SerializeField] [Min(1)] private int dipsPerDrink = 2;
@@ -1007,16 +1012,53 @@ public class BeeController : AnimalController
     }
 
 
-    // just over the flower's drawn top, a touch towards the camera so it draws in front
+    // at a blossom, a touch towards the camera so it draws in front of the flower
     private Vector3 DrinkPoint(EntityId target)
     {
-        Vector3 at = target.transform.position;
-        float top = at.y;
+        return NectarPoint(target) + Vector3.up * drinkHeight - cameraForward * drinkInFront;
+    }
 
+
+    // An authored nectar point if the flower has one, else somewhere in the blossom part of its sprite.
+    // The sprite's box comes from its pixel rect and pivot, as AnimalGlow measures it, rather than
+    // renderer bounds, so a stray pixel at the top of the cell can't lift it
+    private Vector3 NectarPoint(EntityId target)
+    {
         SpriteRenderer drawn = target.GetComponentInChildren<SpriteRenderer>();
-        if (drawn != null) top = drawn.bounds.max.y;
 
-        return new Vector3(at.x, top + drinkHeight, at.z) - cameraForward * drinkInFront;
+        if (TryPickAuthoredNectar(target.transform, out Vector3 authored)) return authored;
+        if (drawn != null && drawn.transform != target.transform && TryPickAuthoredNectar(drawn.transform, out authored)) return authored;
+
+        if (drawn == null || drawn.sprite == null) return target.transform.position;
+
+        Sprite sprite = drawn.sprite;
+        float pixelsPerUnit = sprite.pixelsPerUnit;
+        Vector2 min = -sprite.pivot / pixelsPerUnit;
+        Vector2 size = sprite.rect.size / pixelsPerUnit;
+
+        float x = min.x + size.x * RandomIn(nectarAcross);
+        float y = min.y + size.y * RandomIn(nectarUp);
+
+        return drawn.transform.TransformPoint(new Vector3(x, y, 0.0f));
+    }
+
+
+    // a random one of the direct children named "Nectar...", picked without keeping a list
+    private static bool TryPickAuthoredNectar(Transform parent, out Vector3 point)
+    {
+        point = default;
+        int seen = 0;
+
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            if (!child.name.StartsWith("Nectar", System.StringComparison.Ordinal)) continue;
+
+            seen++;
+            if (Random.Range(0, seen) == 0) point = child.position;
+        }
+
+        return seen > 0;
     }
 
 
