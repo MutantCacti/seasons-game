@@ -71,6 +71,9 @@ public class SeaLevel : MonoBehaviour
     // a load and a checkpoint reset always do, so restoring a save never replays the rise
     [SerializeField] private float riseDuration = 1.5f;
 
+    // played at the camera when the live rise starts; a load or reset snaps silently. Optional
+    [SerializeField] private SoundObject riseSound;
+
 
     // the rest is written by TerrainBaker
     [Header("Baked")]
@@ -254,6 +257,8 @@ public class SeaLevel : MonoBehaviour
     {
         risen = true;
 
+        PlayRiseSound();
+
         if (riseDuration <= 0.0f)
         {
             Apply();
@@ -263,6 +268,18 @@ public class SeaLevel : MonoBehaviour
         rising = true;
         riseElapsed = 0.0f;
         riseFrom = SurfaceY;
+    }
+
+
+    // the sea belongs to the whole view, not a spot on it, so it plays where the listener is
+    private void PlayRiseSound()
+    {
+        if (riseSound == null || AudioManager.Instance == null) return;
+
+        Camera viewCamera = Camera.main;
+        Vector3 position = viewCamera != null ? viewCamera.transform.position : transform.position;
+
+        AudioManager.Instance.PlaySFX(riseSound, position);
     }
 
 

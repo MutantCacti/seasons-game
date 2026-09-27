@@ -180,6 +180,8 @@ public class PuzzleManager : MonoBehaviour
 
     private bool warnedAboutMissingNotifications;
 
+    private bool warnedAboutMissingWorldStates;
+
 
     public bool CompletionEnabled { get { return completionEnabled; } }
     public PuzzleRegistry Registry { get { return registry; } }
@@ -459,6 +461,11 @@ public class PuzzleManager : MonoBehaviour
 
         WriteThrough();
 
+        // here rather than from OnPuzzleComplete, which runs after the save: a quit in between would
+        // keep the completion and lose the condition for good. StartCondition saves the whole save,
+        // completion included, so both reach disk together
+        StartConditions(puzzle);
+
         // after the write-through, so the notification never reaches disk ahead of the completion
         if (notifications != null)
         {
@@ -474,6 +481,34 @@ public class PuzzleManager : MonoBehaviour
         OnPuzzleComplete?.Invoke(puzzle);
 
         return true;
+    }
+
+
+    // Starts the world conditions a completion brings on. Only the live completion gets here: a load
+    // restores completed puzzles without this path, and the conditions are already in the saved states
+    private void StartConditions(Puzzle puzzle)
+    {
+        IReadOnlyList<WorldCondition> conditions = puzzle.StartsConditions;
+        if (conditions == null || conditions.Count == 0) return;
+
+        WorldStateManager worldStates = WorldStateManager.Instance;
+
+        if (worldStates == null)
+        {
+            if (!warnedAboutMissingWorldStates)
+            {
+                warnedAboutMissingWorldStates = true;
+                Debug.LogError($"PuzzleManager: no WorldStateManager, so '{puzzle.name}' completed without " +
+                    $"starting its world conditions", this);
+            }
+
+            return;
+        }
+
+        for (int i = 0; i < conditions.Count; i++)
+        {
+            worldStates.StartCondition(conditions[i]);
+        }
     }
 
 

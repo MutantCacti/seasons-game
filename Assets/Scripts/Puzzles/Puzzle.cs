@@ -38,6 +38,9 @@ public class Puzzle : WorldListener
         "them can still be unlocked")]
     [SerializeField] private List<Puzzle> waitsFor = new List<Puzzle>();
 
+    [Tooltip("world conditions this puzzle starts the moment it's completed")]
+    [SerializeField] private List<WorldCondition> startsConditions = new List<WorldCondition>();
+
 
     public string Id => id;
     public string Name => name;   // Object.name, the name in the inspector
@@ -46,6 +49,7 @@ public class Puzzle : WorldListener
     public IReadOnlyList<Ingredient> Ingredients => ingredients;
     public IReadOnlyList<Puzzle> Unlocks => unlocks;
     public IReadOnlyList<Puzzle> WaitsFor => waitsFor;
+    public IReadOnlyList<WorldCondition> StartsConditions => startsConditions;
 
     // whose checkpoint a fail of this one goes back to
     public Puzzle ResetTarget => resetsTo != null ? resetsTo : this;
