@@ -479,6 +479,9 @@ public class PuzzleManager : MonoBehaviour
         softLocked.Remove(puzzle);
         pendingSoftLockChecks.Remove(puzzle);
 
+        // a puzzle awaiting this one may have nothing left to wait for. queued now, judged after the grace
+        ScheduleSoftLockCheck();
+
         if (!string.IsNullOrEmpty(guid)) completedBy[puzzle] = guid;
 
         // The next puzzles now unlock when the player opens the completion ping, not here. Without a
@@ -876,6 +879,14 @@ public class PuzzleManager : MonoBehaviour
                 continue;
             }
 
+            // Spent, but a puzzle it awaits can still complete (Wood You Be Mine waiting on the others).
+            // Clears like the wait above: a required puzzle's soft lock can clear later
+            if (IsAwaitingPuzzle(puzzle))
+            {
+                if (ClearSoftLock(puzzle)) rejudge = true;
+                continue;
+            }
+
             // Spent, but the player is still holding something that would react with what's left on the
             // ground, so the puzzle is not provably stuck: they can still act. Unlike growth and presenting
             // above, this condition can become true AFTER the puzzle was flagged - a later puzzle grants
@@ -945,6 +956,36 @@ public class PuzzleManager : MonoBehaviour
             if (wanted == null || wanted == puzzle) continue;
             if (unlocked.Contains(wanted)) continue;
 
+            if (CanStillUnlock(wanted, puzzle)) return true;
+        }
+
+        return false;
+    }
+
+
+    // True while any puzzle this scripted one awaits can still complete: active and not stuck, or still
+    // locked but reachable
+    private bool IsAwaitingPuzzle(Puzzle puzzle)
+    {
+        if (!(puzzle is ScriptedPuzzle scripted)) return false;
+
+        IReadOnlyList<Puzzle> awaits = scripted.Awaits;
+        if (awaits == null || awaits.Count == 0) return false;
+
+        for (int i = 0; i < awaits.Count; i++)
+        {
+            Puzzle wanted = awaits[i];
+            if (wanted == null || wanted == puzzle) continue;
+            if (completed.Contains(wanted)) continue;
+
+            // active: it can still complete unless it is stuck itself
+            if (unlocked.Contains(wanted))
+            {
+                if (!softLocked.Contains(wanted)) return true;
+                continue;
+            }
+
+            // locked: only while something can still unlock it (a queued completion lands then too)
             if (CanStillUnlock(wanted, puzzle)) return true;
         }
 

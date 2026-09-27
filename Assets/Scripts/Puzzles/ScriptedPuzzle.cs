@@ -25,10 +25,20 @@ public abstract class ScriptedPuzzle : Puzzle
     // True while the world is still on its way to satisfying it without the player: everything is
     // spent, but what completes it arrives on its own over time (bees moving into a hive). A soft lock
     // is held off meanwhile. It should only ever go from true to false: PuzzleManager skips rather than
-    // clears on it, so it never withdraws a flag it already raised
+    // clears on it, so it never withdraws a flag it already raised. A wait that can come back (another
+    // puzzle's soft lock clearing) belongs in Awaits instead
     protected virtual bool IsStillSettling(WorldContext context)
     {
         return false;
+    }
+
+
+    // Puzzles whose completion this one is waiting on. It isn't judged stuck while any of them can still
+    // complete: active and not soft locked, or locked but still reachable. Unlike settling this can go
+    // false to true (a required puzzle's soft lock clears), so PuzzleManager un-flags on it. Null for none
+    public virtual IReadOnlyList<Puzzle> Awaits
+    {
+        get { return null; }
     }
 
 
