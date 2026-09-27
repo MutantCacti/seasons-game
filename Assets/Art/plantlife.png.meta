@@ -289,7 +289,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: bush_furit
+      name: bush_fruit
       rect:
         serializedVersion: 2
         x: 64
@@ -1478,7 +1478,7 @@ TextureImporter:
       blueberry: 2366276
       bush_autumn: 862332435
       bush_flowering: 1025928156
-      bush_furit: -1967581791
+      bush_fruit: -1967581791
       bush_spring: -438033406
       bush_summer: 1935774533
       bush_winter: -293104882

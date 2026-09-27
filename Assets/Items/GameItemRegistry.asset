@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameItemRegistry
   items:
   - {fileID: 11400000, guid: 7a2a903dc6c1d4e029e4c1ba97e0cba8, type: 2}
+  - {fileID: 11400000, guid: b754a80c2b4d7184b83e961599d437d8, type: 2}
+  - {fileID: 11400000, guid: f3f4459975b84b94c8188b8ad30d73a7, type: 2}
   - {fileID: 11400000, guid: 2a41064d6f74dcdd8bc0c4ced089210d, type: 2}
   - {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
   - {fileID: 11400000, guid: 094ecffb17153e02fb86e9c15e48a83b, type: 2}
