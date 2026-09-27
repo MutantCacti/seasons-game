@@ -249,7 +249,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 225
+        y: 224
         width: 32
         height: 32
       alignment: 0
@@ -289,7 +289,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: bush_furit
+      name: bush_fruit
       rect:
         serializedVersion: 2
         x: 64
@@ -636,28 +636,6 @@ TextureImporter:
       bones: []
       spriteID: 63b890ed7b963d540876da3bed13a0d9
       internalID: 145409455
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: grass_tall
-      rect:
-        serializedVersion: 2
-        x: 32
-        y: 160
-        width: 32
-        height: 32
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 963d5a29ab7dc844c8197f59452b5231
-      internalID: -875080649
       vertices: []
       indices: 
       edges: []
@@ -1478,7 +1456,7 @@ TextureImporter:
       blueberry: 2366276
       bush_autumn: 862332435
       bush_flowering: 1025928156
-      bush_furit: -1967581791
+      bush_fruit: -1967581791
       bush_spring: -438033406
       bush_summer: 1935774533
       bush_winter: -293104882

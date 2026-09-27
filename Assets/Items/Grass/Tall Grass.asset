@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a447734dfd8a20878da909dc174cacf, type: 3}
-  m_Name: Fern Summer
+  m_Name: Tall Grass
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
-  id: fern_summer
-  description: A leafy plant that provides shelter for small animals.
-  icon: {fileID: 1462247588, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
+  id: grass_tall
+  description: lorem ipsum
+  icon: {fileID: -875080649, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 0}
-  prefab: {fileID: 212010971281103808, guid: 7fac7796131fac647befd453bf8a414d, type: 3}
+  prefab: {fileID: 212010971281103808, guid: 9df9c0fc35ae3fe4b9f63e034f3aec89, type: 3}
   placeSound: {fileID: 0}
   placedOnTags:
   - grass
@@ -24,3 +24,5 @@ MonoBehaviour:
   growsInto: {fileID: 0}
   growthDays: 1
   growSound: {fileID: 0}
+  reactions: []
+  hideInCompendium: 0
