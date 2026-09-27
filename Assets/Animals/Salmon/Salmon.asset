@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: Salmon
   m_EditorClassIdentifier: Assembly-CSharp::Animal
   id: salmon
-  description: lorem ipsum
+  description: The ambiguity of our salt or fresh water isn't a problem for these
+    elite jumpers.
   icon: {fileID: 3686518894096300775, guid: 709adf17cc9b83b4aaf10da65c830684, type: 3}
   prefab: {fileID: 2430199224308526179, guid: 6a07677753503a74394569afac585af2, type: 3}
   mobCap: 1

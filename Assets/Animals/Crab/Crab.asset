@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Crab
   m_EditorClassIdentifier: Assembly-CSharp::Animal
   id: crab
-  description: lorem ipsum
+  description: Scuttling over the sand, they'll pinch anything in their way.
   icon: {fileID: -8781757214100938709, guid: 3611497a04c70d64b9679b228061002e, type: 3}
   prefab: {fileID: 2430199224308526179, guid: 1a89c188eee42d442bf84863cda7c215, type: 3}
   mobCap: 1
