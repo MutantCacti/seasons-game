@@ -374,6 +374,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MusicPlaylist
   songs:
   - {fileID: 11400000, guid: 37df897fd2e48c72f8ade9e939f56cf6, type: 2}
+  - {fileID: 11400000, guid: 89093cce5caa93bb49acf3ce1f42053b, type: 2}
   startDelay: 1
   pauseBetweenSongs: 4
   pauseVariation: 1
