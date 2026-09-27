@@ -22,6 +22,37 @@ public static class TerrainSpread
     };
 
 
+    private static bool warnedAboutClock;
+
+
+    // MARK: budget
+
+
+    // An animal's spread credit after dt more seconds: tilesPerDay per whole day and night, read live
+    // since the day length is still being tuned, and capped so a long stall (nowhere to spread) can't
+    // come out as a burst. Spend one per conversion. Scaled dt, so a paused game earns nothing
+    public static float Accrue(float credit, float tilesPerDay, float cap, float dt)
+    {
+        WorldStateManager clock = WorldStateManager.Instance;
+
+        if (clock == null)
+        {
+            if (!warnedAboutClock)
+            {
+                warnedAboutClock = true;
+                Debug.LogError("TerrainSpread: no WorldStateManager, so there is no day length and animals never spread");
+            }
+
+            return credit;
+        }
+
+        float cycle = clock.DayDuration + clock.NightDuration;
+        if (cycle <= 0.0f) return credit;
+
+        return Mathf.Min(credit + tilesPerDay * dt / cycle, cap);
+    }
+
+
     // MARK: checks
 
 

@@ -108,6 +108,18 @@ public class WormController : AnimalController
     [SerializeField] private SoundObject surfaceSound;
 
 
+    [Header("Spreading")]
+    // coming up, it turns ground next to where it surfaced from spreadFrom into spreadTo, as long as
+    // that ground already touches spreadTo (see TerrainSpread)
+    [SerializeField] private TerrainTile spreadFrom;    // wasteland
+    [SerializeField] private TerrainTile spreadTo;      // dirt
+    [Tooltip("cells converted per whole day and night. it only converts on resurfacing (about once a " +
+        "day with the default timings), up to Credit Cap at once, so rates much above that are capped")]
+    [SerializeField] [Min(0.0f)] private float tilesPerDay = 1.0f;
+    [SerializeField] [Min(1.0f)] private float creditCap = 2.0f;
+    [SerializeField] private SoundObject spreadSound;
+
+
     private TerrainManager terrain;
     private Sprite crawlSprite;
 
@@ -138,6 +150,10 @@ public class WormController : AnimalController
     // scratch for the weighted step pick; sized to STEP_OFFSETS so picking never allocates
     private readonly Vector2Int[] candidates = new Vector2Int[9];
     private readonly float[] candidateWeights = new float[9];
+
+    // spreading: credit earned towards the next conversion, and scratch for the cells around a burrow
+    private float spreadCredit;
+    private readonly Vector3Int[] spreadCandidates = new Vector3Int[8];
 
 
     // MARK: read-only state
@@ -175,6 +191,11 @@ public class WormController : AnimalController
             return;
         }
 
+        if (spreadFrom == null || spreadTo == null)
+        {
+            Debug.LogError("WormController: no spread tiles assigned, so the worm never turns wasteland into dirt", this);
+        }
+
         SnapToSurface();
         BeginCrawling();
     }
@@ -184,6 +205,8 @@ public class WormController : AnimalController
     {
         float dt = Time.deltaTime;   // scaled, so a paused game freezes the worm
         if (dt <= 0.0f) return;
+
+        spreadCredit = TerrainSpread.Accrue(spreadCredit, tilesPerDay, creditCap, dt);
 
         switch (state)
         {
@@ -300,6 +323,8 @@ public class WormController : AnimalController
         if (transitionSprite != null) SetSprite(transitionSprite);
         SetVisible(true);
         PlaySound(surfaceSound);
+
+        SpreadAround(burrowTo);
     }
 
 
@@ -472,6 +497,41 @@ public class WormController : AnimalController
         if (tile == null || IsForbidden(tile)) return 0.0f;
 
         return IsPreferred(tile) ? preferredWeight : 1.0f;
+    }
+
+
+    // MARK: spreading
+
+
+    // Coming up churns the ground around it: one of the eight columns around the one it surfaced in,
+    // at random, per whole credit. The worm can't surface on wasteland itself, so it's always next door.
+    // Picked afresh after each one, since the dirt just made can open up more frontier
+    private void SpreadAround(Vector3 point)
+    {
+        if (spreadFrom == null || spreadTo == null) return;
+
+        int x = Mathf.FloorToInt(point.x);
+        int z = Mathf.FloorToInt(point.z);
+
+        while (spreadCredit >= 1.0f)
+        {
+            int count = 0;
+
+            for (int i = 1; i < STEP_OFFSETS.Length; i++)
+            {
+                int cx = x + STEP_OFFSETS[i].x;
+                int cz = z + STEP_OFFSETS[i].y;
+
+                Vector3Int cell = new Vector3Int(cx, terrain.GetTopLevel(cx, cz), cz);
+                if (TerrainSpread.CanSpread(cell, spreadFrom, spreadTo)) spreadCandidates[count++] = cell;
+            }
+
+            if (count == 0) return;
+
+            if (!TerrainSpread.TrySpread(spreadCandidates[Random.Range(0, count)], spreadFrom, spreadTo, spreadSound)) return;
+
+            spreadCredit -= 1.0f;
+        }
     }
 
 
