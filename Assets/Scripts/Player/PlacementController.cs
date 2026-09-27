@@ -32,6 +32,7 @@ public class PlacementController : MonoBehaviour
         typeof(SpriteRenderer),
         typeof(BillboardSprite),
         typeof(FloatOnSea),     // so the ghost floats where the lilypad will
+        typeof(RandomYRotation),     // so the ghost previews the angle the item will land at
     };
 
 
