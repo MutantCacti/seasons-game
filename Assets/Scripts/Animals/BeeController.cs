@@ -131,6 +131,9 @@ public class BeeController : AnimalController
     [SerializeField] private Vector2 nectarUp = new Vector2(0.35f, 0.7f);
     [SerializeField] private float drinkHeight = 0.02f;                    // above the nectar point
     [SerializeField] private float drinkInFront = 0.05f;                   // towards the camera, so it draws in front
+    // plus up to this much more, picked per visit, so bees on one flower sit at different depths and
+    // don't z-fight
+    [SerializeField] private float drinkDepthJitter = 0.06f;
     [SerializeField] private float dipDepth = 0.03f;
     [SerializeField] [Min(1)] private int dipsPerDrink = 2;
     [SerializeField] private float flowerRustleAngle = 6.0f;               // degrees
@@ -1015,7 +1018,9 @@ public class BeeController : AnimalController
     // at a blossom, a touch towards the camera so it draws in front of the flower
     private Vector3 DrinkPoint(EntityId target)
     {
-        return NectarPoint(target) + Vector3.up * drinkHeight - cameraForward * drinkInFront;
+        float inFront = drinkInFront + Random.value * drinkDepthJitter;
+
+        return NectarPoint(target) + Vector3.up * drinkHeight - cameraForward * inFront;
     }
 
 
