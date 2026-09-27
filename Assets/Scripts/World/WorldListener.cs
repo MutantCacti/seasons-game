@@ -21,6 +21,10 @@ public interface WorldContext
     // live animals of this kind
     int Count(Animal animal);
 
+    // every live animal of this kind, so a rule can look at each one (a breeder and the clock stamp it
+    // carries). Fills the caller's list
+    void CollectAnimals(Animal animal, List<AnimalController> results);
+
     // world positions of every placed instance of this item: its entities and, for a tile item, its
     // cells' tops. Fills the caller's list
     void CollectPositionsOf(GameItem item, List<Vector3> results);

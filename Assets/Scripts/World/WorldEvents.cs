@@ -394,6 +394,21 @@ public class WorldEvents : MonoBehaviour, WorldContext
     }
 
 
+    public void CollectAnimals(Animal animal, List<AnimalController> results)
+    {
+        results.Clear();
+
+        AnimalManager manager = AnimalManager.Instance;
+        if (manager == null || animal == null) return;
+
+        for (int i = 0; i < manager.LiveCount; i++)
+        {
+            AnimalController controller = manager.LiveAt(i);
+            if (controller != null && controller.Animal == animal) results.Add(controller);
+        }
+    }
+
+
     public bool CanSpawn(AnimalSpawnRule rule)
     {
         return AnimalManager.Instance != null && AnimalManager.Instance.CanSpawn(rule);
