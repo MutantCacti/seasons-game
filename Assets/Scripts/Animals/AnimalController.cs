@@ -83,6 +83,15 @@ public class AnimalController : MonoBehaviour
     public bool Highlighted { get { return save != null && save.highlighted; } }
 
 
+    // The guid of the entity it calls home, empty for none. It lives in the save row, so it rolls back
+    // with a checkpoint; a change reaches disk with the next save, like the position does
+    public string HomeGuid
+    {
+        get { return save != null && !string.IsNullOrEmpty(save.homeGuid) ? save.homeGuid : ""; }
+        protected set { if (save != null) save.homeGuid = value ?? ""; }
+    }
+
+
     // Trimmed and capped. Empty, or the species name itself, goes back to the species name, so a
     // player who clears the field gets the default rather than a nameless animal. True when the name
     // actually changed, which is when it is worth celebrating

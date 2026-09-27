@@ -18,6 +18,10 @@ public class AnimalSave
 
     // starred in its status panel, which makes it glow
     public bool highlighted;
+
+    // the guid of the placed entity it lives in (a bee's hive). null or empty is none: a save from
+    // before this was written may give either, so read it with string.IsNullOrEmpty
+    public string homeGuid;
 }
 
 

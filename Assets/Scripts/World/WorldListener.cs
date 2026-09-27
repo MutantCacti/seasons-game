@@ -43,6 +43,9 @@ public interface WorldContext
     // refuses anything CanSpawn would refuse, so calling it too often is harmless
     bool Spawn(AnimalSpawnRule rule, Vector3 position);
 
+    // the same, with the guid of the entity the animal lives in (a bee's hive) saved on it
+    bool Spawn(AnimalSpawnRule rule, Vector3 position, string homeGuid);
+
 
     // MARK: puzzles
 

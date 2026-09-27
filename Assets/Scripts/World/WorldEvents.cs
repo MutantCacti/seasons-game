@@ -362,6 +362,12 @@ public class WorldEvents : MonoBehaviour, WorldContext
     }
 
 
+    public bool Spawn(AnimalSpawnRule rule, Vector3 position, string homeGuid)
+    {
+        return AnimalManager.Instance != null && AnimalManager.Instance.Spawn(rule, position, homeGuid);
+    }
+
+
     // MARK: context: puzzles
 
 

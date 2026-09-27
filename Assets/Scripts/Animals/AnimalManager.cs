@@ -194,6 +194,24 @@ public class AnimalManager : MonoBehaviour
     }
 
 
+    // how many live animals call this entity home. derived from the save rows rather than counted, so
+    // it can never drift, and it is right before any animal's Start has run
+    public int CountHomedAt(string homeGuid)
+    {
+        if (string.IsNullOrEmpty(homeGuid)) return 0;
+
+        int count = 0;
+
+        for (int i = 0; i < live.Count; i++)
+        {
+            AnimalSave save = live[i].save;
+            if (save != null && save.homeGuid == homeGuid) count++;
+        }
+
+        return count;
+    }
+
+
     public bool CanSpawn(AnimalSpawnRule rule)
     {
         if (rule == null || rule.Animal == null) return false;
@@ -246,6 +264,14 @@ public class AnimalManager : MonoBehaviour
     // every spawn after the first just adds an animal.
     public bool Spawn(AnimalSpawnRule rule, Vector3 position)
     {
+        return Spawn(rule, position, null);
+    }
+
+
+    // homeGuid: the entity it lives in, written into its row before the first save, so the save never
+    // holds a homeless moment of it. null for none
+    public bool Spawn(AnimalSpawnRule rule, Vector3 position, string homeGuid)
+    {
         if (rule == null) return false;
 
         if (!IsRegistered(rule))
@@ -268,7 +294,7 @@ public class AnimalManager : MonoBehaviour
         // logs and gives up if the animal is not in the registry
         if (registry == null || !registry.TryGetIdByEntry(animal, out string animalId)) return false;
 
-        AnimalSave save = new AnimalSave { animalId = animalId, position = position };
+        AnimalSave save = new AnimalSave { animalId = animalId, position = position, homeGuid = homeGuid ?? "" };
 
         EntityId entityId = CreateInstance(animal, save, position, animal.Prefab != null ? animal.Prefab.transform.rotation : Quaternion.identity);
         if (entityId == null) return false;
