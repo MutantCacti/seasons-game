@@ -147,4 +147,18 @@ public class InputManager : MonoBehaviour
             onPause?.Invoke();
         }
     }
+
+    public event Action onSpeedUp;
+    public void OnSpeedUp(InputAction.CallbackContext ctx) {
+        if (ctx.performed) {
+            onSpeedUp?.Invoke();
+        }
+    }
+
+    public event Action onSpeedDown;
+    public void OnSpeedDown(InputAction.CallbackContext ctx) {
+        if (ctx.performed) {
+            onSpeedDown?.Invoke();
+        }
+    }
 }
