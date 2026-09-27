@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoundObject
   clips:
   - {fileID: 8300000, guid: 7b4831b38c0a05c3ba31b7515a6b04f1, type: 3}
-  soundType: 1
   loop: 0
   volume: 1
   volumeVariation: 0
   pitch: 1
-  pitchVariation: 0
+  pitchVariationSemitones: 0
+  spatialBlend: 0
+  minDistance: 1
+  maxDistance: 30
