@@ -1,11 +1,17 @@
 using UnityEngine;
 
-public class DevTools : MonoBehaviour {
+
+public class DevTools : MonoBehaviour
+{
+    [SerializeField] private float spedUpTimeScale = 10f;
+    [SerializeField] private float normalTimeScale = 1f;
+
 
     private void Start() {
         InputManager.Instance.onSpeedUp += SpeedUp;
         InputManager.Instance.onSpeedDown += SpeedDown;
     }
+
 
     private void OnDisable() {
         InputManager.Instance.onSpeedUp -= SpeedUp;
@@ -14,11 +20,11 @@ public class DevTools : MonoBehaviour {
 
 
     private void SpeedUp() {
-        Time.timeScale = 10f;
-    }
-    
-    private void SpeedDown() {
-        Time.timeScale = 1f;
+        Time.timeScale = spedUpTimeScale;
     }
 
+
+    private void SpeedDown() {
+        Time.timeScale = normalTimeScale;
+    }
 }
