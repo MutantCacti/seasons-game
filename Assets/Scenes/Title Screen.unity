@@ -176,7 +176,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Seasons Game
+  m_text: Compendium
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: e76500cb4c543e42b9e94acc9821eed7, type: 2}
   m_sharedMaterial: {fileID: 8364033027736605934, guid: e76500cb4c543e42b9e94acc9821eed7, type: 2}
