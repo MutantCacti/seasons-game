@@ -36,6 +36,18 @@ public class IAmTheRain : ScriptedPuzzle
     }
 
 
+    // water's tile is grass, so a deer's grass counts as rain too
+    public override void OnTerrainChanged(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to)
+    {
+        if (water == null || to != water.Tile) return;
+
+        lastPlaced = cell;
+        hasLastPlaced = true;
+
+        TryComplete(context);
+    }
+
+
     protected override bool IsSatisfied(WorldContext context, out PuzzleCredit credit)
     {
         credit = PuzzleCredit.None;

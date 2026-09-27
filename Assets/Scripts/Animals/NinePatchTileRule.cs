@@ -62,6 +62,17 @@ public class NinePatchTileRule : AnimalSpawnRule
     }
 
 
+    // an animal greened a cell. Same whole-world look as a placement, so animal-made grass can finish a
+    // 3x3 too. A placement's cover still playing means its own OnItemShown will ask once it settles
+    public override void OnTerrainChanged(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to) {
+        if (context == null) return;
+        if (to != requiredTileToBePlaced && to != desiredNeighbouringTile) return;
+        if (context.IsPresenting) return;
+
+        TrySpawn(context);
+    }
+
+
     // any valid 3x3 around a player-changed centre, for catching up on a load or an unlock
     protected override bool TryFindSpawn(WorldContext context, out Vector3 position) {
         position = default;
