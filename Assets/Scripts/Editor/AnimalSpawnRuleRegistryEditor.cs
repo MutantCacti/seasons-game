@@ -173,6 +173,7 @@ public class AnimalSpawnRuleRegistryEditor : Editor
         }
 
         problems += ValidateAnimals(registry, seen);
+        problems += ValidateBreeding(seen);
 
         if (problems == 0)
         {
@@ -188,6 +189,23 @@ public class AnimalSpawnRuleRegistryEditor : Editor
 
 
     // MARK: validation passes
+
+
+    // A breed rule must never credit a puzzle: what it adds is background population, not progress the
+    // player made. CreditsCompletion refuses it at runtime; this catches the asset before it ships
+    private static int ValidateBreeding(Dictionary<string, AnimalSpawnRule> seen)
+    {
+        foreach (KeyValuePair<string, AnimalSpawnRule> pair in seen)
+        {
+            BreedRule rule = pair.Value as BreedRule;
+            if (rule == null || rule.Completes == null) continue;
+
+            Debug.LogWarning($"AnimalSpawnRuleRegistry: '{rule.name}' is a BreedRule with a puzzle set, " +
+                $"but a bred animal never completes one - the puzzle only gates when it may breed", rule);
+        }
+
+        return 0;
+    }
 
 
     // A rule whose animal is not in the AnimalRegistry can never spawn, because AnimalManager resolves
