@@ -111,15 +111,6 @@ public class AnimalController : MonoBehaviour
     }
 
 
-    // How much this animal's own ground rules want one of its kind placed on this tile, 0 for never.
-    // The base allows anywhere at the same weight; a mover that avoids or prefers ground (a worm) says
-    // so here, so a rule that puts a new one down honours the tiles it would walk on itself
-    public virtual float SpawnWeightOn(TerrainTile tile)
-    {
-        return 1.0f;
-    }
-
-
     // Trimmed and capped. Empty, or the species name itself, goes back to the species name, so a
     // player who clears the field gets the default rather than a nameless animal. True when the name
     // actually changed, which is when it is worth celebrating
@@ -236,5 +227,17 @@ public class AnimalController : MonoBehaviour
         hop.SetLink(gameObject);
 
         hopTween = hop;
+    }
+
+
+    // MARK: ground
+
+
+    // How much this animal's own ground rules want one of its kind placed on this tile, 0 for never.
+    // The base allows anywhere at the same weight; a mover that avoids or prefers ground (a worm) says
+    // so here, so a rule that puts a new one down honours the tiles it would walk on itself
+    public virtual float SpawnWeightOn(TerrainTile tile)
+    {
+        return 1.0f;
     }
 }
