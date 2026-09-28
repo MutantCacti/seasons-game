@@ -10,10 +10,13 @@ using UnityEngine;
 // Credited to the cell that changed last; caught up after a load or an unlock, the last of the
 // player's grass, and failing that the book.
 //
-// While it is active it raises the worm's mob cap, so there are enough worms to finish the job. Once its
-// dirt and water are spent it isn't judged stuck while a live worm can still reach some wasteland the
-// spreading rules can still green (CanStillProgress). That can come back after a flag (a worm is born
-// within reach), so it un-flags rather than skips.
+// While it is active it raises the worm's mob cap per spawn rule, so there are enough worms to finish the
+// job: breeding to one cap and the 3x3 patch to a higher one, so breeding can't fill the room a player's
+// patch needs. A patch is the only way a worm reaches the island worms can't burrow across to.
+//
+// Once its dirt and water are spent it isn't judged stuck while a live worm can still reach some
+// wasteland the spreading rules can still green (CanStillProgress). That can come back after a flag (a
+// worm is born within reach), so it un-flags rather than skips.
 [CreateAssetMenu(
     fileName = "Its A Small World",
     menuName = "Puzzles/Its A Small World"
@@ -37,8 +40,16 @@ public class ItsASmallWorld : ScriptedPuzzle
     [Tooltip("the animal that greens wasteland; its prefab's WormController gives the spreading and burrowing rules")]
     [SerializeField] private Animal worm;
 
-    [Tooltip("the worm mob cap while this is active. 0 leaves the worm's own")]
-    [SerializeField] [Min(0)] private int wormMobCap = 12;
+    [Tooltip("mob caps per spawn rule while this is active. a rule not listed keeps its animal's own cap")]
+    [SerializeField] private List<RuleCap> spawnCaps = new List<RuleCap>();
+
+
+    [System.Serializable]
+    private struct RuleCap
+    {
+        public AnimalSpawnRule rule;
+        [Min(0)] public int cap;
+    }
 
 
     [System.NonSerialized] private bool hasLastCell;
@@ -87,9 +98,18 @@ public class ItsASmallWorld : ScriptedPuzzle
     }
 
 
-    public override int MobCapFor(Animal animal)
+    public override int MobCapFor(AnimalSpawnRule rule)
     {
-        return animal != null && animal == worm ? wormMobCap : 0;
+        if (rule == null || spawnCaps == null) return 0;
+
+        int cap = 0;
+
+        for (int i = 0; i < spawnCaps.Count; i++)
+        {
+            if (spawnCaps[i].rule == rule) cap = Mathf.Max(cap, spawnCaps[i].cap);
+        }
+
+        return cap;
     }
 
 
@@ -501,7 +521,12 @@ public class ItsASmallWorld : ScriptedPuzzle
     private void OnValidate()
     {
         if (wasteland == null) Debug.LogError($"ItsASmallWorld: '{name}' has no wasteland tile, so it can never complete", this);
-        if (worm == null) Debug.LogError($"ItsASmallWorld: '{name}' has no worm, so its soft lock never waits for worms and the cap is never raised", this);
+        if (worm == null) Debug.LogError($"ItsASmallWorld: '{name}' has no worm, so its soft lock never waits for worms", this);
+
+        for (int i = 0; spawnCaps != null && i < spawnCaps.Count; i++)
+        {
+            if (spawnCaps[i].rule == null) Debug.LogWarning($"ItsASmallWorld: '{name}' spawn cap {i} has no rule, so it raises nothing", this);
+        }
 
         WormController rules = worm != null && worm.Prefab != null ? worm.Prefab.GetComponent<WormController>() : null;
 

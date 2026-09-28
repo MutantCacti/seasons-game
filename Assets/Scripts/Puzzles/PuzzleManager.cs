@@ -368,11 +368,11 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
-    // The highest cap an active puzzle raises this animal to, 0 when none does. Read from the unlocked
-    // state rather than stored, so a load or a checkpoint reset puts it right on its own
-    public int MobCapOverride(Animal animal)
+    // The highest cap an active puzzle raises this spawn rule to, 0 when none does. Read from the
+    // unlocked state rather than stored, so a load or a checkpoint reset puts it right on its own
+    public int MobCapOverride(AnimalSpawnRule rule)
     {
-        if (animal == null) return 0;
+        if (rule == null) return 0;
 
         int cap = 0;
 
@@ -381,7 +381,7 @@ public class PuzzleManager : MonoBehaviour
             if (completed.Contains(puzzle)) continue;
             if (!(puzzle is ScriptedPuzzle scripted)) continue;
 
-            cap = Mathf.Max(cap, scripted.MobCapFor(animal));
+            cap = Mathf.Max(cap, scripted.MobCapFor(rule));
         }
 
         return cap;

@@ -3,7 +3,9 @@ using UnityEngine;
 
 
 // Spawns its animal in the center of a 3x3 patch whose center must be a neighbour of the tile just
-// placed, on the same level.
+// placed, on the same level. The patch that cell just finished comes first, so the animal turns up
+// where the player made it; any other patch only when that cell finished none (another placement's
+// cover finished last, or a catch-up).
 [CreateAssetMenu(
     fileName = "NinePatchTileRule",
     menuName = "Animals/Spawn Rules/Nine Patch Tile"
@@ -39,6 +41,10 @@ public class NinePatchTileRule : AnimalSpawnRule
 
     [System.NonSerialized] private List<Vector3Int> candidates;
 
+    // the cell the current placement or spread was heard at, only set within one TrySpawn
+    [System.NonSerialized] private bool hasHeardCell;
+    [System.NonSerialized] private Vector3Int heardCell;
+
 
     public override void OnLoaded(WorldContext context) {
         if (catchUpFromWorld) base.OnLoaded(context);
@@ -58,7 +64,7 @@ public class NinePatchTileRule : AnimalSpawnRule
         if (context == null) return;
         if (context.IsPresenting) return;
 
-        TrySpawn(context);
+        TrySpawnNear(context, cell);
     }
 
 
@@ -69,11 +75,25 @@ public class NinePatchTileRule : AnimalSpawnRule
         if (to != requiredTileToBePlaced && to != desiredNeighbouringTile) return;
         if (context.IsPresenting) return;
 
-        TrySpawn(context);
+        TrySpawnNear(context, cell);
     }
 
 
-    // any valid 3x3 around a player-changed centre, for catching up on a load or an unlock
+    private void TrySpawnNear(WorldContext context, Vector3Int cell) {
+        hasHeardCell = true;
+        heardCell = cell;
+
+        try {
+            TrySpawn(context);
+        }
+        finally {
+            hasHeardCell = false;
+        }
+    }
+
+
+    // a valid 3x3 around a player-changed centre: first one the heard cell is part of, else any, which
+    // is also how a load or an unlock catches up
     protected override bool TryFindSpawn(WorldContext context, out Vector3 position) {
         position = default;
         if (requiredTileToBePlaced == null || desiredNeighbouringTile == null) return false;
@@ -85,6 +105,16 @@ public class NinePatchTileRule : AnimalSpawnRule
 
         terrain.CollectPlayerCellsOf(requiredTileToBePlaced, candidates);
 
+        if (hasHeardCell) {
+            for (int i = 0; i < candidates.Count; i++) {
+                if (!IsAround(candidates[i], heardCell)) continue;
+                if (!IsValidCentre(terrain, candidates[i])) continue;
+
+                position = terrain.CellToWorld(candidates[i]);
+                return true;
+            }
+        }
+
         for (int i = 0; i < candidates.Count; i++) {
             if (!IsValidCentre(terrain, candidates[i])) continue;
 
@@ -93,6 +123,12 @@ public class NinePatchTileRule : AnimalSpawnRule
         }
 
         return false;
+    }
+
+
+    // a centre whose 3x3 holds the cell: within one column of it, on its level
+    private static bool IsAround(Vector3Int center, Vector3Int cell) {
+        return center.y == cell.y && Mathf.Abs(center.x - cell.x) <= 1 && Mathf.Abs(center.z - cell.z) <= 1;
     }
 
 

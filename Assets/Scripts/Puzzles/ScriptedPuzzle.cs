@@ -52,9 +52,10 @@ public abstract class ScriptedPuzzle : Puzzle
     }
 
 
-    // A mob cap this puzzle raises an animal to while it is active, so the world can do more of the
-    // work. 0 leaves the animal's own cap; a lower number never lowers it
-    public virtual int MobCapFor(Animal animal)
+    // A mob cap this puzzle raises a spawn rule to while it is active, so the world can do more of the
+    // work. Per rule rather than per animal, so one way in (breeding) can't fill the room another (a
+    // player's patch) needs. 0 leaves the animal's own cap; a lower number never lowers it
+    public virtual int MobCapFor(AnimalSpawnRule rule)
     {
         return 0;
     }
