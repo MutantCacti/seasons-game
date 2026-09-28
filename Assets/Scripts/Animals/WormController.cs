@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 
@@ -126,7 +127,13 @@ public class WormController : AnimalController
     [SerializeField] [Min(0.0f)] private float seekWeight = 8.0f;
     [Tooltip("cells each way it looks for somewhere to spread when there's nowhere within Burrow Radius. " +
         "it then heads for the nearest by burrowing towards it")]
-    [SerializeField] [Min(1)] private int seekRadius = 8;
+    [SerializeField] [Min(1)] private int seekRadius = 50;
+    [Tooltip("seeking heads straight for it: each burrow comes up in a column it can spread at, or failing " +
+        "that the one nearest the far goal, instead of a chance weighted by Seek Weight. Seek Weight still " +
+        "has to be above 0 for it to seek at all")]
+    [SerializeField] private bool seekDirectly = true;
+    [Tooltip("crawl time between burrows while it's seeking, so it doesn't dawdle on the way")]
+    [SerializeField] private Vector2 seekingCrawlDuration = new Vector2(2.0f, 5.0f);
     [SerializeField] private SoundObject spreadSound;
 
 
@@ -170,7 +177,12 @@ public class WormController : AnimalController
     private bool seekNear;
     private bool seekFar;
     private Vector2 seekGoal;
+    private Vector2Int seekGoalColumn;
     private float seekGoalDistance;
+
+    // far goals it came no closer to (across a gap wider than a burrow), skipped until it next spreads,
+    // so a worm doesn't sit on the shore staring at an island
+    private readonly HashSet<Vector2Int> unreachableGoals = new HashSet<Vector2Int>();
 
 
     // MARK: read-only state
@@ -258,7 +270,9 @@ public class WormController : AnimalController
     private void BeginCrawling()
     {
         state = WormState.Crawling;
-        stateTimer = RandomIn(crawlDuration);
+        // busy seeking, it only stops briefly before burrowing on
+        bool seeking = IsSeekingSpread && (seekNear || seekFar);
+        stateTimer = RandomIn(seeking ? seekingCrawlDuration : crawlDuration);
         flipTimer = RandomIn(flipInterval);
         soundTimer = RandomIn(crawlSoundInterval);
         hasTarget = false;
@@ -489,6 +503,8 @@ public class WormController : AnimalController
         // decided once, so both passes weigh every column the same
         PlanSeek(x, z);
 
+        if (seekDirectly && TryPickDirect(x, z, out Vector3 direct)) return direct;
+
         float total = 0.0f;
 
         for (int dz = -burrowRadius; dz <= burrowRadius; dz++)
@@ -554,8 +570,9 @@ public class WormController : AnimalController
 
 
     // With a spread to spend: somewhere within burrowRadius to spread at, else the nearest spreadable
-    // cell out to seekRadius to head for. That scan is one CanSpread per column outside the burrow
-    // radius, at most (2 * seekRadius + 1)^2, and only when nothing was near
+    // cell out to seekRadius to head for, skipping goals it has written off. That scan is one CanSpread
+    // per column, ring by ring out from the burrow radius until nothing further can be nearer, and
+    // only when nothing was near
     private void PlanSeek(int x, int z)
     {
         seekNear = false;
@@ -577,22 +594,21 @@ public class WormController : AnimalController
 
         if (seekNear) return;
 
+        // ring by ring outwards, so the nearest is found without scanning the whole radius. Every column
+        // on ring r is at least r away, so once r^2 reaches the best found nothing further can beat it
         int best = int.MaxValue;
 
-        for (int dz = -seekRadius; dz <= seekRadius; dz++)
+        for (int r = burrowRadius + 1; r <= seekRadius && r * r < best; r++)
         {
-            for (int dx = -seekRadius; dx <= seekRadius; dx++)
+            for (int d = -r; d <= r; d++)
             {
-                // already looked at, around every column in the burrow radius
-                if (Mathf.Abs(dx) <= burrowRadius && Mathf.Abs(dz) <= burrowRadius) continue;
+                ConsiderGoal(x, z, d, -r, ref best);
+                ConsiderGoal(x, z, d, r, ref best);
 
-                int distance = dx * dx + dz * dz;
-                if (distance >= best) continue;
+                if (d == -r || d == r) continue;
 
-                if (!TerrainSpread.CanSpread(TopCell(x + dx, z + dz), spreadFrom, spreadTo, spreadNextTo)) continue;
-
-                best = distance;
-                seekGoal = new Vector2(x + dx + 0.5f, z + dz + 0.5f);
+                ConsiderGoal(x, z, -r, d, ref best);
+                ConsiderGoal(x, z, r, d, ref best);
             }
         }
 
@@ -600,6 +616,85 @@ public class WormController : AnimalController
 
         seekFar = true;
         seekGoalDistance = Mathf.Sqrt(best);
+    }
+
+
+    private void ConsiderGoal(int x, int z, int dx, int dz, ref int best)
+    {
+        int distance = dx * dx + dz * dz;
+        if (distance >= best) return;
+
+        Vector2Int column = new Vector2Int(x + dx, z + dz);
+        if (unreachableGoals.Contains(column)) return;
+
+        if (!TerrainSpread.CanSpread(TopCell(column.x, column.y), spreadFrom, spreadTo, spreadNextTo)) return;
+
+        best = distance;
+        seekGoalColumn = column;
+        seekGoal = new Vector2(column.x + 0.5f, column.y + 0.5f);
+    }
+
+
+    // Seeking directly: any column in reach it could spread at, else the one nearest the far goal, ties
+    // broken at random. False when not seeking, or when nothing in reach gets it closer to the far goal:
+    // that goal is then written off, and the weighted pick wanders as usual
+    private bool TryPickDirect(int x, int z, out Vector3 picked)
+    {
+        picked = default;
+
+        if (!seekNear && !seekFar) return false;
+
+        float bestDistance = float.MaxValue;
+        int ties = 0;
+        int pickX = 0;
+        int pickZ = 0;
+
+        for (int dz = -burrowRadius; dz <= burrowRadius; dz++)
+        {
+            for (int dx = -burrowRadius; dx <= burrowRadius; dx++)
+            {
+                if (ResurfaceWeight(x, z, dx, dz) <= 0.0f) continue;
+
+                float distance;
+
+                if (seekNear)
+                {
+                    if (!CanSpreadAround(x + dx, z + dz)) continue;
+                    distance = 0.0f;
+                }
+                else
+                {
+                    distance = Vector2.Distance(new Vector2(x + dx + 0.5f, z + dz + 0.5f), seekGoal);
+                }
+
+                if (distance > bestDistance + 0.001f) continue;
+
+                if (distance < bestDistance - 0.001f)
+                {
+                    bestDistance = distance;
+                    ties = 0;
+                }
+
+                // one pass reservoir pick among the ties
+                ties++;
+                if (Random.Range(0, ties) != 0) continue;
+
+                pickX = x + dx;
+                pickZ = z + dz;
+            }
+        }
+
+        if (ties == 0) return false;
+
+        if (seekFar && bestDistance >= seekGoalDistance - 0.001f)
+        {
+            unreachableGoals.Add(seekGoalColumn);
+            seekFar = false;
+            return false;
+        }
+
+        picked = PointIn(pickX, pickZ, terrain.GetTopLevel(pickX, pickZ));
+        return true;
     }
 
 
@@ -631,6 +726,9 @@ public class WormController : AnimalController
             if (!TerrainSpread.TrySpread(spreadCandidates[Random.Range(0, count)], spreadFrom, spreadTo, spreadNextTo, spreadSound)) return;
 
             spreadCredit -= 1.0f;
+
+            // the ground has changed, so a goal written off may be in reach of new frontier now
+            unreachableGoals.Clear();
         }
     }
 
