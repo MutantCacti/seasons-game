@@ -218,7 +218,19 @@ public class AnimalManager : MonoBehaviour
         if (!IsRegistered(rule)) return false;
         if (!IsUnlocked(rule)) return false;
 
-        return Count(rule.Animal) < rule.Animal.MobCap;
+        return Count(rule.Animal) < MobCapOf(rule.Animal);
+    }
+
+
+    // the animal's own cap, or higher while an active puzzle raises it (It's A Small World's worms)
+    public int MobCapOf(Animal animal)
+    {
+        if (animal == null) return 0;
+
+        PuzzleManager puzzles = PuzzleManager.Instance;
+        int raised = puzzles != null ? puzzles.MobCapOverride(animal) : 0;
+
+        return Mathf.Max(animal.MobCap, raised);
     }
 
 
@@ -289,7 +301,7 @@ public class AnimalManager : MonoBehaviour
         }
 
         if (!IsUnlocked(rule)) return false;
-        if (Count(animal) >= animal.MobCap) return false;
+        if (Count(animal) >= MobCapOf(animal)) return false;
 
         // logs and gives up if the animal is not in the registry
         if (registry == null || !registry.TryGetIdByEntry(animal, out string animalId)) return false;

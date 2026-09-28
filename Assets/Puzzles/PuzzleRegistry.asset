@@ -30,5 +30,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b857f505005b412a9674723972fda023, type: 2}
   - {fileID: 11400000, guid: 788df3cc659d29972a92992401e03ce4, type: 2}
   - {fileID: 11400000, guid: 6120f7e896d4452cb728092f4ef927e9, type: 2}
+  - {fileID: 11400000, guid: 3979a7e28373467c944da95c004c9c9b, type: 2}
+  - {fileID: 11400000, guid: 17a8b97131554c1caf74d93013981bdc, type: 2}
   startingPuzzles:
   - {fileID: 11400000, guid: 6b3fb5c8f4bb890a2a314d8c0534feea, type: 2}

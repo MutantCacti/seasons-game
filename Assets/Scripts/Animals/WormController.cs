@@ -183,6 +183,21 @@ public class WormController : AnimalController
     public bool IsBurrowed { get { return state == WormState.Burrowed; } }
 
 
+    // the spreading and burrowing rules, for a puzzle asking whether worms can still reach some ground.
+    // serialized values, so they read the same off the prefab asset as off a live worm
+    public TerrainTile SpreadFrom { get { return spreadFrom; } }
+    public TerrainTile SpreadTo { get { return spreadTo; } }
+    public TerrainTile[] SpreadNextTo { get { return spreadNextTo; } }
+    public int BurrowRadius { get { return burrowRadius; } }
+
+
+    // somewhere a worm can crawl or come up: anything but a forbidden tile
+    public bool CanStandOn(TerrainTile tile)
+    {
+        return tile != null && !IsForbidden(tile);
+    }
+
+
     // MARK: lifecycle
 
 

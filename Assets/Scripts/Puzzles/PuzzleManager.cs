@@ -368,6 +368,26 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
+    // The highest cap an active puzzle raises this animal to, 0 when none does. Read from the unlocked
+    // state rather than stored, so a load or a checkpoint reset puts it right on its own
+    public int MobCapOverride(Animal animal)
+    {
+        if (animal == null) return 0;
+
+        int cap = 0;
+
+        foreach (Puzzle puzzle in unlocked)
+        {
+            if (completed.Contains(puzzle)) continue;
+            if (!(puzzle is ScriptedPuzzle scripted)) continue;
+
+            cap = Mathf.Max(cap, scripted.MobCapFor(animal));
+        }
+
+        return cap;
+    }
+
+
     // the fliers for what a completion unlocks come from whatever completed it, entity or cell
     private GrantOrigin CreditOrigin(Puzzle puzzle)
     {
@@ -772,6 +792,36 @@ public class PuzzleManager : MonoBehaviour
     }
 
 
+    // Hands the player items outside any puzzle (the endgame's surprise), the way an unlock grants
+    // ingredients: into the inventory with the display held, then IngredientsGranted flies them in from
+    // origin. Charges and checkpoints nothing. A full inventory refuses an item and it is lost
+    public void GrantItems(GrantOrigin origin, IReadOnlyList<IngredientGrant> items)
+    {
+        if (inventoryManager == null || items == null) return;
+
+        List<IngredientGrant> given = new List<IngredientGrant>();
+
+        // the display only waits when something will fly the icons in and release it
+        bool deferDisplay = IngredientsGranted != null;
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            IngredientGrant grant = items[i];
+            if (grant.item == null || grant.count <= 0) continue;
+
+            if (!inventoryManager.Add(grant.item, grant.count, deferDisplay))
+            {
+                Debug.LogError($"PuzzleManager: could not grant {grant.count}x '{grant.item.name}' (inventoryManager.Add returned false)", this);
+                continue;
+            }
+
+            given.Add(grant);
+        }
+
+        if (given.Count > 0) IngredientsGranted?.Invoke(origin, given);
+    }
+
+
     // MARK: consumption
 
 
@@ -851,7 +901,7 @@ public class PuzzleManager : MonoBehaviour
 
             // Not stuck, so any saved fail notification is left over from a save that disagrees with
             // the ledger. A fail ping cannot be dismissed, so without this it would stay forever.
-            if (!ledger.IsExhausted(puzzle))
+            if (!IsSpent(puzzle))
             {
                 if (NotificationManager.Instance != null) NotificationManager.Instance.Withdraw(NotificationType.FailPuzzle, puzzle);
                 continue;
@@ -882,6 +932,14 @@ public class PuzzleManager : MonoBehaviour
             // Spent, but a puzzle it awaits can still complete (Wood You Be Mine waiting on the others).
             // Clears like the wait above: a required puzzle's soft lock can clear later
             if (IsAwaitingPuzzle(puzzle))
+            {
+                if (ClearSoftLock(puzzle)) rejudge = true;
+                continue;
+            }
+
+            // Spent, but animals can still finish it (worms greening the last wasteland). Clears like the
+            // waits above: a worm born within reach can bring it back after it was flagged
+            if (puzzle is ScriptedPuzzle progressing && progressing.IsProgressing(WorldEvents.Instance))
             {
                 if (ClearSoftLock(puzzle)) rejudge = true;
                 continue;
@@ -937,6 +995,18 @@ public class PuzzleManager : MonoBehaviour
         if (wasFlagged) OnPuzzleSoftLockCleared?.Invoke(puzzle);
 
         return wasFlagged;
+    }
+
+
+    // Everything it was given has been spent. A plain puzzle given nothing counts as spent from its
+    // unlock: nothing completes it but something else, so it is judged stuck a grace period in (Endgame,
+    // which is there to be reset from). A scripted one given nothing waits on its own rules instead
+    private bool IsSpent(Puzzle puzzle)
+    {
+        if (ledger.IsExhausted(puzzle)) return true;
+        if (puzzle is ScriptedPuzzle) return false;
+
+        return puzzle.Ingredients == null || puzzle.Ingredients.Count == 0;
     }
 
 

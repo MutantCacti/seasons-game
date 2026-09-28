@@ -42,10 +42,34 @@ public abstract class ScriptedPuzzle : Puzzle
     }
 
 
+    // True while the world can still finish it without the player, but not for sure: everything is
+    // spent and animals are still working on it (worms greening the last of the wasteland). Unlike
+    // settling this can go false to true (a new worm is born within reach), so PuzzleManager un-flags
+    // on it, as it does for Awaits
+    protected virtual bool CanStillProgress(WorldContext context)
+    {
+        return false;
+    }
+
+
+    // A mob cap this puzzle raises an animal to while it is active, so the world can do more of the
+    // work. 0 leaves the animal's own cap; a lower number never lowers it
+    public virtual int MobCapFor(Animal animal)
+    {
+        return 0;
+    }
+
+
     // for PuzzleManager's soft-lock judgement
     public bool IsSettling(WorldContext context)
     {
         return context != null && IsStillSettling(context);
+    }
+
+
+    public bool IsProgressing(WorldContext context)
+    {
+        return context != null && CanStillProgress(context);
     }
 
 
