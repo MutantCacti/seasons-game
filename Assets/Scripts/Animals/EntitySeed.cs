@@ -26,7 +26,7 @@ public static class EntitySeed
     // The same hash over a cell instead of a guid. A placement ghost has no guid and no EntityId to
     // read, so the only thing the preview and the thing it spawns share is where they stand: x and z
     // in whole world units, which is the terrain cell for anything on a tile centre. y is left out on
-    // purpose, FloatOnSea lifts a lilypad's height without moving it to another cell
+    // purpose, FloatOnSea lifts a lily pad's height without moving it to another cell
     public static uint FromCell(int x, int z)
     {
         uint seed = 2166136261u;

@@ -9,7 +9,7 @@ using UnityEngine;
 // only for a puzzle that wants a different number (or that needs no ingredients of its own).
 //
 // Credited to the thing that finished it: the entity a prefab item just placed, so the ping follows it
-// (a lilypad riding the sea), or the cell a tile item changed, as BreakGround does. Caught up after a
+// (a lily pad riding the sea), or the cell a tile item changed, as BreakGround does. Caught up after a
 // load or an unlock there is no "just placed", so any of the player's does.
 //
 // AllIngredientsSpent is the other rule: done once every ingredient this puzzle hands out has been used
@@ -58,7 +58,7 @@ public class PlaceAll : ScriptedPuzzle
         if (this.item == null || item != this.item) return;
 
         // a tile item is counted by its cells, so it is credited to one; a prefab item is an entity,
-        // and the ping can then follow it around (a lilypad riding the sea)
+        // and the ping can then follow it around (a lily pad riding the sea)
         if (this.item.Tile != null)
         {
             lastPlaced = cell;

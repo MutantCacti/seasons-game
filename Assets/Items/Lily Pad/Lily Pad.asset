@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a447734dfd8a20878da909dc174cacf, type: 3}
-  m_Name: Lilypad
+  m_Name: Lily Pad
   m_EditorClassIdentifier: Assembly-CSharp::GameItem
-  id: lilypad
+  id: lily_pad
   description: Excellent shade for fish and other watery things. Pretty, too.
   icon: {fileID: -1089566785, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   tile: {fileID: 0}

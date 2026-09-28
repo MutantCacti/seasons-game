@@ -2,13 +2,13 @@ using UnityEngine;
 
 
 // Faces an item the same way on every load. The yaw used to be Random.Range in Start, so a seed or a
-// lilypad came back facing somewhere new every save/reload (and a rebuilt entity, like growth, re-rolled
+// lily pad came back facing somewhere new every save/reload (and a rebuilt entity, like growth, re-rolled
 // too). Now it comes from the cell the item sits on, so reload lands on the angle the player saw.
 //
 // Cell, not guid: the placement ghost has no EntityId and no guid (PlacementController prunes things
 // like that), so only a position seed lets the preview show the exact angle the item will land at.
 //
-// This sits on the Sprite child of the seed/lilypad prefabs, and it sets world rotation outright rather
+// This sits on the Sprite child of the seed/lily pad prefabs, and it sets world rotation outright rather
 // than adding to it: the ghost re-enables on every preview move, and the angle is derived from the cell,
 // so adding would stack a new yaw on the old one each time
 public class RandomYRotation : MonoBehaviour

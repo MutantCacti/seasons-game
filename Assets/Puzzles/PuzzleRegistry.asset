@@ -26,9 +26,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: fe177fa2d15eeddf5dafb9ca3472a771, type: 2}
   - {fileID: 11400000, guid: b642dcb4a42fc4f4f81ebe26317bcc0c, type: 2}
   - {fileID: 11400000, guid: 9ab47bec8a17ff54c96f3e742b3bee38, type: 2}
-  - {fileID: 11400000, guid: 788df3cc659d29972a92992401e03ce4, type: 2}
   - {fileID: 11400000, guid: 8a6ce83cf7234e5f8781eb9f91376b41, type: 2}
-  - {fileID: 11400000, guid: 6120f7e896d4452cb728092f4ef927e9, type: 2}
   - {fileID: 11400000, guid: b857f505005b412a9674723972fda023, type: 2}
+  - {fileID: 11400000, guid: 788df3cc659d29972a92992401e03ce4, type: 2}
+  - {fileID: 11400000, guid: 6120f7e896d4452cb728092f4ef927e9, type: 2}
   startingPuzzles:
   - {fileID: 11400000, guid: 6b3fb5c8f4bb890a2a314d8c0534feea, type: 2}
