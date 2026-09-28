@@ -14,9 +14,11 @@ using UnityEngine;
 // job: breeding to one cap and the 3x3 patch to a higher one, so breeding can't fill the room a player's
 // patch needs. A patch is the only way a worm reaches the island worms can't burrow across to.
 //
-// Once its dirt and water are spent it isn't judged stuck while a live worm can still reach some
-// wasteland the spreading rules can still green (CanStillProgress). That can come back after a flag (a
-// worm is born within reach), so it un-flags rather than skips.
+// Once its dirt and water are spent it isn't judged stuck while worms can still green all of what's
+// left: every visible wasteland cell can be reached by the spreading rules and by some live worm
+// (CanStillProgress). One cell out of reach (an island no worm can burrow to) and it can never finish,
+// so it is flagged. That can come back after a flag (a worm is born within reach), so it un-flags
+// rather than skips.
 [CreateAssetMenu(
     fileName = "Its A Small World",
     menuName = "Puzzles/Its A Small World"
@@ -162,24 +164,29 @@ public class ItsASmallWorld : ScriptedPuzzle
     // MARK: soft lock
 
 
-    // a live worm, and wasteland it can get to that the spreading rules can still green
+    // worms can still green everything that's left: every visible wasteland cell is one the spreading
+    // rules can reach, and within a churn of somewhere a live worm can get to. Any one that isn't can
+    // never go, so the puzzle can never finish
     protected override bool CanStillProgress(WorldContext context)
     {
         WormController rules = WormRules();
         if (rules == null) return false;
+        if (!Scan(context.Terrain)) return false;
+
+        int remaining = CountVisibleWasteland();
+
+        // nothing left: it completes rather than waits, so there is nothing to hold off
+        if (remaining == 0) return true;
+        if (MarkSpreadable(rules) < remaining) return false;
 
         if (scratchWorms == null) scratchWorms = new List<AnimalController>();
 
         context.CollectAnimals(worm, scratchWorms);
-        if (scratchWorms.Count == 0) return false;
 
-        if (!Scan(context.Terrain)) return false;
-        if (MarkSpreadable(rules) == 0) return false;
-
-        bool reachable = WormsReachSpreadable(rules, scratchWorms, true);
+        int reachable = CountWormReachable(rules, scratchWorms);
         scratchWorms.Clear();
 
-        return reachable;
+        return reachable == remaining;
     }
 
 
@@ -352,10 +359,8 @@ public class ItsASmallWorld : ScriptedPuzzle
 
 
     // Walks out from each worm's column the way a worm gets about: coming up anywhere it can stand
-    // within its burrow radius, on any level. True once it reaches spreadable wasteland, or stands next
-    // to some, since a worm churns the eight columns around where it surfaces. Without stopEarly it walks
-    // everywhere a worm can get to, leaving it in visited, for the debug count
-    private bool WormsReachSpreadable(WormController rules, List<AnimalController> worms, bool stopEarly)
+    // within its burrow radius, on any level. Everywhere it can get to is left in visited
+    private void WalkWormReach(WormController rules, List<AnimalController> worms)
     {
         for (int i = 0; i < visited.Length; i++) visited[i] = false;
 
@@ -385,8 +390,6 @@ public class ItsASmallWorld : ScriptedPuzzle
             int fx = from % width;
             int fz = from / width;
 
-            if (stopEarly && NextToSpreadable(fx, fz)) return true;
-
             for (int dz = -reach; dz <= reach; dz++)
             {
                 for (int dx = -reach; dx <= reach; dx++)
@@ -404,27 +407,6 @@ public class ItsASmallWorld : ScriptedPuzzle
                 }
             }
         }
-
-        return false;
-    }
-
-
-    // the column or one of the eight around it
-    private bool NextToSpreadable(int cx, int cz)
-    {
-        for (int dz = -1; dz <= 1; dz++)
-        {
-            for (int dx = -1; dx <= 1; dx++)
-            {
-                int x = cx + dx;
-                int z = cz + dz;
-                if (x < 0 || z < 0 || x >= width || z >= depth) continue;
-
-                if (spreadable[z * width + x]) return true;
-            }
-        }
-
-        return false;
     }
 
 
@@ -471,10 +453,11 @@ public class ItsASmallWorld : ScriptedPuzzle
     }
 
 
-    // spreadable cells within a worm's churn of anywhere a live worm can get to
+    // spreadable cells within a churn of anywhere a live worm can get to, since a worm churns the eight
+    // columns around where it surfaces
     private int CountWormReachable(WormController rules, List<AnimalController> worms)
     {
-        WormsReachSpreadable(rules, worms, false);
+        WalkWormReach(rules, worms);
 
         int count = 0;
 
