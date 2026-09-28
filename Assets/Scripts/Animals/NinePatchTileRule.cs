@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-// Spawns its animal in the center of a 3x3 patch whose center must be a neighbour of the tile just
-// placed, on the same level. The patch that cell just finished comes first, so the animal turns up
-// where the player made it; any other patch only when that cell finished none (another placement's
-// cover finished last, or a catch-up).
+// Spawns its animal in the center of a 3x3 patch the player just completed by placing a tile: the
+// placed cell must be part of the patch, on the same level. Only the player's own placements count, so
+// grass an animal spread (deer greening dirt) never spawns one, and can't fill the mob cap before the
+// player's patches get a turn.
 [CreateAssetMenu(
     fileName = "NinePatchTileRule",
     menuName = "Animals/Spawn Rules/Nine Patch Tile"
@@ -34,66 +34,71 @@ public class NinePatchTileRule : AnimalSpawnRule
     [SerializeField] private TerrainTile requiredTileToBePlaced;
     [SerializeField] private TerrainTile desiredNeighbouringTile;
 
-    // Catching up on a load or an unlock only looks for centres the player changed, so the world's
-    // own authored patches can't spawn the animal the moment its puzzle unlocks. The neighbours can
-    // still be authored. Off, the rule only reacts to placements, as it always has
+    // Catching up looks over the whole world for any valid patch around a centre the player changed,
+    // but only while this rule's puzzle is unlocked and not yet completed: at the unlock, and on a load
+    // (a quit during the last watering's cover). Once the puzzle is done it's off, so a reload never
+    // spawns from the patches already standing, deer-made ones included. With no puzzle, never.
+    // Off, the rule only reacts to placements
     [SerializeField] private bool catchUpFromWorld = false;
 
     [System.NonSerialized] private List<Vector3Int> candidates;
 
-    // the cell the current placement or spread was heard at, only set within one TrySpawn
-    [System.NonSerialized] private bool hasHeardCell;
-    [System.NonSerialized] private Vector3Int heardCell;
+    // cells the player placed whose patch hasn't been looked at yet: held while any cover is still
+    // playing, then all looked at once the last one finishes
+    [System.NonSerialized] private List<Vector3Int> placedCells;
+
+    // true within a catch-up's TrySpawn, which looks over the whole world instead of placedCells
+    [System.NonSerialized] private bool catchingUp;
 
 
     public override void OnLoaded(WorldContext context) {
-        if (catchUpFromWorld) base.OnLoaded(context);
+        // a reset or reload's leftovers belong to a world that is gone
+        if (placedCells != null) placedCells.Clear();
+
+        CatchUp(context);
     }
 
 
     public override void OnPuzzleUnlocked(WorldContext context) {
-        if (catchUpFromWorld) base.OnPuzzleUnlocked(context);
+        CatchUp(context);
     }
 
 
     // The world is remapped the moment a tile goes down, but its cover takes a moment to grow over the
     // old one. While any cover is still playing, a 3x3 can look complete before the player can see it,
-    // so the rule waits: the last cover to finish is the one that asks, and it looks over the whole
-    // settled world rather than only the cell it was told about
+    // so the placed cell is held and the rule waits: the last cover to finish looks at every held cell.
+    // A growth is heard here too, but only a tile placement can finish a patch
     public override void OnItemShown(WorldContext context, GameItem itemOrTileJustPlaced, Vector3Int cell) {
         if (context == null) return;
+        if (itemOrTileJustPlaced == null || itemOrTileJustPlaced.Tile == null) return;
+
+        if (placedCells == null) placedCells = new List<Vector3Int>();
+        placedCells.Add(cell);
+
         if (context.IsPresenting) return;
 
-        TrySpawnNear(context, cell);
+        TrySpawn(context);
+        placedCells.Clear();
     }
 
 
-    // an animal greened a cell. Same whole-world look as a placement, so animal-made grass can finish a
-    // 3x3 too. A placement's cover still playing means its own OnItemShown will ask once it settles
-    public override void OnTerrainMutated(WorldContext context, Vector3Int cell, TerrainTile from, TerrainTile to) {
-        if (context == null) return;
-        if (to != requiredTileToBePlaced && to != desiredNeighbouringTile) return;
-        if (context.IsPresenting) return;
+    private void CatchUp(WorldContext context) {
+        if (!catchUpFromWorld || context == null) return;
+        if (Completes == null || context.IsCompleted(Completes)) return;
 
-        TrySpawnNear(context, cell);
-    }
-
-
-    private void TrySpawnNear(WorldContext context, Vector3Int cell) {
-        hasHeardCell = true;
-        heardCell = cell;
+        catchingUp = true;
 
         try {
             TrySpawn(context);
         }
         finally {
-            hasHeardCell = false;
+            catchingUp = false;
         }
     }
 
 
-    // a valid 3x3 around a player-changed centre: first one the heard cell is part of, else any, which
-    // is also how a load or an unlock catches up
+    // a valid 3x3 one of the held cells is part of; catching up, any valid 3x3 around a player-changed
+    // centre. One spawn per look: two patches finished by the same cover only get one
     protected override bool TryFindSpawn(WorldContext context, out Vector3 position) {
         position = default;
         if (requiredTileToBePlaced == null || desiredNeighbouringTile == null) return false;
@@ -101,19 +106,30 @@ public class NinePatchTileRule : AnimalSpawnRule
         TerrainManager terrain = context.Terrain;
         if (terrain == null) return false;
 
-        if (candidates == null) candidates = new List<Vector3Int>();
+        if (catchingUp) return TryFindAnywhere(terrain, out position);
 
-        terrain.CollectPlayerCellsOf(requiredTileToBePlaced, candidates);
+        if (placedCells == null) return false;
 
-        if (hasHeardCell) {
-            for (int i = 0; i < candidates.Count; i++) {
-                if (!IsAround(candidates[i], heardCell)) continue;
-                if (!IsValidCentre(terrain, candidates[i])) continue;
+        for (int i = 0; i < placedCells.Count; i++) {
+            for (int j = 0; j < CENTRE_OFFSETS.Length; j++) {
+                Vector3Int center = placedCells[i] + CENTRE_OFFSETS[j];
+                if (!IsValidCentre(terrain, center)) continue;
 
-                position = terrain.CellToWorld(candidates[i]);
+                position = terrain.CellToWorld(center);
                 return true;
             }
         }
+
+        return false;
+    }
+
+
+    private bool TryFindAnywhere(TerrainManager terrain, out Vector3 position) {
+        position = default;
+
+        if (candidates == null) candidates = new List<Vector3Int>();
+
+        terrain.CollectPlayerCellsOf(requiredTileToBePlaced, candidates);
 
         for (int i = 0; i < candidates.Count; i++) {
             if (!IsValidCentre(terrain, candidates[i])) continue;
@@ -123,12 +139,6 @@ public class NinePatchTileRule : AnimalSpawnRule
         }
 
         return false;
-    }
-
-
-    // a centre whose 3x3 holds the cell: within one column of it, on its level
-    private static bool IsAround(Vector3Int center, Vector3Int cell) {
-        return center.y == cell.y && Mathf.Abs(center.x - cell.x) <= 1 && Mathf.Abs(center.z - cell.z) <= 1;
     }
 
 
