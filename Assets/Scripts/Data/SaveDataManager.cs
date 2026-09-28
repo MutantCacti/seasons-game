@@ -112,6 +112,29 @@ public class SaveDataManager : MonoBehaviour
     }
 
 
+    // A save worth continuing: one was read from disk rather than started fresh (none, unreadable, or
+    // from another version all start a new world)
+    public bool HasSave { get { return saveData != null && !IsConstructingNewWorld && File.Exists(FullPath); } }
+
+
+    // The title screen's New Game: the file goes, and the save in memory is replaced with a new world,
+    // or the game scene would load the old one from memory and write it straight back
+    public void DeleteSave()
+    {
+        try
+        {
+            if (File.Exists(FullPath)) File.Delete(FullPath);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"SaveDataManager: failed to delete '{FullPath}' ... {e.Message}");
+        }
+
+        saveSoon = false;
+        saveData = CreateNewSave();
+    }
+
+
     // used by the new game path
     public void ResetToNewGame()
     {
