@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Hot Fern Summer
   m_EditorClassIdentifier: Assembly-CSharp::ThreeInARow
   id: hot_fern_summer
-  description: Lather on some SPF and start photosynthesising!
+  description: Lather on some SPF and start photosynthesising in a straight line.
   icon: {fileID: 1462247588, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: 3ea59f08fabc65b4fb76d1e98ecd567b, type: 2}
@@ -25,4 +25,5 @@ MonoBehaviour:
   resetsTo: {fileID: 0}
   waitsFor: []
   startsConditions: 02000000
+  hideInCompendium: 0
   fernSummer: {fileID: 11400000, guid: 3ea59f08fabc65b4fb76d1e98ecd567b, type: 2}

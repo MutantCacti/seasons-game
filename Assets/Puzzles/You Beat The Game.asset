@@ -9,13 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b9cb12d39d04b7aab503483786a6892, type: 3}
+  m_Script: {fileID: 11500000, guid: 508d114467548ae18b5249591cf26370, type: 3}
   m_Name: You Beat The Game
-  m_EditorClassIdentifier: Assembly-CSharp::Puzzle
+  m_EditorClassIdentifier: Assembly-CSharp::PlaceAll
   id: you_beat_the_game
-  description: The land is alive again. Here's a little of everything - make it yours,
-    and when it's all used up, start again from the beginning.
-  icon: {fileID: 0}
+  description: That's all we had time for, folks. Have a bunch of stuff, make the
+    world pretty.
+  icon: {fileID: -948755693, guid: 9564f1b283a093a4ab21cc8198faaca9, type: 3}
   ingredients:
   - item: {fileID: 11400000, guid: 2a41064d6f74dcdd8bc0c4ced089210d, type: 2}
     count: 15
@@ -41,8 +41,12 @@ MonoBehaviour:
     count: 3
   - item: {fileID: 11400000, guid: b754a80c2b4d7184b83e961599d437d8, type: 2}
     count: 3
-  unlocks: []
-  resetsTo: {fileID: 11400000, guid: 6b3fb5c8f4bb890a2a314d8c0534feea, type: 2}
+  unlocks:
+  - {fileID: 11400000, guid: 3979a7e28373467c944da95c004c9c9b, type: 2}
+  resetsTo: {fileID: 0}
   waitsFor: []
-  startsConditions: []
+  startsConditions: 
   hideInCompendium: 0
+  completesWhen: 1
+  item: {fileID: 0}
+  requiredOverride: 0

@@ -21,6 +21,7 @@ MonoBehaviour:
   placeSound: {fileID: 0}
   placedOnTags:
   - grass
+  - dirt
   antiPlacedOnTags: []
   growsInto: {fileID: 0}
   growthDays: 1

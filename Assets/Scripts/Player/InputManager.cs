@@ -49,10 +49,6 @@ public class InputManager : MonoBehaviour
     // MARK: typing
 
 
-    // True while a text field has the keyboard, and for a frame after it lets go. The actions still
-    // fire while typing, so WASD and Escape handlers ask this first. The grace frame is for Escape:
-    // the field handles it and lets go in the same frame, and whichever of the two runs first, the
-    // pause handler must still see a field that was being typed in
     public static bool IsTypingText
     {
         get
@@ -159,6 +155,33 @@ public class InputManager : MonoBehaviour
     public void OnSpeedDown(InputAction.CallbackContext ctx) {
         if (ctx.performed) {
             onSpeedDown?.Invoke();
+        }
+    }
+
+    private bool modifierDown;
+    public bool ModifierDown { get { return modifierDown; } }
+
+    public event Action<bool> onModifier;
+    public void OnModifier(InputAction.CallbackContext ctx)
+    {
+        if (ctx.performed)
+        {
+            modifierDown = true;
+            onModifier?.Invoke(true);
+        }
+        else if (ctx.canceled)
+        {
+            modifierDown = false;
+            onModifier?.Invoke(false);
+        }
+    }
+
+
+    public event Action onGrantItems;
+    public void OnGrantItems(InputAction.CallbackContext ctx)
+    {
+        if (ctx.performed && modifierDown) {
+            onGrantItems?.Invoke();
         }
     }
 }

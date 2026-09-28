@@ -1771,6 +1771,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7247807792327866529}
   m_CullTransparentMesh: 1
+--- !u!1 &7320323393359947821
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4423040152398376394}
+  - component: {fileID: 6065835948472758567}
+  m_Layer: 0
+  m_Name: Ping
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4423040152398376394
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7320323393359947821}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5362821762151227219}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6065835948472758567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7320323393359947821}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd65fa943828d086d8ef2da99f9af7d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PingTarget
 --- !u!1 &8061855865313685030
 GameObject:
   m_ObjectHideFlags: 0
@@ -2074,6 +2118,34 @@ MonoBehaviour:
   discoveryColour: {r: 0.92941177, g: 0.76862746, b: 0.23137255, a: 1}
   completionColour: {r: 0.5529412, g: 0.7490196, b: 0.3529412, a: 1}
   softLockColour: {r: 0.8235294, g: 0.34117648, b: 0.24705882, a: 1}
+--- !u!114 &7850329750509362505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8202063350275754688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3634b7c2bfc84ae8a39de11e51e0a9a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EndgameGrantItems
+  endgame: {fileID: 11400000, guid: 17a8b97131554c1caf74d93013981bdc, type: 2}
+  itemCount: 5
+  pool:
+  - {fileID: 11400000, guid: 2a41064d6f74dcdd8bc0c4ced089210d, type: 2}
+  - {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
+  - {fileID: 11400000, guid: 094ecffb17153e02fb86e9c15e48a83b, type: 2}
+  - {fileID: 11400000, guid: 641663caa22cd29a68165a82bcc24891, type: 2}
+  - {fileID: 11400000, guid: 23142dca9dc523b14acab44078f8a522, type: 2}
+  - {fileID: 11400000, guid: 3ea59f08fabc65b4fb76d1e98ecd567b, type: 2}
+  - {fileID: 11400000, guid: b754a80c2b4d7184b83e961599d437d8, type: 2}
+  - {fileID: 11400000, guid: 6c7005ff39fc31240b69bc6756b0e091, type: 2}
+  - {fileID: 11400000, guid: f3f4459975b84b94c8188b8ad30d73a7, type: 2}
+  - {fileID: 11400000, guid: 777e2b82c49909441ac3fae8c4827049, type: 2}
+  - {fileID: 11400000, guid: 1ba7695016810394cb8dd252a9484cfa, type: 2}
+  - {fileID: 11400000, guid: f041bf6c234bfde438163a2a4f5d178e, type: 2}
+  - {fileID: 11400000, guid: 862b714692a61127a8be0c201c85858a, type: 2}
 --- !u!1 &8376713765797636832
 GameObject:
   m_ObjectHideFlags: 0
@@ -2436,6 +2508,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: b5a2e01d019c9b0ab97dba0ea461d183, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7967407944039262146}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: b5a2e01d019c9b0ab97dba0ea461d183, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4423040152398376394}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b5a2e01d019c9b0ab97dba0ea461d183, type: 3}
 --- !u!4 &411759229743830550 stripped
@@ -2488,31 +2563,3 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2489813110396615407, guid: b5a2e01d019c9b0ab97dba0ea461d183, type: 3}
   m_PrefabInstance: {fileID: 5613218549347612856}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &7850329750509362505
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8202063350275754688}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3634b7c2bfc84ae8a39de11e51e0a9a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EndgameGrantItems
-  endgame: {fileID: 11400000, guid: 17a8b97131554c1caf74d93013981bdc, type: 2}
-  itemCount: 5
-  pool:
-  - {fileID: 11400000, guid: 2a41064d6f74dcdd8bc0c4ced089210d, type: 2}
-  - {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
-  - {fileID: 11400000, guid: 094ecffb17153e02fb86e9c15e48a83b, type: 2}
-  - {fileID: 11400000, guid: 641663caa22cd29a68165a82bcc24891, type: 2}
-  - {fileID: 11400000, guid: 23142dca9dc523b14acab44078f8a522, type: 2}
-  - {fileID: 11400000, guid: 3ea59f08fabc65b4fb76d1e98ecd567b, type: 2}
-  - {fileID: 11400000, guid: b754a80c2b4d7184b83e961599d437d8, type: 2}
-  - {fileID: 11400000, guid: 6c7005ff39fc31240b69bc6756b0e091, type: 2}
-  - {fileID: 11400000, guid: f3f4459975b84b94c8188b8ad30d73a7, type: 2}
-  - {fileID: 11400000, guid: 777e2b82c49909441ac3fae8c4827049, type: 2}
-  - {fileID: 11400000, guid: 1ba7695016810394cb8dd252a9484cfa, type: 2}
-  - {fileID: 11400000, guid: f041bf6c234bfde438163a2a4f5d178e, type: 2}
-  - {fileID: 11400000, guid: 862b714692a61127a8be0c201c85858a, type: 2}

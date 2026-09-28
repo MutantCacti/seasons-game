@@ -25,4 +25,4 @@ MonoBehaviour:
   growthDays: 1
   growSound: {fileID: 0}
   reactions: []
-  hideInCompendium: 0
+  hideInCompendium: 1

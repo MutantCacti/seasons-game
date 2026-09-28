@@ -16,4 +16,5 @@ MonoBehaviour:
   description: An innocent and noble soul, cutely bounding through the brush.
   icon: {fileID: -522707151, guid: b3802dc048e9e0ea9b06517cf8026507, type: 3}
   prefab: {fileID: 5107978839270462576, guid: 0f98476208a332a369429a17eab265b7, type: 3}
-  mobCap: 4
+  mobCap: 16
+  hideInCompendium: 0

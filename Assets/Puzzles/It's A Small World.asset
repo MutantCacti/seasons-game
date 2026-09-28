@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: It's A Small World
   m_EditorClassIdentifier: Assembly-CSharp::ItsASmallWorld
   id: its_a_small_world
-  description: Make it green.
+  description: And there's a secret endgame if you can banish the wasteland from
+    it. Careful, worms can't teleport.
   icon: {fileID: 0}
   ingredients:
   - item: {fileID: 11400000, guid: 2a41064d6f74dcdd8bc0c4ced089210d, type: 2}

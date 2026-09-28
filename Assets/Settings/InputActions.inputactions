@@ -95,6 +95,26 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "Modifier",
+                    "type": "Value",
+                    "id": "3c457c36-ae48-47b7-8bae-ef9721284742",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true,
+                    "priority": 0
+                },
+                {
+                    "name": "Grant Items",
+                    "type": "Button",
+                    "id": "d5c63454-05d8-41b6-8e00-3b6f65e92213",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -315,6 +335,28 @@
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "Speed Down",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4f38e51c-5321-46cf-92e7-504382ccf939",
+                    "path": "<Keyboard>/shift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Modifier",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "facc22dc-0e99-46eb-afce-9314d46f6828",
+                    "path": "<Keyboard>/g",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Grant Items",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

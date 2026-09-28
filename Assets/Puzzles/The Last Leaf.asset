@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: The Last Leaf
   m_EditorClassIdentifier: Assembly-CSharp::AfterPuzzles
   id: the_last_leaf
-  description: Every branch has run its course.
+  description: Hidden transition into You Beat The Game
   icon: {fileID: 0}
   ingredients: []
   unlocks:
   - {fileID: 11400000, guid: 6120f7e896d4452cb728092f4ef927e9, type: 2}
   resetsTo: {fileID: 0}
   waitsFor: []
-  startsConditions: []
+  startsConditions: 
   hideInCompendium: 1
   requires:
   - {fileID: 11400000, guid: 9335854607e2ca3b50f9a64ee5dd4c14, type: 2}
