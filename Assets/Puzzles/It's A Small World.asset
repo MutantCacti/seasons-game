@@ -30,7 +30,7 @@ MonoBehaviour:
   grass: {fileID: 11400000, guid: 885a3f12794c79fbd8a3d116913b07da, type: 2}
   worm: {fileID: 11400000, guid: 35aca377dbe5c7b5fb0e1e5f3c104ad4, type: 2}
   spawnCaps:
-  - rule: {fileID: 11400000, guid: 402dbf9c65d3ec04db455e5a9f8b5a0e, type: 2}
-    cap: 8
   - rule: {fileID: 11400000, guid: 00515dc96de2404492d8748385c9faee, type: 2}
+    cap: 8
+  - rule: {fileID: 11400000, guid: 402dbf9c65d3ec04db455e5a9f8b5a0e, type: 2}
     cap: 16
