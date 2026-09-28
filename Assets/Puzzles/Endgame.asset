@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Endgame
   m_EditorClassIdentifier: Assembly-CSharp::Puzzle
   id: endgame
-  description: Press Ctrl + O for a surprise; reset to restart the game.
+  description: Press Shift + G for a surprise; reset to restart the game.
   icon: {fileID: 0}
   ingredients: []
   unlocks: []

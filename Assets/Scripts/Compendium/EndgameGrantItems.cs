@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-// The endgame's surprise: Ctrl+O hands the player a few random items, flown in from the book like a
+// The endgame's surprise: Shift+G hands the player a few random items, flown in from the book like a
 // puzzle's ingredients. Only while Endgame is unlocked, read from PuzzleManager at the moment of the
 // press rather than kept, so a load gets it right and a reset to Break Ground turns it off again.
 //
@@ -11,7 +11,7 @@ using UnityEngine;
 // flag can't sort them out since the seeds are hidden too.
 public class EndgameGrantItems : MonoBehaviour
 {
-    [Tooltip("Ctrl+O only does anything while this is unlocked")]
+    [Tooltip("Shift+G only does anything while this is unlocked")]
     [SerializeField] private Puzzle endgame;
 
     [Tooltip("random picks per press, one of each; repeats stack")]
@@ -38,8 +38,8 @@ public class EndgameGrantItems : MonoBehaviour
 
     private void Awake()
     {
-        if (endgame == null) Debug.LogError("EndgameGrantItems: no endgame puzzle assigned, so Ctrl+O never grants anything", this);
-        if (pool == null || pool.Count == 0) Debug.LogError("EndgameGrantItems: the pool is empty, so Ctrl+O has nothing to grant", this);
+        if (endgame == null) Debug.LogError("EndgameGrantItems: no endgame puzzle assigned, so Shift+G never grants anything", this);
+        if (pool == null || pool.Count == 0) Debug.LogError("EndgameGrantItems: the pool is empty, so Shift+G has nothing to grant", this);
     }
 
 
@@ -55,7 +55,7 @@ public class EndgameGrantItems : MonoBehaviour
     {
         Subscribe();
 
-        if (input == null) Debug.LogError("EndgameGrantItems: no InputManager, so Ctrl+O is never heard", this);
+        if (input == null) Debug.LogError("EndgameGrantItems: no InputManager, so Shift+G is never heard", this);
     }
 
 
